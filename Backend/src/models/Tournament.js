@@ -1,0 +1,72 @@
+import mongoose from 'mongoose';
+import { schemaOptions } from './schemaOptions.js';
+
+// live = ongoing, completed = past. A new tournament starts live and the admin ends it.
+export const TOURNAMENT_STATUSES = ['live', 'completed'];
+
+export const MAX_HOUSES = 30;
+
+// house: house_id (_id), house_name. Houses belong to a single tournament, so they live inside it.
+const houseSchema = new mongoose.Schema({
+  house_name: {
+    type: String,
+    required: [true, 'House name is required'],
+    trim: true,
+    maxlength: [60, 'House name must be 60 characters or fewer'],
+  },
+});
+
+// tournament: tournament_id (_id), tournament_name, list(game_id) (games), houses
+const tournamentSchema = new mongoose.Schema(
+  {
+    tournament_name: {
+      type: String,
+      required: [true, 'Tournament name is required'],
+      trim: true,
+      maxlength: [100, 'Tournament name must be 100 characters or fewer'],
+    },
+    games: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
+    houses: {
+      type: [houseSchema],
+      default: [],
+      validate: [
+        {
+          validator: (houses) => houses.length <= MAX_HOUSES,
+          message: `A tournament can have at most ${MAX_HOUSES} houses`,
+        },
+        {
+          validator: (houses) => {
+            const names = houses.map((house) => house.house_name?.toLowerCase());
+            return new Set(names).size === names.length;
+          },
+          message: 'Each house in a tournament needs a different name',
+        },
+      ],
+    },
+    status: {
+      type: String,
+      enum: { values: TOURNAMENT_STATUSES, message: 'Status must be live or completed' },
+      default: 'live',
+    },
+    // Planned dates, shown to people. They never change the status on their own.
+    start_date: Date,
+    end_date: Date,
+  },
+  schemaOptions,
+);
+
+tournamentSchema.index({ status: 1 });
+tournamentSchema.index({ games: 1 });
+
+tournamentSchema.pre('validate', function () {
+  if (this.start_date && this.end_date && this.end_date < this.start_date) {
+    this.invalidate('end_date', 'End date cannot be before the start date');
+  }
+});
+
+export const Tournament = mongoose.model('Tournament', tournamentSchema);
+
+// Runs on server start. Earlier versions had an "upcoming" status; those tournaments now count as ongoing.
+export async function migrateUpcomingTournaments() {
+  await Tournament.updateMany({ status: 'upcoming' }, { $set: { status: 'live' } });
+}

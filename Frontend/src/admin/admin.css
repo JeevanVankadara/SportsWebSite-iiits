@@ -1,0 +1,1009 @@
+/* Admin area. Styles are mobile first; wider screens are handled in the media queries. */
+
+/* Layout */
+
+.admin-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--blue-800);
+  color: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.15);
+}
+
+.admin-header-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'brand account'
+    'nav nav';
+  align-items: center;
+  column-gap: 12px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 16px 0;
+}
+
+.brand {
+  grid-area: brand;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #fff;
+  text-decoration: none;
+}
+
+.brand-logo {
+  width: 34px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.brand-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.16);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-account {
+  grid-area: account;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-username {
+  display: none;
+  font-size: 0.875rem;
+  color: rgb(255 255 255 / 0.8);
+}
+
+.btn-on-blue {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.4);
+  color: #fff;
+}
+
+.btn-on-blue:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.admin-nav {
+  grid-area: nav;
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.admin-nav-link {
+  flex: 1;
+  padding: 10px 8px 9px;
+  border-bottom: 3px solid transparent;
+  color: rgb(255 255 255 / 0.72);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-nav-link:hover {
+  color: #fff;
+}
+
+.admin-nav-link.active {
+  border-bottom-color: #fff;
+  color: #fff;
+}
+
+.admin-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 96px;
+}
+
+@media (max-width: 359px) {
+  .brand-tag {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-header-inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'brand nav account';
+    column-gap: 32px;
+    min-height: 64px;
+    padding: 0 24px;
+  }
+
+  .admin-nav {
+    align-self: stretch;
+    margin-top: 0;
+  }
+
+  .admin-nav-link {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-top: 3px solid transparent;
+  }
+
+  .admin-username {
+    display: inline;
+  }
+
+  .admin-main {
+    padding: 32px 24px 96px;
+  }
+}
+
+/* Page header */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.page-description {
+  margin-top: 4px;
+  color: var(--color-muted);
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Dashboard */
+
+.dash-section + .dash-section {
+  margin-top: 32px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-border);
+  color: var(--color-text-soft);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+}
+
+/* Tournament card */
+
+.t-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.t-card-live {
+  border-color: var(--blue-200);
+  box-shadow: var(--shadow);
+}
+
+.t-card-live::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--blue-600);
+}
+
+.t-card-completed {
+  background: #fbfcfe;
+}
+
+.t-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.t-card-dates {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.t-card:hover {
+  border-color: var(--blue-200);
+}
+
+.t-card-title {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.t-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Stretches the title link over the whole card, so tapping anywhere on it opens the tournament. */
+.t-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.t-card-link:focus-visible {
+  outline: none;
+}
+
+.t-card:has(.t-card-link:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.t-card:hover .t-card-link {
+  color: var(--blue-700);
+}
+
+.t-card-meta {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.t-card-meta > div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+
+.t-card-meta dt {
+  padding-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.t-card-meta dd {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Sits above the stretched title link so the buttons stay clickable. */
+.t-card-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.t-card-delete {
+  margin-left: auto;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--blue-50);
+  color: var(--blue-800);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Status badge */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-live {
+  background: var(--color-live-bg);
+  color: var(--color-live);
+}
+
+.badge-completed {
+  background: var(--color-subtle);
+  color: var(--color-muted);
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+
+/* Empty and error states */
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 40px 20px;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--blue-50);
+  color: var(--blue-600);
+}
+
+.empty-state-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.empty-state-text {
+  max-width: 42ch;
+  color: var(--color-muted);
+}
+
+.empty-state .btn {
+  margin-top: 10px;
+}
+
+.alert {
+  padding: 12px 14px;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+  color: #991b1b;
+  font-size: 0.9375rem;
+}
+
+/* Panels and forms */
+
+.panel {
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.form-stack {
+  display: grid;
+  gap: 22px;
+}
+
+.form-row {
+  display: grid;
+  gap: 22px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field > legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.field-label {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.optional {
+  margin-left: 4px;
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.field-hint {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.field-error {
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+}
+
+/* 16px text stops iPhones from zooming in when a field is tapped. */
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  line-height: 1.4;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--blue-600);
+  box-shadow: var(--focus-ring);
+}
+
+.textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 559px) {
+  .form-actions > .btn {
+    flex: 1 1 0;
+  }
+}
+
+@media (min-width: 560px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .panel {
+    padding: 24px;
+  }
+}
+
+/* Status picker (radio buttons shown as a segmented control) */
+
+.segmented {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-subtle);
+  border-radius: var(--radius);
+}
+
+.segmented-option {
+  position: relative;
+}
+
+.segmented-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 8px;
+  border-radius: 7px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.segmented-option input:checked + span {
+  background: #fff;
+  color: var(--blue-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented-option input:focus-visible + span {
+  box-shadow: var(--focus-ring);
+}
+
+/* Sports checkboxes */
+
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+}
+
+.check-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  background: #fff;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.check-card:hover {
+  border-color: var(--blue-600);
+}
+
+/* The real checkbox covers the card, invisible, so the whole card is clickable and keyboard friendly. */
+.check-card input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.check-box {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: #fff;
+}
+
+.check-label {
+  font-weight: 600;
+}
+
+.check-card:has(input:checked) {
+  background: var(--blue-50);
+  border-color: var(--blue-600);
+}
+
+.check-card input:checked + .check-box {
+  background: var(--blue-600);
+  border-color: var(--blue-600);
+}
+
+.check-card input:focus-visible + .check-box {
+  box-shadow: var(--focus-ring);
+}
+
+/* Houses */
+
+.house-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.house-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 4px 0 14px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: 999px;
+  color: var(--blue-800);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.house-remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  color: var(--blue-700);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.house-remove:hover {
+  background: var(--blue-100);
+}
+
+.house-remove:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.house-summary .chip {
+  padding: 5px 14px;
+  font-size: 0.9375rem;
+}
+
+.quick-add {
+  display: grid;
+  gap: 6px;
+}
+
+.quick-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-add-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-add-row .btn {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+/* Tournament page */
+
+.breadcrumbs {
+  margin-bottom: 14px;
+  font-size: 0.875rem;
+}
+
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+}
+
+.breadcrumbs li + li::before {
+  content: '/';
+  margin-right: 6px;
+  color: var(--color-border-strong);
+}
+
+.breadcrumbs a {
+  color: var(--blue-700);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbs [aria-current='page'] {
+  overflow-wrap: anywhere;
+}
+
+.tournament-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 559px) {
+  .page-actions {
+    width: 100%;
+  }
+
+  .page-actions > .btn {
+    flex: 1 1 0;
+  }
+}
+
+.sport-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+}
+
+.sport-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.sport-tile:hover {
+  border-color: var(--blue-200);
+  box-shadow: var(--shadow);
+}
+
+.sport-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.sport-initial {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--blue-600);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.sport-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.sport-arrow {
+  margin-left: auto;
+  color: var(--blue-600);
+  font-size: 1.25rem;
+  transition: transform 0.15s;
+}
+
+.sport-tile:hover .sport-arrow {
+  transform: translateX(3px);
+}
+
+/* Toast */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(calc(100% - 32px), 480px);
+  padding: 12px 12px 12px 16px;
+  background: #1e293b;
+  color: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgb(15 23 42 / 0.3);
+  font-size: 0.9375rem;
+  transform: translateX(-50%);
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* Sign-in page */
+
+.login {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: radial-gradient(circle at top, var(--blue-600), var(--blue-900) 70%);
+}
+
+.login-card {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 24px;
+  background: var(--color-surface);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.3);
+}
+
+.login-head {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.login-logo {
+  width: 72px;
+  margin-bottom: 8px;
+}
+
+.login-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.password-input {
+  position: relative;
+}
+
+.password-input .input {
+  padding-right: 68px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  padding: 6px 10px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--blue-700);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (min-width: 480px) {
+  .login-card {
+    padding: 36px 32px;
+  }
+}

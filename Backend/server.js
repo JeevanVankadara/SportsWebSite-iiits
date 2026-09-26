@@ -1,0 +1,45 @@
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+import { connectDB } from './src/config/db.js';
+import { env } from './src/config/env.js';
+import { errorHandler, notFound } from './src/middleware/errorHandler.js';
+import { ensurePredefinedGames } from './src/models/Game.js';
+import { migrateUpcomingTournaments } from './src/models/Tournament.js';
+import adminRoutes from './src/routes/admin.routes.js';
+import gameRoutes from './src/routes/game.routes.js';
+import tournamentRoutes from './src/routes/tournament.routes.js';
+
+const app = express();
+
+if (env.trustProxy) app.set('trust proxy', 1);
+app.use(helmet());
+app.use(cors({ origin: env.clientOrigins }));
+app.use(express.json({ limit: '100kb' }));
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+app.use('/api/admin', adminRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/games', gameRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
+
+try {
+  await connectDB();
+  await ensurePredefinedGames();
+  await migrateUpcomingTournaments();
+} catch (err) {
+  console.error(`Could not prepare the database: ${err.message}`);
+  process.exit(1);
+}
+
+app.listen(env.port, (error) => {
+  if (error) {
+    console.error(`Could not start the server: ${error.message}`);
+    process.exit(1);
+  }
+  console.log(`API listening on http://localhost:${env.port}`);
+});
