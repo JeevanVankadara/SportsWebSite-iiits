@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { getCurrentAdmin, login } from '../controllers/admin.controller.js';
+import { getCurrentAdmin, login } from '../controllers/admin/admin.controller.js';
 import { requireAdmin } from '../middleware/auth.js';
 
 // Only failed attempts count towards the limit.

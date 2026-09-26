@@ -8,3 +8,10 @@ export const ADMIN_PATH = `/${(import.meta.env.VITE_ADMIN_PATH || 'control-room'
 export function adminPath(subpath = '') {
   return subpath ? `${ADMIN_PATH}/${subpath}` : ADMIN_PATH
 }
+
+// Co-ordinators (referees) sign in here with their player account.
+export const COORDINATOR_PATH = '/coordinator'
+
+export function coordinatorPath(subpath = '') {
+  return subpath ? `${COORDINATOR_PATH}/${subpath}` : COORDINATOR_PATH
+}

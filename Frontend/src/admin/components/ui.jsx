@@ -1,6 +1,13 @@
 import { Link } from 'react-router'
 
-const STATUS_LABELS = { live: 'Live', completed: 'Completed' }
+const STATUS_LABELS = {
+  live: 'Live',
+  completed: 'Completed',
+  scheduled: 'Scheduled',
+  pending: 'Pending',
+  not_played: 'Not played',
+  abandoned: 'Abandoned',
+}
 
 // items: [{ label, to }]; the last item is the current page and is not a link.
 export function Breadcrumbs({ items }) {
@@ -41,14 +48,6 @@ export function StatusBadge({ status }) {
       {status === 'live' && <span className="live-dot" aria-hidden="true" />}
       {STATUS_LABELS[status] ?? status}
     </span>
-  )
-}
-
-export function Alert({ children }) {
-  return (
-    <div className="alert" role="alert">
-      {children}
-    </div>
   )
 }
 

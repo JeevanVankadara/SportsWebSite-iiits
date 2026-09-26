@@ -1,5 +1,6 @@
 import { Game } from '../models/Game.js';
 import { TOURNAMENT_STATUSES, Tournament } from '../models/Tournament.js';
+import { assertTournamentEditAllowed, deleteFixtures } from '../services/badminton/fixture.service.js';
 import { HttpError } from '../utils/httpError.js';
 import {
   ensureAllExist,
@@ -40,11 +41,14 @@ async function applyChanges(tournament, body) {
   if (endDate !== undefined) tournament.end_date = endDate;
 
   const games = optionalIdList(body.games, 'Sports');
+  const houses = optionalHouses(body.houses);
+  // Sports and houses that already have fixtures cannot be removed.
+  await assertTournamentEditAllowed(tournament, { games, houses });
+
   if (games) {
     await ensureAllExist(Game, games, 'sports');
     tournament.games = games;
   }
-  const houses = optionalHouses(body.houses);
   if (houses) tournament.houses = houses;
 }
 
@@ -85,6 +89,7 @@ export async function updateTournament(req, res) {
 
 export async function deleteTournament(req, res) {
   const tournament = await findByIdOr404(Tournament, req.params.id, 'Tournament not found');
+  await deleteFixtures({ tournament: tournament._id });
   await tournament.deleteOne();
   res.status(204).end();
 }

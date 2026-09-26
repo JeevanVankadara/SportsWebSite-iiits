@@ -3,9 +3,10 @@ import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { TrophyIcon } from '../components/icons.jsx'
 import { Breadcrumbs, EmptyState, LoadError } from '../components/ui.jsx'
+import BadmintonRoutes from '../sports/badminton/BadmintonRoutes.jsx'
 import { useTournament } from '../useTournament.js'
 
-// Placeholder for one sport inside a tournament. Matches and scores will be managed here later.
+// Each sport has its own section under src/admin/sports/. Sports without one show a placeholder.
 export default function SportPage() {
   const { id, gameId } = useParams()
   const { tournament, error, retry } = useTournament(id)
@@ -14,6 +15,10 @@ export default function SportPage() {
 
   const tournamentUrl = adminPath(`tournaments/${id}`)
   const sport = tournament.games.find((game) => game._id === gameId)
+  if (sport?.game_name.toLowerCase() === 'badminton') {
+    return <BadmintonRoutes tournament={tournament} sport={sport} />
+  }
+
   const backButton = (
     <Link to={tournamentUrl} className="btn btn-secondary">
       Back to {tournament.tournament_name}
@@ -46,11 +51,7 @@ export default function SportPage() {
           />
         </>
       ) : (
-        <EmptyState
-          title="Sport not found"
-          text="This sport is not part of the tournament anymore."
-          action={backButton}
-        />
+        <EmptyState title="Sport not found" text="This sport is not part of the tournament anymore." action={backButton} />
       )}
     </>
   )

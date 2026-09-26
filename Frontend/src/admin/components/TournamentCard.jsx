@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { adminPath } from '../../config.js'
-import { formatDateRange } from '../utils.js'
+import { formatDateRange } from '../../utils/dates.js'
 import { CalendarIcon } from './icons.jsx'
 import { StatusBadge } from './ui.jsx'
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { gamesApi, tournamentsApi } from '../../api/endpoints.js'
+import Alert from '../../components/Alert.jsx'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { CheckIcon } from '../components/icons.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
-import { Alert, LoadError, PageHeader } from '../components/ui.jsx'
-import { toDateInput } from '../utils.js'
+import { LoadError, PageHeader } from '../components/ui.jsx'
+import { toDateInput } from '../../utils/dates.js'
 
 // A new tournament starts as ongoing; the status can only be changed when editing.
 const STATUS_OPTIONS = [

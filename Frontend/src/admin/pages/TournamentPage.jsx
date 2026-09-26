@@ -4,10 +4,10 @@ import { tournamentsApi } from '../../api/endpoints.js'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { CalendarIcon } from '../components/icons.jsx'
-import Toast from '../components/Toast.jsx'
+import Toast from '../../components/Toast.jsx'
 import { Breadcrumbs, EmptyState, LoadError, StatusBadge } from '../components/ui.jsx'
 import { useTournament } from '../useTournament.js'
-import { formatDateRange } from '../utils.js'
+import { formatDateRange } from '../../utils/dates.js'
 
 export default function TournamentPage() {
   const { id } = useParams()

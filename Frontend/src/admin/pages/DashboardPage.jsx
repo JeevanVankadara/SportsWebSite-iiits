@@ -4,7 +4,7 @@ import { tournamentsApi } from '../../api/endpoints.js'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { PlusIcon, TrophyIcon } from '../components/icons.jsx'
-import Toast from '../components/Toast.jsx'
+import Toast from '../../components/Toast.jsx'
 import TournamentCard from '../components/TournamentCard.jsx'
 import { EmptyState, LoadError, PageHeader } from '../components/ui.jsx'
 

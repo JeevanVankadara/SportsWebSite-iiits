@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { ADMIN_PATH, adminPath } from '../config.js'
-import { useAuth } from './auth/authContext.js'
+import { useAuth } from '../auth/authContext.js'
 
 const NAV_ITEMS = [
   { path: 'dashboard', label: 'Dashboard' },
@@ -8,7 +8,7 @@ const NAV_ITEMS = [
 ]
 
 export default function AdminLayout() {
-  const { admin, signOut } = useAuth()
+  const { user: admin, signOut } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
 

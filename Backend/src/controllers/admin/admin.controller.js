@@ -1,6 +1,6 @@
-import { signAdminToken } from '../middleware/auth.js';
-import { Admin } from '../models/Admin.js';
-import { HttpError } from '../utils/httpError.js';
+import { signAdminToken } from '../../middleware/auth.js';
+import { Admin } from '../../models/Admin.js';
+import { HttpError } from '../../utils/httpError.js';
 
 export async function login(req, res) {
   const { username, password } = req.body ?? {};

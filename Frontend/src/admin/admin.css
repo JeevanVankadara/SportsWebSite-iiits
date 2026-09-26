@@ -392,6 +392,22 @@
   color: var(--color-muted);
 }
 
+.badge-scheduled,
+.badge-pending {
+  background: var(--blue-50);
+  color: var(--blue-700);
+}
+
+.badge-not_played {
+  background: var(--color-subtle);
+  color: var(--color-muted);
+}
+
+.badge-abandoned {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .live-dot {
   width: 7px;
   height: 7px;
@@ -450,15 +466,6 @@
   margin-top: 10px;
 }
 
-.alert {
-  padding: 12px 14px;
-  background: var(--color-danger-bg);
-  border: 1px solid var(--color-danger-border);
-  border-radius: var(--radius-sm);
-  color: #991b1b;
-  font-size: 0.9375rem;
-}
-
 /* Panels and forms */
 
 .panel {
@@ -482,72 +489,6 @@
 .form-row {
   display: grid;
   gap: 22px;
-}
-
-.field {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.field > legend {
-  margin-bottom: 8px;
-  padding: 0;
-}
-
-.field-label {
-  color: var(--color-text);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.optional {
-  margin-left: 4px;
-  color: var(--color-muted);
-  font-weight: 400;
-}
-
-.field-hint {
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-}
-
-.field-error {
-  color: var(--color-danger);
-  font-size: 0.8125rem;
-}
-
-/* 16px text stops iPhones from zooming in when a field is tapped. */
-.input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  background: #fff;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
-  line-height: 1.4;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-
-.input::placeholder {
-  color: #94a3b8;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--blue-600);
-  box-shadow: var(--focus-ring);
-}
-
-.textarea {
-  min-height: 180px;
-  resize: vertical;
 }
 
 .form-actions {
@@ -887,123 +828,4 @@
 
 .sport-tile:hover .sport-arrow {
   transform: translateX(3px);
-}
-
-/* Toast */
-
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 20px;
-  z-index: 50;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: min(calc(100% - 32px), 480px);
-  padding: 12px 12px 12px 16px;
-  background: #1e293b;
-  color: #fff;
-  border-radius: var(--radius);
-  box-shadow: 0 12px 32px rgb(15 23 42 / 0.3);
-  font-size: 0.9375rem;
-  transform: translateX(-50%);
-  animation: toast-in 0.2s ease-out;
-}
-
-.toast-close {
-  flex-shrink: 0;
-  margin-left: auto;
-  padding: 0 4px;
-  background: none;
-  border: 0;
-  color: inherit;
-  font-size: 1.25rem;
-  line-height: 1.2;
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-.toast-close:hover {
-  opacity: 1;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px);
-  }
-}
-
-/* Sign-in page */
-
-.login {
-  min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  background: radial-gradient(circle at top, var(--blue-600), var(--blue-900) 70%);
-}
-
-.login-card {
-  display: grid;
-  gap: 18px;
-  width: 100%;
-  max-width: 380px;
-  padding: 32px 24px;
-  background: var(--color-surface);
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgb(15 23 42 / 0.3);
-}
-
-.login-head {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-  text-align: center;
-}
-
-.login-logo {
-  width: 72px;
-  margin-bottom: 8px;
-}
-
-.login-title {
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.password-input {
-  position: relative;
-}
-
-.password-input .input {
-  padding-right: 68px;
-}
-
-.password-toggle {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  padding: 6px 10px;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  color: var(--blue-700);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  transform: translateY(-50%);
-}
-
-.password-toggle:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
-@media (min-width: 480px) {
-  .login-card {
-    padding: 36px 32px;
-  }
 }

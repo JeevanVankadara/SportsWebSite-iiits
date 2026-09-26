@@ -7,7 +7,11 @@ import { errorHandler, notFound } from './src/middleware/errorHandler.js';
 import { ensurePredefinedGames } from './src/models/Game.js';
 import { migrateUpcomingTournaments } from './src/models/Tournament.js';
 import adminRoutes from './src/routes/admin.routes.js';
+import badmintonRoutes from './src/routes/badminton/badminton.routes.js';
+import badmintonCoordinatorRoutes from './src/routes/badminton/coordinator.routes.js';
+import coordinatorRoutes from './src/routes/coordinator.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
+import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
 
 const app = express();
@@ -23,6 +27,10 @@ app.get('/api/health', (req, res) => {
 app.use('/api/admin', adminRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/players', playerRoutes);
+app.use('/api/badminton', badmintonRoutes);
+app.use('/api/coordinator/badminton', badmintonCoordinatorRoutes);
+app.use('/api/coordinator', coordinatorRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
