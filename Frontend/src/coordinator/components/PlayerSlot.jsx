@@ -1,31 +1,30 @@
-import { useEffect, useState } from 'react'
-import { coordinatorPlayersApi } from '../../api/endpoints.js'
+import { useEffect, useState } from 'react';
+import { coordinatorPlayersApi } from '../../api/endpoints.js';
 
-// One player on a slip or squad: shows the chosen player, or a search box to find one by username,
-// name or roll number. Players whose ids are in `exclude` are left out of the results.
-export default function PlayerSlot({ player, onChange, label, exclude }) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState({ search: '', players: [], error: '' })
-  const search = query.trim()
+// Search registered players by username, name or roll number.
+export default function PlayerSlot({ player, onChange, label }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState({ search: '', players: [], error: '' });
+  const search = query.trim();
 
   useEffect(() => {
-    if (!search) return
-    let ignore = false
+    if (!search) return;
+    let ignore = false;
     const timer = setTimeout(() => {
       coordinatorPlayersApi.search(search).then(
         ({ players }) => {
-          if (!ignore) setResults({ search, players, error: '' })
+          if (!ignore) setResults({ search, players, error: '' });
         },
         (err) => {
-          if (!ignore) setResults({ search, players: [], error: err.message })
+          if (!ignore) setResults({ search, players: [], error: err.message });
         },
-      )
-    }, 250)
+      );
+    }, 250);
     return () => {
-      ignore = true
-      clearTimeout(timer)
-    }
-  }, [search])
+      ignore = true;
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   if (player) {
     return (
@@ -56,10 +55,9 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => {
-          // Enter picks the first match instead of submitting anything.
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
-            event.preventDefault()
-            if (options.length > 0) pick(options[0])
+            event.preventDefault();
+            if (options.length > 0) pick(options[0]);
           }
         }}
         placeholder="Username, name or roll no."
@@ -88,5 +86,5 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
         </div>
       )}
     </div>
-  )
+  );
 }

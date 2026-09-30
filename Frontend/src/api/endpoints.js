@@ -48,6 +48,16 @@ export const badmintonApi = {
   clearResult: (matchId) => request(`/api/badminton/matches/${id(matchId)}/result`, { method: 'DELETE' }),
 }
 
+export const footballApi = {
+  fixtures: (tournamentId) => request(`/api/football/tournaments/${id(tournamentId)}/fixtures`),
+  standings: (tournamentId) => request(`/api/football/tournaments/${id(tournamentId)}/standings`),
+  fixture: (fixtureId) => request(`/api/football/fixtures/${id(fixtureId)}`),
+  createFixture: (tournamentId, data) =>
+    request(`/api/football/tournaments/${id(tournamentId)}/fixtures`, { method: 'POST', body: data }),
+  updateFixture: (fixtureId, data) => request(`/api/football/fixtures/${id(fixtureId)}`, { method: 'PATCH', body: data }),
+  deleteFixture: (fixtureId) => request(`/api/football/fixtures/${id(fixtureId)}`, { method: 'DELETE' }),
+  setDecision: (fixtureId, data) =>
+    request(`/api/football/fixtures/${id(fixtureId)}/decision`, { method: 'PUT', body: data }),
 export const cricketApi = {
   fixtures: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/fixtures`),
   standings: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/standings`),
@@ -96,6 +106,32 @@ export const coordinatorBadmintonApi = {
     coordinatorRequest(`/api/coordinator/badminton/matches/${id(matchId)}/abandon`, { method: 'POST', body: data }),
   editSet: (setId, data) =>
     coordinatorRequest(`/api/coordinator/badminton/sets/${id(setId)}`, { method: 'PUT', body: data }),
+}
+
+export const coordinatorFootballApi = {
+  fixtures: () => coordinatorRequest('/api/coordinator/football/fixtures'),
+  fixture: (fixtureId) => coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}`),
+  saveConfig: (fixtureId, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/config`, { method: 'PUT', body: data }),
+  saveSlip: (fixtureId, team, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/slips/${team}`, { method: 'PUT', body: data }),
+  decideFixture: (fixtureId, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/decision`, { method: 'PUT', body: data }),
+  clock: (fixtureId, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/clock`, { method: 'POST', body: data }),
+  finishMatch: (fixtureId) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/finish`, { method: 'POST' }),
+  addEvent: (fixtureId, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/events`, { method: 'POST', body: data }),
+  updateEvent: (fixtureId, eventId, data) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/events/${id(eventId)}`, {
+      method: 'PUT',
+      body: data,
+    }),
+  deleteEvent: (fixtureId, eventId) =>
+    coordinatorRequest(`/api/coordinator/football/fixtures/${id(fixtureId)}/events/${id(eventId)}`, {
+      method: 'DELETE',
+    }),
 }
 
 // Every action answers with the whole fixture: { fixture, innings, tournament }.

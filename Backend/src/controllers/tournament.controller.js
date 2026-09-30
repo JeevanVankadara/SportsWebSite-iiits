@@ -1,5 +1,13 @@
 import { Game } from '../models/Game.js';
 import { TOURNAMENT_STATUSES, Tournament } from '../models/Tournament.js';
+import {
+  assertTournamentEditAllowed as assertBadmintonEditAllowed,
+  deleteFixtures as deleteBadmintonFixtures,
+} from '../services/badminton/fixture.service.js';
+import {
+  assertTournamentEditAllowed as assertFootballEditAllowed,
+  deleteFixtures as deleteFootballFixtures,
+} from '../services/football/fixture.service.js';
 import { assertTournamentEditAllowed, deleteFixtures } from '../services/badminton/fixture.service.js';
 import {
   assertTournamentEditAllowed as assertCricketEditAllowed,
@@ -47,6 +55,8 @@ async function applyChanges(tournament, body) {
   const games = optionalIdList(body.games, 'Sports');
   const houses = optionalHouses(body.houses);
   // Sports and houses that already have fixtures cannot be removed.
+  await assertBadmintonEditAllowed(tournament, { games, houses });
+  await assertFootballEditAllowed(tournament, { games, houses });
   await assertTournamentEditAllowed(tournament, { games, houses });
   await assertCricketEditAllowed(tournament, { games, houses });
 
@@ -94,6 +104,8 @@ export async function updateTournament(req, res) {
 
 export async function deleteTournament(req, res) {
   const tournament = await findByIdOr404(Tournament, req.params.id, 'Tournament not found');
+  await deleteBadmintonFixtures({ tournament: tournament._id });
+  await deleteFootballFixtures({ tournament: tournament._id });
   await deleteFixtures({ tournament: tournament._id });
   await deleteCricketFixtures({ tournament: tournament._id });
   await tournament.deleteOne();

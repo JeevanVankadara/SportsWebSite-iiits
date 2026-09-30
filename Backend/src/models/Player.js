@@ -14,6 +14,13 @@ const sportRecordSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const footballRecordSchema = new mongoose.Schema(
+  {
+    played: { type: Number, default: 0, min: 0 },
+    won: { type: Number, default: 0, min: 0 },
+    goals: { type: Number, default: 0, min: 0 },
+    yellow_cards: { type: Number, default: 0, min: 0 },
+    red_cards: { type: Number, default: 0, min: 0 },
 const cricketRecordSchema = new mongoose.Schema(
   {
     played: { type: Number, default: 0, min: 0 },
@@ -62,6 +69,7 @@ const playerSchema = new mongoose.Schema(
     password_hash: { type: String, required: true, select: false },
     sports: {
       badminton: { type: sportRecordSchema, default: () => ({}) },
+      football: { type: footballRecordSchema, default: () => ({}) },
       cricket: { type: cricketRecordSchema, default: () => ({}) },
     },
   },

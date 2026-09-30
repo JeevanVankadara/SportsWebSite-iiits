@@ -1,0 +1,150 @@
+.football-scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.football-team {
+  flex: 1;
+}
+
+.football-team-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--blue-950);
+}
+
+.football-score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--blue-900);
+  padding: 0 1.5rem;
+}
+
+.football-period-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  background: var(--blue-200);
+  color: var(--blue-900);
+  border-radius: 9999px;
+  margin-top: 0.5rem;
+}
+
+.football-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.football-event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.football-event-minute {
+  font-weight: 700;
+  color: var(--color-muted);
+  min-width: 2.5rem;
+}
+
+.football-event-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.badge-goal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-yellow {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-sub {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+/* Standings table styles */
+.standings-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.standings {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.standings th,
+.standings td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.standings thead th {
+  background: var(--color-subtle);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.standings tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.standings .standings-house {
+  min-width: 130px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.standings-points {
+  color: var(--blue-700);
+  font-weight: 700;
+}
+
+.standings-legend {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
