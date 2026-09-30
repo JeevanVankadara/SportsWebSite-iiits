@@ -1,6 +1,7 @@
 import { useAuth } from '../../auth/authContext.js'
 import { Eyebrow } from '../components/ui.jsx'
 import BadmintonAssignments from '../sports/badminton/BadmintonAssignments.jsx'
+import CricketAssignments from '../sports/cricket/CricketAssignments.jsx'
 
 // Everything assigned to the co-ordinator, one section per sport.
 // A new sport adds its own <XAssignments /> section here.
@@ -19,6 +20,7 @@ export default function GamesPage() {
       </section>
 
       <BadmintonAssignments sectionNumber="02" />
+      <CricketAssignments sectionNumber="03" />
     </>
   )
 }

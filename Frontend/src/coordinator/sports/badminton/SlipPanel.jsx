@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { coordinatorBadmintonApi as api } from '../../../api/endpoints.js'
 import { MATCH_TYPE_LABELS, playersPerSide } from '../../../sports/badminton/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
-import PlayerSlot from './PlayerSlot.jsx'
+import PlayerSlot from '../../components/PlayerSlot.jsx'
 
 const TEAMS = ['team1', 'team2']
 

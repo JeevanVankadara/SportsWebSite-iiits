@@ -693,3 +693,334 @@ body:has(.co-app) {
   border-color: rgb(59 130 246 / 0.25);
   border-top-color: var(--co-accent);
 }
+
+/* Fixture pages (shared by every sport) */
+
+.co-main > * + * {
+  margin-top: 20px;
+}
+
+.co-back {
+  display: inline-block;
+  color: var(--co-muted) !important;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.co-back:hover {
+  color: var(--co-text) !important;
+}
+
+/* Scoreboard header */
+
+.co-fixture-hero {
+  padding: 24px 0 8px;
+}
+
+.co-scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.co-scoreboard-team {
+  font-size: clamp(2rem, 9vw, 4.5rem);
+  overflow-wrap: anywhere;
+}
+
+.co-scoreboard-team:last-child {
+  text-align: right;
+}
+
+.co-scoreboard-team.is-winner {
+  color: var(--co-accent);
+}
+
+.co-scoreboard-score {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  background: var(--co-panel);
+  border: 1px solid var(--co-line-strong);
+  border-radius: var(--co-radius-sm);
+}
+
+.co-scoreboard-score .co-display {
+  font-size: clamp(2.25rem, 9vw, 4rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.co-scoreboard-dash {
+  margin: 0 6px;
+  color: var(--co-muted);
+}
+
+.co-scoreboard-score small {
+  color: var(--co-muted);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.co-fixture-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  color: var(--co-muted);
+  font-size: 0.875rem;
+}
+
+/* Progress steps */
+
+.co-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.co-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--co-line);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.co-step-no {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--co-line-strong);
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.co-steps li.is-current {
+  border-color: var(--co-accent);
+  color: var(--co-text);
+}
+
+.co-steps li.is-current .co-step-no {
+  background: var(--co-accent);
+  border-color: var(--co-accent);
+  color: #fff;
+}
+
+.co-steps li.is-done .co-step-no {
+  border-color: var(--co-good);
+  color: var(--co-good);
+}
+
+/* Collapsible management panels */
+
+.co-manage > summary {
+  color: var(--co-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.co-manage:not([open]) {
+  gap: 0;
+}
+
+.co-block {
+  padding-top: 8px;
+}
+/* Tabs */
+
+.co-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--co-line);
+}
+
+.co-tab {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--co-muted);
+  font: inherit;
+  font-family: var(--co-display-font);
+  font-size: 1.375rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.co-tab[aria-selected='true'] {
+  border-bottom-color: var(--co-accent);
+  color: var(--co-text);
+}
+
+.co-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--co-focus);
+}
+
+.co-tab-check {
+  color: var(--co-good);
+  font-family: var(--co-body-font);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Player search */
+
+.co-player-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 6px 4px 14px;
+  background: var(--co-accent-soft);
+  border: 1px solid rgb(59 130 246 / 0.35);
+  border-radius: var(--co-radius-sm);
+  font-weight: 600;
+}
+
+.co-player-chip button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  color: var(--co-muted);
+  font-size: 1.125rem;
+  cursor: pointer;
+}
+
+.co-player-chip button:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--co-text);
+}
+
+.co-player-search {
+  position: relative;
+}
+
+.co-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 10;
+  padding: 4px;
+  background: var(--co-panel-raised);
+  border: 1px solid var(--co-line-strong);
+  border-radius: var(--co-radius-sm);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
+.co-results ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.co-results button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--co-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.co-results button:hover,
+.co-results button:focus-visible {
+  outline: none;
+  background: var(--co-accent-soft);
+}
+
+.co-results-note {
+  padding: 10px 12px;
+  color: var(--co-muted);
+  font-size: 0.875rem;
+}
+/* Banner */
+
+.co-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 14px 16px;
+  background: var(--co-accent-soft);
+  border: 1px solid rgb(59 130 246 / 0.45);
+  border-radius: var(--co-radius-sm);
+}
+
+.co-banner .co-display {
+  font-size: 1.75rem;
+}
+
+.co-banner .co-btn {
+  flex: 1 1 180px;
+}
+
+@media (min-width: 640px) {
+  .co-banner .co-btn {
+    flex: 0 0 auto;
+  }
+}
+
+.co-note {
+  font-size: 0.875rem;
+}
+
+/* End of fixture and abandoning */
+
+.co-finished {
+  border-color: rgb(34 197 94 / 0.35);
+}
+
+.co-danger-zone {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  border-top: 1px solid var(--co-line);
+}
+
+.co-danger-panel {
+  border-color: rgb(239 68 68 / 0.35);
+}
+
+.co-decision {
+  display: grid;
+  gap: 14px;
+}

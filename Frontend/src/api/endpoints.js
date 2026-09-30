@@ -48,6 +48,17 @@ export const badmintonApi = {
   clearResult: (matchId) => request(`/api/badminton/matches/${id(matchId)}/result`, { method: 'DELETE' }),
 }
 
+export const cricketApi = {
+  fixtures: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/fixtures`),
+  standings: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/standings`),
+  fixture: (fixtureId) => request(`/api/cricket/fixtures/${id(fixtureId)}`),
+  createFixture: (tournamentId, data) =>
+    request(`/api/cricket/tournaments/${id(tournamentId)}/fixtures`, { method: 'POST', body: data }),
+  updateFixture: (fixtureId, data) => request(`/api/cricket/fixtures/${id(fixtureId)}`, { method: 'PATCH', body: data }),
+  deleteFixture: (fixtureId) => request(`/api/cricket/fixtures/${id(fixtureId)}`, { method: 'DELETE' }),
+  setDecision: (fixtureId, data) => request(`/api/cricket/fixtures/${id(fixtureId)}/decision`, { method: 'PUT', body: data }),
+}
+
 // Co-ordinator area.
 const coordinatorRequest = coordinatorSession.request
 
@@ -85,4 +96,25 @@ export const coordinatorBadmintonApi = {
     coordinatorRequest(`/api/coordinator/badminton/matches/${id(matchId)}/abandon`, { method: 'POST', body: data }),
   editSet: (setId, data) =>
     coordinatorRequest(`/api/coordinator/badminton/sets/${id(setId)}`, { method: 'PUT', body: data }),
+}
+
+// Every action answers with the whole fixture: { fixture, innings, tournament }.
+const cricketPath = (path) => `/api/coordinator/cricket/${path}`
+
+export const coordinatorCricketApi = {
+  fixtures: () => coordinatorRequest(cricketPath('fixtures')),
+  fixture: (fixtureId) => coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}`)),
+  saveSetup: (fixtureId, data) => coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}/setup`), { method: 'PUT', body: data }),
+  saveToss: (fixtureId, data) => coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}/toss`), { method: 'PUT', body: data }),
+  startInnings: (fixtureId, data) =>
+    coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}/innings`), { method: 'POST', body: data }),
+  acceptTie: (fixtureId) => coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}/accept-tie`), { method: 'POST' }),
+  decideFixture: (fixtureId, data) =>
+    coordinatorRequest(cricketPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+  ball: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/balls`), { method: 'POST', body: data }),
+  undo: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/undo`), { method: 'POST', body: data }),
+  setBatter: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/batter`), { method: 'PUT', body: data }),
+  setBowler: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/bowler`), { method: 'PUT', body: data }),
+  swapStrike: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/swap-strike`), { method: 'POST' }),
+  endInnings: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/end`), { method: 'POST' }),
 }

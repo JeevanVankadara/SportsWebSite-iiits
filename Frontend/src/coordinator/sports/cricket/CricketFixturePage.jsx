@@ -1,36 +1,51 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { coordinatorBadmintonApi as api } from '../../../api/endpoints.js'
+import { coordinatorCricketApi as api } from '../../../api/endpoints.js'
 import PageLoader from '../../../components/PageLoader.jsx'
 import Toast from '../../../components/Toast.jsx'
 import { coordinatorPath } from '../../../config.js'
 import { useResource } from '../../../hooks/useResource.js'
-import { houseName } from '../../../sports/badminton/format.js'
+import {
+  houseName,
+  playerIndex,
+  resultText,
+  setupComplete,
+  superOverScores,
+  teamScore,
+} from '../../../sports/cricket/format.js'
 import { formatDateTime } from '../../../utils/dates.js'
-import { CoError, Eyebrow, StatusPill } from '../../components/ui.jsx'
-import './badminton.css'
 import DecisionForm from '../../components/DecisionForm.jsx'
-import MatchList from './MatchList.jsx'
-import MatchOrderPanel from './MatchOrderPanel.jsx'
-import ScoringPanel from './ScoringPanel.jsx'
-import SlipPanel from './SlipPanel.jsx'
+import { CoError, Eyebrow, StatusPill } from '../../components/ui.jsx'
+import './cricket.css'
+import PlayPanel from './PlayPanel.jsx'
+import Scorecard from './Scorecard.jsx'
+import SetupPanel from './SetupPanel.jsx'
+import TossPanel from './TossPanel.jsx'
 
 const STEPS = [
-  { key: 'order', label: 'Match order' },
-  { key: 'slips', label: 'Slips' },
+  { key: 'setup', label: 'Setup' },
+  { key: 'toss', label: 'Toss' },
   { key: 'play', label: 'Play' },
 ]
 
-// A badminton fixture run by its referee: match order -> slips -> play, then read-only once it is over.
-export default function BadmintonFixturePage() {
+const NO_RESULT = { value: 'no_result', label: 'No result' }
+
+function stepOf(fixture) {
+  if (fixture.status === 'completed') return 'done'
+  if (fixture.status === 'live') return 'play'
+  if (!setupComplete(fixture)) return 'setup'
+  return fixture.toss?.winner ? 'play' : 'toss'
+}
+
+// A cricket fixture run by its referee: setup -> toss -> play, then read-only once it is over.
+export default function CricketFixturePage() {
   const { fixtureId } = useParams()
   const { data: detail, setData, error, retry } = useResource(fixtureId, () => api.fixture(fixtureId))
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState('')
 
-  // Runs one referee action. The server answers with the whole fixture, which replaces what is shown.
-  // If the action clashed with a change made elsewhere (e.g. by another referee), the latest state is loaded.
-  // Resolves to true when the action worked.
+  // Runs one referee action and shows the fixture the server answers with. On a clash with a change
+  // made elsewhere the latest state is loaded. Resolves to true when the action worked.
   async function run(action) {
     setBusy(true)
     try {
@@ -47,54 +62,38 @@ export default function BadmintonFixturePage() {
 
   if (!detail) return error ? <CoError message={error} onRetry={retry} /> : <PageLoader />
 
-  const { fixture, matches, tournament } = detail
+  const { fixture, innings, tournament } = detail
   const names = { team1: houseName(tournament, fixture.team1), team2: houseName(tournament, fixture.team2) }
-  let step = 'play'
-  if (fixture.status === 'completed') step = 'done'
-  else if (matches.length === 0) step = 'order'
-  else if (!fixture.lineup_locked_at) step = 'slips'
-  const panel = { fixture, matches, names, busy, run }
+  const step = stepOf(fixture)
+  const panel = { fixture, innings, names, players: playerIndex(fixture), busy, run }
 
   return (
-    <>
+    <div className="co-cricket">
       <Link to={coordinatorPath('games')} className="co-back">
         ← All games
       </Link>
       <FixtureHeader fixture={fixture} tournament={tournament} names={names} />
       <Steps step={step} />
 
-      {step === 'order' && <MatchOrderPanel {...panel} />}
-
-      {step === 'slips' && (
+      {step === 'setup' && <SetupPanel {...panel} />}
+      {step === 'toss' && (
         <>
-          <SlipPanel {...panel} />
-          <MatchOrderPanel {...panel} collapsible />
+          <TossPanel {...panel} />
+          <SetupPanel {...panel} collapsible />
         </>
       )}
-
-      {step === 'play' && (
-        <>
-          <ScoringPanel {...panel} />
-          <MatchList {...panel} editable />
-          <details className="co-panel co-manage">
-            <summary>Correct the slips</summary>
-            <SlipPanel {...panel} embedded />
-          </details>
-          <MatchOrderPanel {...panel} collapsible />
-        </>
-      )}
-
+      {step === 'play' && <PlayPanel {...panel} />}
       {step === 'done' && (
         <>
           <FinishedBanner fixture={fixture} names={names} />
-          <MatchList {...panel} />
+          <Scorecard {...panel} />
         </>
       )}
 
       {step !== 'done' && <AbandonFixture {...panel} />}
 
       <Toast message={toast} onClose={() => setToast('')} />
-    </>
+    </div>
   )
 }
 
@@ -102,29 +101,40 @@ function FixtureHeader({ fixture, tournament, names }) {
   const referees = fixture.referees.map((referee) => referee.name).join(', ')
   return (
     <section className="co-fixture-hero">
-      <Eyebrow>§ Badminton · {tournament?.tournament_name}</Eyebrow>
-      <div className="co-scoreboard">
-        <span className={`co-display co-scoreboard-team${fixture.result === 'team1' ? ' is-winner' : ''}`}>
-          {names.team1}
-        </span>
-        <span className="co-scoreboard-score" aria-label={`Matches won: ${fixture.team1_matches_won} to ${fixture.team2_matches_won}`}>
-          <span className="co-display">
-            {fixture.team1_matches_won}
-            <span className="co-scoreboard-dash">–</span>
-            {fixture.team2_matches_won}
-          </span>
-          <small>Matches won</small>
-        </span>
-        <span className={`co-display co-scoreboard-team${fixture.result === 'team2' ? ' is-winner' : ''}`}>
-          {names.team2}
-        </span>
+      <Eyebrow>§ Cricket · {tournament?.tournament_name}</Eyebrow>
+      <div className="co-cr-board">
+        <TeamLine fixture={fixture} team="team1" name={names.team1} />
+        <span className="co-display co-cr-board-vs">vs</span>
+        <TeamLine fixture={fixture} team="team2" name={names.team2} />
       </div>
+      {fixture.status !== 'scheduled' && <p className="co-cr-result">{resultText(fixture, names)}</p>}
       <div className="co-fixture-meta">
         <StatusPill status={fixture.status} />
+        {fixture.overs && (
+          <span>
+            {fixture.overs} overs · powerplay {fixture.powerplay_overs}
+          </span>
+        )}
+        {fixture.toss?.winner && (
+          <span>
+            Toss: {names[fixture.toss.winner]}, chose to {fixture.toss.decision}
+          </span>
+        )}
         {fixture.scheduled_at && <span>{formatDateTime(fixture.scheduled_at)}</span>}
         {referees && <span>Referees: {referees}</span>}
       </div>
     </section>
+  )
+}
+
+function TeamLine({ fixture, team, name }) {
+  const superOvers = superOverScores(fixture, team)
+  return (
+    <div className={`co-cr-board-team${fixture.result === team ? ' is-winner' : ''}`}>
+      <span className="co-display co-cr-board-name">{name}</span>
+      <span className="co-cr-board-score">{teamScore(fixture, team) || '—'}</span>
+      {superOvers.length > 0 && <span className="co-cr-board-super">Super over {superOvers.join(', ')}</span>}
+    </div>
   )
 }
 
@@ -146,17 +156,16 @@ function Steps({ step }) {
 }
 
 function FinishedBanner({ fixture, names }) {
-  const result = fixture.result === 'draw' ? 'Fixture drawn' : `${names[fixture.result]} won the fixture`
   return (
     <section className="co-panel co-finished">
       <Eyebrow>§ Full time</Eyebrow>
-      <h2 className="co-display co-display-lg">{result}</h2>
+      <h2 className="co-display co-display-md">{resultText(fixture, names)}</h2>
       {fixture.result_type === 'abandoned' && (
         <p>
           <strong>Abandoned.</strong> {fixture.note}
         </p>
       )}
-      <p className="co-muted">This fixture is over. Only the admin can change it now.</p>
+      <p className="co-muted co-small">This fixture is over. Only the admin can change it now.</p>
     </section>
   )
 }
@@ -167,8 +176,8 @@ function AbandonFixture({ fixture, names, busy, run }) {
   if (!open) {
     return (
       <div className="co-danger-zone">
-        <button type="button" className="co-btn co-btn-danger" onClick={() => setOpen(true)}>
-          Abandon the whole fixture
+        <button type="button" className="co-btn co-btn-danger co-btn-sm" onClick={() => setOpen(true)}>
+          Abandon the match
         </button>
       </div>
     )
@@ -176,14 +185,13 @@ function AbandonFixture({ fixture, names, busy, run }) {
 
   return (
     <section className="co-panel co-danger-panel">
-      <h2 className="co-display co-display-md">Abandon the fixture</h2>
-      <p className="co-muted">
-        Choose who gets the fixture. Matches not yet finished are marked as not played, and the fixture closes.
-      </p>
+      <h2 className="co-display co-display-md">Abandon the match</h2>
+      <p className="co-muted co-small">Choose who gets the match, or no result. The fixture closes with your decision.</p>
       <DecisionForm
         names={names}
         busy={busy}
-        submitLabel="Abandon fixture"
+        drawOption={NO_RESULT}
+        submitLabel="Abandon match"
         onCancel={() => setOpen(false)}
         onSubmit={({ decision, note }) =>
           run(() => api.decideFixture(fixture._id, { result_type: 'abandoned', result: decision, note }))

@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "seed:admin": "node src/scripts/seedAdmin.js"
+    "seed:admin": "node src/scripts/seedAdmin.js",
+    "seed:cricket": "node src/scripts/seedCricket.js"
   },
   "engines": {
     "node": ">=20.11"

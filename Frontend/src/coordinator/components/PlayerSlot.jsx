@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { coordinatorPlayersApi } from '../../../api/endpoints.js'
+import { coordinatorPlayersApi } from '../../api/endpoints.js'
 
-// One player on a slip: shows the chosen player, or a search box to find one by username,
-// name or roll number.
-export default function PlayerSlot({ player, onChange, label }) {
+// One player on a slip or squad: shows the chosen player, or a search box to find one by username,
+// name or roll number. Players whose ids are in `exclude` are left out of the results.
+export default function PlayerSlot({ player, onChange, label, exclude }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState({ search: '', players: [], error: '' })
   const search = query.trim()
@@ -41,7 +41,7 @@ export default function PlayerSlot({ player, onChange, label }) {
   }
 
   const upToDate = search !== '' && results.search === search
-  const options = upToDate ? results.players : []
+  const options = upToDate ? results.players.filter((option) => !exclude?.has(option._id)) : []
 
   function pick(chosen) {
     onChange(chosen)

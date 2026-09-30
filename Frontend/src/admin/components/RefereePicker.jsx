@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { playersApi } from '../../../api/endpoints.js'
+import { playersApi } from '../../api/endpoints.js'
 
 // Search registered players by username, name or roll number and add them as referees.
 // referees: [{ _id, name, username }]

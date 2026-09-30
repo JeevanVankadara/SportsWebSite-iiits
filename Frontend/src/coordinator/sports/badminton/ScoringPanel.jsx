@@ -10,7 +10,7 @@ import {
   setWinner,
 } from '../../../sports/badminton/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
-import DecisionForm from './DecisionForm.jsx'
+import DecisionForm from '../../components/DecisionForm.jsx'
 import SetScores from './SetScores.jsx'
 
 const TEAMS = ['team1', 'team2']

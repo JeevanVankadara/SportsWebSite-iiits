@@ -10,6 +10,8 @@ import adminRoutes from './src/routes/admin.routes.js';
 import badmintonRoutes from './src/routes/badminton/badminton.routes.js';
 import badmintonCoordinatorRoutes from './src/routes/badminton/coordinator.routes.js';
 import coordinatorRoutes from './src/routes/coordinator.routes.js';
+import cricketCoordinatorRoutes from './src/routes/cricket/coordinator.routes.js';
+import cricketRoutes from './src/routes/cricket/cricket.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
 import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
@@ -30,6 +32,8 @@ app.use('/api/games', gameRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/badminton', badmintonRoutes);
 app.use('/api/coordinator/badminton', badmintonCoordinatorRoutes);
+app.use('/api/cricket', cricketRoutes);
+app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
 app.use('/api/coordinator', coordinatorRoutes);
 
 app.use(notFound);

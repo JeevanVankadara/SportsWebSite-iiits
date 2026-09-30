@@ -14,6 +14,16 @@ const sportRecordSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const cricketRecordSchema = new mongoose.Schema(
+  {
+    played: { type: Number, default: 0, min: 0 },
+    won: { type: Number, default: 0, min: 0 },
+    runs: { type: Number, default: 0, min: 0 },
+    wickets: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false },
+);
+
 // player: player_id (_id), name, email, roll_number, username. Players are shared by every sport,
 // and any player can be picked as a referee (co-ordinator) for a fixture.
 const playerSchema = new mongoose.Schema(
@@ -52,6 +62,7 @@ const playerSchema = new mongoose.Schema(
     password_hash: { type: String, required: true, select: false },
     sports: {
       badminton: { type: sportRecordSchema, default: () => ({}) },
+      cricket: { type: cricketRecordSchema, default: () => ({}) },
     },
   },
   {

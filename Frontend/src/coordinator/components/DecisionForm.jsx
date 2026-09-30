@@ -1,15 +1,17 @@
 import { useState } from 'react'
 
+const DRAW = { value: 'draw', label: 'Draw' }
+
 // The referee's decision when a match or the whole fixture is abandoned: who gets it, and why.
-// onSubmit({ decision: 'team1' | 'team2' | 'draw', note }) resolves to true when it was saved.
-export default function DecisionForm({ names, busy, submitLabel, onSubmit, onCancel }) {
+// onSubmit({ decision: 'team1' | 'team2' | drawOption.value, note }) resolves to true when it was saved.
+export default function DecisionForm({ names, busy, submitLabel, onSubmit, onCancel, drawOption = DRAW }) {
   const [decision, setDecision] = useState('')
   const [note, setNote] = useState('')
 
   const options = [
     { value: 'team1', label: `${names.team1} wins` },
     { value: 'team2', label: `${names.team2} wins` },
-    { value: 'draw', label: 'Draw' },
+    drawOption,
   ]
 
   return (
