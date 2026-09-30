@@ -3,25 +3,6 @@ import gsap from 'gsap'
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-// Drifting gradient blobs behind a card; GSAP moves them slowly and pauses when the tab is hidden.
-export function MeshBg({ tone = 'brand' }) {
-  const root = useRef(null)
-  useEffect(() => {
-    if (reduced()) return
-    const context = gsap.context(() => {
-      const timeline = gsap.timeline({ repeat: -1, yoyo: true })
-      root.current.querySelectorAll('i').forEach((blob, index) => {
-        timeline.to(blob, { x: gsap.utils.random(-60, 60), y: gsap.utils.random(-30, 30), scale: gsap.utils.random(.85, 1.25), duration: 6 + index * 1.5, ease: 'sine.inOut' }, 0)
-      })
-      const pause = () => document.hidden ? timeline.pause() : timeline.resume()
-      document.addEventListener('visibilitychange', pause)
-      return () => document.removeEventListener('visibilitychange', pause)
-    }, root)
-    return () => context.revert()
-  }, [])
-  return <div ref={root} className={`st-mesh st-mesh-${tone}`} aria-hidden="true"><i /><i /><i /></div>
-}
-
 // Segmented toggle whose thumb glides to the selected option with an eased spring.
 export function SegToggle({ options, value, onChange, label }) {
   const root = useRef(null)
@@ -32,7 +13,7 @@ export function SegToggle({ options, value, onChange, label }) {
     if (!selected) return
     const to = { x: selected.offsetLeft, width: selected.offsetWidth, height: selected.offsetHeight }
     if (first.current || reduced()) { gsap.set(thumb.current, to); first.current = false }
-    else gsap.to(thumb.current, { ...to, duration: .55, ease: 'elastic.out(1, .78)', overwrite: true })
+    else gsap.to(thumb.current, { ...to, duration: .45, ease: 'power3.out', overwrite: true })
   }, [value])
   return <div ref={root} className="st-seg" role="radiogroup" aria-label={label}>
     <span ref={thumb} className="st-seg-thumb" aria-hidden="true" />

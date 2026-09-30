@@ -141,7 +141,7 @@ export function advancePreview(data) {
   } else if (token !== 'wd' && token !== 'nb' && value.runs % 2 === 1) swap()
   inning.this_over.push(token)
   if (inning.this_over.filter(t => deliveryValue(t).legal).length >= 6) {
-    inning.over_history = [...inning.over_history, { number: inning.this_over_no, balls: inning.this_over }].slice(-8)
+    inning.over_history = [...inning.over_history.filter(row => row.number !== inning.this_over_no), { number: inning.this_over_no, balls: inning.this_over }].slice(-8)
     inning.this_over = []
     inning.this_over_no += 1
     swap()

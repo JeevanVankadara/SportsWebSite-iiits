@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { Activity, ArrowUpRight, Clock3 } from 'lucide-react'
 import PlayerAvatar from './PlayerAvatar.jsx'
 import { TeamLogo } from './Cartoon.jsx'
-import { AnimatedBar, BallCelebration, CountUp, MeshBg, SegToggle } from './Fx.jsx'
+import { AnimatedBar, BallCelebration, CountUp, SegToggle } from './Fx.jsx'
 import { liveInning, shortName, usePop, winProbability } from './liveFeed.js'
 import { idOf, houseName, formatDate } from './data.js'
 import { inningsTitle, oversText, runRate, strikeRate } from '../sports/cricket/format.js'
@@ -27,12 +27,11 @@ export function CricketLiveHeader({ data, live }) {
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
   const last = inning.this_over?.at(-1)
-  const centre = event && !event.seeded ? EVENT_LABEL[event.kind] ?? 'LIVE' : last === '0' ? 'Dot ball' : last === '4' ? 'FOUR' : last === '6' ? 'SIX' : last?.includes('W') ? 'WICKET' : last ?? 'Ready to play'
+  const centre = event && !event.seeded ? (event.kind === 'milestone' ? event.word : EVENT_LABEL[event.kind]) ?? 'LIVE' : last === '0' ? 'Dot ball' : last === '4' ? 'FOUR' : last === '6' ? 'SIX' : last?.includes('W') ? 'WICKET' : last ?? 'Ready to play'
   return <div className="st-live-score-hero st-fx-hero" data-event={event?.kind}>
-    <MeshBg />
     <BallCelebration event={event} />
     <div className="st-live-team">
-      <TeamLogo name={batting} size={56} className="st-float" />
+      <TeamLogo name={batting} size={56} />
       <div>
         <span data-tip={`${batting} are batting`}>{batting}<small>{inningsTitle(inning)}</small></span>
         <strong><CountUp value={inning.runs} /><i>/{inning.wickets}</i> <small>{oversText(inning.legal_balls)} ov</small></strong>
@@ -112,7 +111,7 @@ export default function CricketLive({ data, live }) {
   const remaining = Math.max(0, maxBalls - inning.legal_balls)
   const rate = Number(runRate(inning.runs, inning.legal_balls))
   return <div className="st-cricket-live-layout"><div className="st-live-main">
-    <section className="st-detail-panel st-crease-panel st-fx-card"><MeshBg tone="warm" />
+    <section className="st-detail-panel st-crease-panel st-fx-card">
       <div className="st-live-section-title"><h2>At the crease</h2><span><Activity size={14} /> Live innings</span></div>
       <div className="st-active-players">
         {batters.map(row => <div className="st-active-player" key={idOf(row.player)}><PlayerAvatar id={idOf(row.player)} team={batting} /><div><small>{idOf(row.player) === idOf(inning.striker) ? 'On strike' : 'Non-striker'}</small><PlayerName player={players.get(idOf(row.player))} /><p><b><CountUp value={row.runs ?? 0} /></b> <span>({row.balls ?? 0})</span></p><small>{row.fours ?? 0} fours · {row.sixes ?? 0} sixes</small><small>SR {strikeRate(row.runs ?? 0, row.balls ?? 0)}</small></div></div>)}
