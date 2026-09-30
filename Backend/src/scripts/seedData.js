@@ -1,11 +1,8 @@
+// Demo players for trying any sport. Safe to run again: players are matched by roll number,
+// email or username and updated. Create the admin separately with npm run seed:admin.
+// Run from the Backend folder: npm run seed:data
 import { connectDB, disconnectDB } from '../config/db.js';
-import { Admin } from '../models/Admin.js';
 import { Player } from '../models/Player.js';
-
-const ADMIN_CREDENTIALS = {
-  username: 'adminAli',
-  password: 'Ali@123',
-};
 
 const COMMON_PLAYER_PASSWORD = 'password@123';
 
@@ -56,28 +53,11 @@ async function seed() {
   await connectDB();
   console.log('--- Starting Database Seeding ---');
 
-  // 1. Seed Admin
-  const adminUsername = ADMIN_CREDENTIALS.username.toLowerCase();
-  const adminPasswordHash = await Admin.hashPassword(ADMIN_CREDENTIALS.password);
-
-  const existingAdmin = await Admin.findOne({ username: adminUsername });
-  if (existingAdmin) {
-    existingAdmin.password_hash = adminPasswordHash;
-    await existingAdmin.save();
-    console.log(`✓ Admin "${adminUsername}" updated with new password.`);
-  } else {
-    await Admin.create({
-      username: adminUsername,
-      password_hash: adminPasswordHash,
-    });
-    console.log(`✓ Admin "${adminUsername}" created.`);
-  }
-
-  // 2. Hash player password once
+  // Hash the player password once
   console.log(`Hashing player password "${COMMON_PLAYER_PASSWORD}"...`);
   const playerPasswordHash = await Player.hashPassword(COMMON_PLAYER_PASSWORD);
 
-  // 3. Seed 40 Players
+  // Upsert the players
   console.log(`Upserting ${NAMES.length} players...`);
   let createdCount = 0;
   let updatedCount = 0;

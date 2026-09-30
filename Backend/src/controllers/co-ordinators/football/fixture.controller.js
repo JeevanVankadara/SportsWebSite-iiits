@@ -13,6 +13,7 @@ import {
   parseMatchConfig,
   validateFixtureDecision,
 } from '../../../services/football/validators.js';
+import { HttpError } from '../../../utils/httpError.js';
 import { ensureOpen, refereeDetail, refereeFixture } from './access.js';
 
 export async function myFixtures(req, res) {
@@ -57,7 +58,10 @@ export async function saveTeamLineup(req, res) {
 
 export async function decideFixture(req, res) {
   const fixture = await refereeFixture(req.params.id, req.player);
-  const decision = validateFixtureDecision(req.body);
+  ensureOpen(fixture);
+  // Referees can only abandon a match; changing a decision afterwards is up to the admin.
+  const decision = validateFixtureDecision(req.body ?? {});
+  if (decision.result_type !== 'abandoned') throw new HttpError(400, 'Choose who gets the match and add a note');
 
   await setFixtureDecision(fixture, decision);
   res.json(await refereeDetail(req.params.id));

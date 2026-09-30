@@ -1,22 +1,22 @@
-import { footballApi } from '../../../api/endpoints.js';
-import PageLoader from '../../../components/PageLoader.jsx';
-import { useResource } from '../../../hooks/useResource.js';
-import { EmptyState, LoadError } from '../../components/ui.jsx';
-import { useFootball } from './footballContext.js';
+import { footballApi } from '../../../api/endpoints.js'
+import PageLoader from '../../../components/PageLoader.jsx'
+import { useResource } from '../../../hooks/useResource.js'
+import { EmptyState, LoadError } from '../../components/ui.jsx'
+import { useFootball } from './footballContext.js'
 
-const signed = (value) => (value > 0 ? `+${value}` : String(value));
+const signed = (value) => (value > 0 ? `+${value}` : String(value))
 
 export default function StandingsTable() {
-  const { tournament } = useFootball();
+  const { tournament } = useFootball()
   const { data, error, retry } = useResource(`football-standings-${tournament._id}`, () =>
     footballApi.standings(tournament._id),
-  );
+  )
 
-  if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />;
+  if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
 
-  const { standings } = data;
+  const { standings } = data
   if (standings.length === 0) {
-    return <EmptyState title="No houses yet" text="Add houses to the tournament to see the points table." />;
+    return <EmptyState title="No houses yet" text="Add houses to the tournament to see the points table." />
   }
 
   return (
@@ -79,5 +79,5 @@ export default function StandingsTable() {
         Win 3 points, draw 1, loss 0. Houses level on points are separated by their head-to-head result, then goal difference (GD), and goals for (GF).
       </p>
     </section>
-  );
+  )
 }

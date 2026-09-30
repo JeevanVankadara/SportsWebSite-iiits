@@ -22,7 +22,7 @@ export default function GamesPage() {
 
       <BadmintonAssignments sectionNumber="02" />
       <FootballAssignments sectionNumber="03" />
-      <CricketAssignments sectionNumber="03" />
+      <CricketAssignments sectionNumber="04" />
     </>
   )
 }

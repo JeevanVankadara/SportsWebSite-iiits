@@ -43,11 +43,6 @@ export default function SignInPage() {
       </section>
 
       <form className="co-panel co-signin-card" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <Link to="/" className="co-btn co-btn-ghost co-btn-sm" style={{ padding: '0 10px' }}>
-            ← Back to Live Scores
-          </Link>
-        </div>
         <h2 className="co-display co-display-md">Sign in</h2>
         <p className="co-muted">Use your player username and password.</p>
 

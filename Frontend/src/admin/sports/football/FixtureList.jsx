@@ -1,20 +1,20 @@
-import { Link } from 'react-router';
-import { footballApi } from '../../../api/endpoints.js';
-import PageLoader from '../../../components/PageLoader.jsx';
-import { useResource } from '../../../hooks/useResource.js';
-import { fixtureResultText, PERIOD_LABELS } from '../../../sports/football/format.js';
-import { formatDateTime } from '../../../utils/dates.js';
-import { PlusIcon, TrophyIcon } from '../../components/icons.jsx';
-import { EmptyState, LoadError, StatusBadge } from '../../components/ui.jsx';
-import { useFootball } from './footballContext.js';
+import { Link } from 'react-router'
+import { footballApi } from '../../../api/endpoints.js'
+import PageLoader from '../../../components/PageLoader.jsx'
+import { useResource } from '../../../hooks/useResource.js'
+import { fixtureResultText, PERIOD_LABELS } from '../../../sports/football/format.js'
+import { formatDateTime } from '../../../utils/dates.js'
+import { PlusIcon, TrophyIcon } from '../../components/icons.jsx'
+import { EmptyState, LoadError, StatusBadge } from '../../components/ui.jsx'
+import { useFootball } from './footballContext.js'
 
 export default function FixtureList() {
-  const { tournament, basePath } = useFootball();
+  const { tournament, basePath } = useFootball()
   const { data: fixtures, error, retry } = useResource(`football-fixtures-${tournament._id}`, () =>
     footballApi.fixtures(tournament._id).then((data) => data.fixtures),
-  );
+  )
 
-  if (!fixtures) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />;
+  if (!fixtures) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
 
   if (fixtures.length === 0) {
     return (
@@ -29,14 +29,14 @@ export default function FixtureList() {
           </Link>
         }
       />
-    );
+    )
   }
 
   const groups = [
     { key: 'live', title: 'Live', items: fixtures.filter((f) => f.status === 'live') },
     { key: 'scheduled', title: 'Upcoming', items: fixtures.filter((f) => f.status === 'scheduled') },
     { key: 'completed', title: 'Completed', items: fixtures.filter((f) => f.status === 'completed').reverse() },
-  ].filter((g) => g.items.length > 0);
+  ].filter((g) => g.items.length > 0)
 
   return groups.map((group) => (
     <section key={group.key} className="dash-section" aria-labelledby={`football-fixtures-${group.key}`}>
@@ -49,14 +49,14 @@ export default function FixtureList() {
         ))}
       </ul>
     </section>
-  ));
+  ))
 }
 
 function FixtureRow({ fixture }) {
-  const { basePath, houseName } = useFootball();
-  const team1 = houseName(fixture.team1);
-  const team2 = houseName(fixture.team2);
-  const referees = (fixture.referees || []).map((r) => r.name).join(', ');
+  const { basePath, houseName } = useFootball()
+  const team1 = houseName(fixture.team1)
+  const team2 = houseName(fixture.team2)
+  const referees = (fixture.referees || []).map((r) => r.name).join(', ')
 
   return (
     <li>
@@ -80,5 +80,5 @@ function FixtureRow({ fixture }) {
         </div>
       </Link>
     </li>
-  );
+  )
 }

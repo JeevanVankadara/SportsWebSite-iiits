@@ -58,12 +58,6 @@ export default function RegisterPage() {
   return (
     <main className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <Link to="/" className="btn btn-ghost btn-sm" style={{ padding: '0 8px', fontSize: '0.8125rem' }}>
-            ← Back to Home
-          </Link>
-        </div>
-
         <div className="auth-head">
           <img src="/iiits-logo.jpg" alt="IIIT Sri City logo" className="auth-logo" width="435" height="459" />
           <h1 className="auth-title">Player sign-up</h1>

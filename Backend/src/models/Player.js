@@ -21,6 +21,10 @@ const footballRecordSchema = new mongoose.Schema(
     goals: { type: Number, default: 0, min: 0 },
     yellow_cards: { type: Number, default: 0, min: 0 },
     red_cards: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false },
+);
+
 const cricketRecordSchema = new mongoose.Schema(
   {
     played: { type: Number, default: 0, min: 0 },

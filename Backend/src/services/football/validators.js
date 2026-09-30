@@ -119,10 +119,10 @@ export function parseLineup(body, requiredStarters, maxSubstitutes = DEFAULT_MAX
 
 /**
  * Validates timer / clock action request:
- * { action: 'start' | 'pause' | 'resume' | 'stoppage' | 'next_period' | 'reset' }
+ * { action: 'start' | 'pause' | 'resume' | 'stoppage' | 'next_period' | 'set_time' }
  */
 export function parseClockAction(body) {
-  const allowedActions = ['start', 'pause', 'resume', 'stoppage', 'next_period', 'reset', 'set_time'];
+  const allowedActions = ['start', 'pause', 'resume', 'stoppage', 'next_period', 'set_time'];
   if (!allowedActions.includes(body.action)) {
     throw new HttpError(400, `Invalid clock action: ${body.action}`);
   }
@@ -143,11 +143,16 @@ export function parseClockAction(body) {
     }
   }
 
+  const targetPeriod = body.target_period || null;
+  if (targetPeriod && (!PERIODS.includes(targetPeriod) || targetPeriod === 'not_started')) {
+    throw new HttpError(400, `Invalid match period: ${targetPeriod}`);
+  }
+
   return {
     action: body.action,
     stoppage_time_minutes: stoppageMinutes,
     elapsed_seconds: elapsedSeconds,
-    target_period: body.target_period || null,
+    target_period: targetPeriod,
   };
 }
 
@@ -184,6 +189,11 @@ export function parseMatchEvent(body) {
     if (body.assist_player && !isObjectId(body.assist_player)) {
       throw new HttpError(400, 'Invalid player ID for assist');
     }
+    // An own goal has no assist.
+    const assist = goalType === 'own_goal' || !body.assist_player ? null : String(body.assist_player);
+    if (assist && body.player && assist === String(body.player)) {
+      throw new HttpError(400, 'A player cannot assist their own goal');
+    }
 
     return {
       type: 'goal',
@@ -191,7 +201,7 @@ export function parseMatchEvent(body) {
       period,
       team: body.team,
       player: body.player ? String(body.player) : null,
-      assist_player: body.assist_player ? String(body.assist_player) : null,
+      assist_player: assist,
       goal_type: goalType,
       note,
     };

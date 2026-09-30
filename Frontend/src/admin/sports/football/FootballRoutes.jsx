@@ -1,15 +1,15 @@
-import { Route, Routes } from 'react-router';
-import { adminPath } from '../../../config.js';
-import NotFoundPage from '../../../pages/NotFoundPage.jsx';
-import './football.css';
-import { FootballContext } from './footballContext.js';
-import FootballHomePage from './FootballHomePage.jsx';
-import FixtureFormPage from './FixtureFormPage.jsx';
-import FixturePage from './FixturePage.jsx';
+import { Route, Routes } from 'react-router'
+import { adminPath } from '../../../config.js'
+import NotFoundPage from '../../../pages/NotFoundPage.jsx'
+import './football.css'
+import { FootballContext } from './footballContext.js'
+import FootballHomePage from './FootballHomePage.jsx'
+import FixtureFormPage from './FixtureFormPage.jsx'
+import FixturePage from './FixturePage.jsx'
 
 export default function FootballRoutes({ tournament, sport }) {
-  const basePath = adminPath(`tournaments/${tournament._id}/sports/${sport._id}`);
-  const houses = new Map(tournament.houses.map((house) => [house._id, house.house_name]));
+  const basePath = adminPath(`tournaments/${tournament._id}/sports/${sport._id}`)
+  const houses = new Map(tournament.houses.map((house) => [house._id, house.house_name]))
 
   const value = {
     tournament,
@@ -22,7 +22,7 @@ export default function FootballRoutes({ tournament, sport }) {
       extra.length ? { label: 'Football', to: basePath } : { label: 'Football' },
       ...extra.filter(Boolean),
     ],
-  };
+  }
 
   return (
     <FootballContext value={value}>
@@ -34,5 +34,5 @@ export default function FootballRoutes({ tournament, sport }) {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </FootballContext>
-  );
+  )
 }

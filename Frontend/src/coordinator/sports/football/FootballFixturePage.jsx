@@ -1,58 +1,57 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { coordinatorFootballApi as api } from '../../../api/endpoints.js';
-import PageLoader from '../../../components/PageLoader.jsx';
-import Toast from '../../../components/Toast.jsx';
-import { coordinatorPath } from '../../../config.js';
-import { useResource } from '../../../hooks/useResource.js';
-import { fixtureResultText, houseName } from '../../../sports/football/format.js';
-import { formatDateTime } from '../../../utils/dates.js';
-import { CoError, Eyebrow, StatusPill } from '../../components/ui.jsx';
-import DecisionForm from './DecisionForm.jsx';
-import './football.css';
-import LineupPanel from './LineupPanel.jsx';
-import MatchCenter from './MatchCenter.jsx';
-import MatchConfigPanel from './MatchConfigPanel.jsx';
+import { useState } from 'react'
+import { Link, useParams } from 'react-router'
+import { coordinatorFootballApi as api } from '../../../api/endpoints.js'
+import PageLoader from '../../../components/PageLoader.jsx'
+import Toast from '../../../components/Toast.jsx'
+import { coordinatorPath } from '../../../config.js'
+import { useResource } from '../../../hooks/useResource.js'
+import { fixtureResultText, houseName } from '../../../sports/football/format.js'
+import { formatDateTime } from '../../../utils/dates.js'
+import DecisionForm from '../../components/DecisionForm.jsx'
+import { CoError, Eyebrow, StatusPill } from '../../components/ui.jsx'
+import './football.css'
+import LineupPanel from './LineupPanel.jsx'
+import MatchCenter from './MatchCenter.jsx'
+import MatchConfigPanel from './MatchConfigPanel.jsx'
 
 const STEPS = [
   { key: 'config', label: 'Match settings' },
   { key: 'slips', label: 'Lineups' },
   { key: 'play', label: 'Match center' },
-];
+]
 
+// A football fixture run by its referee: settings and lineups -> match center, then read-only once it is over.
 export default function FootballFixturePage() {
-  const { fixtureId } = useParams();
-  const { data: detail, setData, error, retry } = useResource(fixtureId, () => api.fixture(fixtureId));
-  const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState('');
+  const { fixtureId } = useParams()
+  const { data: detail, setData, error, retry } = useResource(fixtureId, () => api.fixture(fixtureId))
+  const [busy, setBusy] = useState(false)
+  const [toast, setToast] = useState('')
 
+  // Runs one referee action. The server answers with the whole fixture, which replaces what is shown.
+  // If the action clashed with a change made elsewhere (e.g. by another referee), the latest state is loaded.
+  // Resolves to true when the action worked.
   async function run(action) {
-    setBusy(true);
+    setBusy(true)
     try {
-      setData(await action());
-      return true;
+      setData(await action())
+      return true
     } catch (err) {
-      setToast(err.message);
-      if (err.status === 409) api.fixture(fixtureId).then(setData, () => {});
-      return false;
+      setToast(err.message)
+      if (err.status === 409) api.fixture(fixtureId).then(setData, () => {})
+      return false
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
-  if (!detail) return error ? <CoError message={error} onRetry={retry} /> : <PageLoader />;
+  if (!detail) return error ? <CoError message={error} onRetry={retry} /> : <PageLoader />
 
-  const { fixture, tournament } = detail;
-  const names = {
-    team1: houseName(tournament, fixture.team1),
-    team2: houseName(tournament, fixture.team2),
-  };
-
-  let step = 'play';
-  if (fixture.status === 'completed') step = 'done';
-  else if (!fixture.lineup_locked_at) step = 'slips';
-
-  const panel = { fixture, names, busy, run };
+  const { fixture, tournament } = detail
+  const names = { team1: houseName(tournament, fixture.team1), team2: houseName(tournament, fixture.team2) }
+  let step = 'play'
+  if (fixture.status === 'completed') step = 'done'
+  else if (!fixture.lineup_locked_at) step = 'slips'
+  const panel = { fixture, names, busy, run }
 
   return (
     <>
@@ -72,7 +71,7 @@ export default function FootballFixturePage() {
       {step === 'play' && (
         <>
           <MatchCenter {...panel} />
-          <details className="co-panel co-manage" style={{ marginTop: '1.5rem' }}>
+          <details className="co-panel co-manage">
             <summary>Correct the lineups</summary>
             <LineupPanel {...panel} embedded />
           </details>
@@ -91,111 +90,100 @@ export default function FootballFixturePage() {
 
       <Toast message={toast} onClose={() => setToast('')} />
     </>
-  );
+  )
 }
 
 function FixtureHeader({ fixture, tournament, names }) {
+  const referees = fixture.referees.map((referee) => referee.name).join(', ')
   return (
-    <div className="co-fixture-head">
-      <div className="co-fixture-head-top">
-        <Eyebrow>
-          {tournament?.tournament_name} · {fixture.scheduled_at ? formatDateTime(fixture.scheduled_at) : 'Time not announced'}
-        </Eyebrow>
-        <StatusPill status={fixture.status} />
-      </div>
-      <div className="co-fixture-head-teams">
-        <span className="co-display co-display-xl">{names.team1}</span>
-        <span className="co-display co-fixture-head-score">
-          {fixture.status === 'scheduled' ? 'vs' : `${fixture.team1_score} – ${fixture.team2_score}`}
+    <section className="co-fixture-hero">
+      <Eyebrow>§ Football · {tournament?.tournament_name}</Eyebrow>
+      <div className="co-scoreboard">
+        <span className={`co-display co-scoreboard-team${fixture.result === 'team1' ? ' is-winner' : ''}`}>
+          {names.team1}
         </span>
-        <span className="co-display co-display-xl">{names.team2}</span>
+        <span className="co-scoreboard-score" aria-label={`Goals: ${fixture.team1_score} to ${fixture.team2_score}`}>
+          <span className="co-display">
+            {fixture.team1_score}
+            <span className="co-scoreboard-dash">–</span>
+            {fixture.team2_score}
+          </span>
+          <small>Goals</small>
+        </span>
+        <span className={`co-display co-scoreboard-team${fixture.result === 'team2' ? ' is-winner' : ''}`}>
+          {names.team2}
+        </span>
       </div>
-    </div>
-  );
+      <div className="co-fixture-meta">
+        <StatusPill status={fixture.status} />
+        {fixture.scheduled_at && <span>{formatDateTime(fixture.scheduled_at)}</span>}
+        {referees && <span>Referees: {referees}</span>}
+      </div>
+    </section>
+  )
 }
 
 function Steps({ step }) {
-  const current = step === 'done' ? STEPS.length : STEPS.findIndex((item) => item.key === step);
+  const current = step === 'done' ? STEPS.length : STEPS.findIndex((item) => item.key === step)
   return (
-    <nav className="co-steps" aria-label="Match steps">
-      <ol>
-        {STEPS.map((item, index) => {
-          const isDone = index < current;
-          const isCurrent = index === current;
-          return (
-            <li
-              key={item.key}
-              className={`co-step${isDone ? ' is-done' : ''}${isCurrent ? ' is-current' : ''}`}
-            >
-              <span className="co-step-index">{isDone ? '✓' : `0${index + 1}`}</span>
-              <span className="co-step-label">{item.label}</span>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
+    <ol className="co-steps" aria-label="Progress">
+      {STEPS.map((item, index) => {
+        const state = index < current ? 'is-done' : index === current ? 'is-current' : ''
+        return (
+          <li key={item.key} className={state} aria-current={index === current ? 'step' : undefined}>
+            <span className="co-step-no">{index < current ? '✓' : index + 1}</span>
+            {item.label}
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
 function FinishedBanner({ fixture, names }) {
   return (
-    <div className="co-panel co-finished">
-      <Eyebrow>Full time · Match over</Eyebrow>
-      <h2 className="co-display co-display-lg" style={{ marginTop: '0.25rem' }}>
-        {fixtureResultText(fixture, names.team1, names.team2)}
-      </h2>
+    <section className="co-panel co-finished">
+      <Eyebrow>§ Full time</Eyebrow>
+      <h2 className="co-display co-display-lg">{fixtureResultText(fixture, names.team1, names.team2)}</h2>
       {fixture.result_type === 'abandoned' && (
-        <p className="co-hint" style={{ color: 'var(--co-accent)', marginTop: '0.5rem' }}>
-          Abandoned by referee: {fixture.decision_note}
+        <p>
+          <strong>Abandoned.</strong> {fixture.decision_note}
         </p>
       )}
-    </div>
-  );
+      <p className="co-muted">This fixture is over. Only the admin can change it now.</p>
+    </section>
+  )
 }
 
 function AbandonFixture({ fixture, names, busy, run }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
+
+  if (!open) {
+    return (
+      <div className="co-danger-zone">
+        <button type="button" className="co-btn co-btn-danger" onClick={() => setOpen(true)}>
+          Abandon the match
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <section className="co-panel co-danger-panel" style={{ marginTop: '2rem' }}>
-      <div className="co-danger-head">
-        <div>
-          <Eyebrow>Stop the match</Eyebrow>
-          <h2 className="co-display co-display-sm">Abandon match</h2>
-        </div>
-        {!open && (
-          <button
-            type="button"
-            className="co-btn co-btn-danger-outline co-btn-sm"
-            onClick={() => setOpen(true)}
-            disabled={busy}
-          >
-            Abandon match
-          </button>
-        )}
-      </div>
-      <p className="co-hint">
-        Use this only if the match cannot continue (e.g. extreme weather, injury, or misconduct).
+    <section className="co-panel co-danger-panel">
+      <h2 className="co-display co-display-md">Abandon the match</h2>
+      <p className="co-muted">
+        Use this only if the match cannot continue (e.g. extreme weather, injury or misconduct). Choose who gets the
+        match; the fixture closes with your decision.
       </p>
-
-      {open && (
-        <DecisionForm
-          names={names}
-          busy={busy}
-          submitLabel="Confirm abandonment"
-          onSubmit={async ({ decision, note }) => {
-            const ok = await run(() =>
-              api.decideFixture(fixture._id, {
-                result_type: 'abandoned',
-                result: decision,
-                decision_note: note,
-              }),
-            );
-            if (ok) setOpen(false);
-          }}
-          onCancel={() => setOpen(false)}
-        />
-      )}
+      <DecisionForm
+        names={names}
+        busy={busy}
+        submitLabel="Abandon match"
+        onCancel={() => setOpen(false)}
+        onSubmit={({ decision, note }) =>
+          run(() => api.decideFixture(fixture._id, { result_type: 'abandoned', result: decision, decision_note: note }))
+        }
+      />
     </section>
-  );
+  )
 }

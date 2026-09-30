@@ -1,31 +1,31 @@
-import { useState } from 'react';
-import { footballApi } from '../../../api/endpoints.js';
-import Alert from '../../../components/Alert.jsx';
+import { useState } from 'react'
+import { footballApi } from '../../../api/endpoints.js'
+import Alert from '../../../components/Alert.jsx'
 
 export default function FixtureDecision({ fixture, team1, team2, onSaved, onError }) {
-  const [result, setResult] = useState('');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState('')
+  const [note, setNote] = useState('')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function save(body) {
-    setError('');
-    setSaving(true);
+    setError('')
+    setSaving(true)
     try {
-      onSaved(await footballApi.setDecision(fixture._id, body));
+      onSaved(await footballApi.setDecision(fixture._id, body))
     } catch (err) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
   async function removeDecision() {
-    if (!window.confirm('Remove the decision? The result will be calculated from match goals again.')) return;
+    if (!window.confirm('Remove the decision? The result will be calculated from match goals again.')) return
     try {
-      onSaved(await footballApi.setDecision(fixture._id, { result_type: 'normal' }));
+      onSaved(await footballApi.setDecision(fixture._id, { result_type: 'normal' }))
     } catch (err) {
-      onError(err.message);
+      onError(err.message)
     }
   }
 
@@ -33,7 +33,7 @@ export default function FixtureDecision({ fixture, team1, team2, onSaved, onErro
     const awarded =
       fixture.result === 'draw'
         ? 'Declared a draw'
-        : `Awarded to ${fixture.result === 'team1' ? team1 : team2}`;
+        : `Awarded to ${fixture.result === 'team1' ? team1 : team2}`
     return (
       <section className="panel decision-panel">
         <h2 className="panel-title">Match abandoned</h2>
@@ -46,7 +46,7 @@ export default function FixtureDecision({ fixture, team1, team2, onSaved, onErro
           </button>
         </div>
       </section>
-    );
+    )
   }
 
   return (
@@ -55,8 +55,8 @@ export default function FixtureDecision({ fixture, team1, team2, onSaved, onErro
       <form
         className="form-stack decision-form"
         onSubmit={(event) => {
-          event.preventDefault();
-          save({ result_type: 'abandoned', result, decision_note: note });
+          event.preventDefault()
+          save({ result_type: 'abandoned', result, decision_note: note })
         }}
       >
         <p className="field-hint">
@@ -103,5 +103,5 @@ export default function FixtureDecision({ fixture, team1, team2, onSaved, onErro
         </div>
       </form>
     </details>
-  );
+  )
 }

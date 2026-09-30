@@ -36,8 +36,9 @@ export function determineWinner(team1Score, team2Score) {
 /**
  * Given a team's lineup (starters & bench) and chronological events,
  * computes the current status of each player: 'on_pitch', 'bench', or 'sent_off'.
+ * Without rolling substitutions, a player taken off cannot come back on.
  */
-export function computeRosterState(starters = [], bench = [], events = [], team) {
+export function computeRosterState(starters = [], bench = [], events = [], team, { rollingSubs = true } = {}) {
   const onPitch = new Set(starters.map((id) => String(id)));
   const onBench = new Set(bench.map((id) => String(id)));
   const sentOff = new Set();
@@ -51,7 +52,7 @@ export function computeRosterState(starters = [], bench = [], events = [], team)
 
       if (outId && onPitch.has(outId)) {
         onPitch.delete(outId);
-        onBench.add(outId);
+        if (rollingSubs) onBench.add(outId);
       }
       if (inId && onBench.has(inId)) {
         onBench.delete(inId);

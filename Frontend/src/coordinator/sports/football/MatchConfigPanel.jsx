@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { coordinatorFootballApi as api } from '../../../api/endpoints.js';
-import { Eyebrow } from '../../components/ui.jsx';
+import { useState } from 'react'
+import { coordinatorFootballApi as api } from '../../../api/endpoints.js'
+import { Eyebrow } from '../../components/ui.jsx'
 
 export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
-  const [open, setOpen] = useState(!collapsible);
-  const [playersPerTeam, setPlayersPerTeam] = useState(fixture.config?.players_per_team || 8);
-  const [maxSubstitutes, setMaxSubstitutes] = useState(fixture.config?.max_substitutes ?? 5);
-  const [halfDuration, setHalfDuration] = useState(fixture.config?.half_duration_minutes || 20);
-  const [extraTime, setExtraTime] = useState(fixture.config?.extra_time_duration_minutes || 0);
-  const [rollingSubs, setRollingSubs] = useState(fixture.config?.rolling_subs ?? true);
+  const [open, setOpen] = useState(!collapsible)
+  const [playersPerTeam, setPlayersPerTeam] = useState(fixture.config?.players_per_team || 8)
+  const [maxSubstitutes, setMaxSubstitutes] = useState(fixture.config?.max_substitutes ?? 5)
+  const [halfDuration, setHalfDuration] = useState(fixture.config?.half_duration_minutes || 20)
+  const [extraTime, setExtraTime] = useState(fixture.config?.extra_time_duration_minutes || 0)
+  const [rollingSubs, setRollingSubs] = useState(fixture.config?.rolling_subs ?? true)
 
-  const canEdit = fixture.status === 'scheduled' && fixture.clock?.period === 'not_started';
+  const canEdit = fixture.status === 'scheduled' && fixture.clock?.period === 'not_started'
 
   async function handleSave(event) {
-    event.preventDefault();
+    event.preventDefault()
     await run(() =>
       api.saveConfig(fixture._id, {
         players_per_team: Number(playersPerTeam),
@@ -22,7 +22,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
         extra_time_duration_minutes: Number(extraTime),
         rolling_subs: Boolean(rollingSubs),
       }),
-    );
+    )
   }
 
   return (
@@ -43,7 +43,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
 
       {open && (
         <form onSubmit={handleSave} className="co-form">
-          <p className="co-hint">
+          <p className="co-muted">
             Configure squad size and half lengths before submitting lineups and kicking off.
           </p>
 
@@ -70,7 +70,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
                   <button
                     key={n}
                     type="button"
-                    className={`co-btn co-btn-sm ${Number(playersPerTeam) === n ? 'co-btn-primary' : 'co-btn-secondary'}`}
+                    className={`co-btn co-btn-sm ${Number(playersPerTeam) === n ? 'co-btn-primary' : 'co-btn-ghost'}`}
                     onClick={() => setPlayersPerTeam(n)}
                     disabled={!canEdit || busy}
                   >
@@ -102,7 +102,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
                   <button
                     key={n}
                     type="button"
-                    className={`co-btn co-btn-sm ${Number(maxSubstitutes) === n ? 'co-btn-primary' : 'co-btn-secondary'}`}
+                    className={`co-btn co-btn-sm ${Number(maxSubstitutes) === n ? 'co-btn-primary' : 'co-btn-ghost'}`}
                     onClick={() => setMaxSubstitutes(n)}
                     disabled={!canEdit || busy}
                   >
@@ -134,7 +134,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
                   <button
                     key={m}
                     type="button"
-                    className={`co-btn co-btn-sm ${Number(halfDuration) === m ? 'co-btn-primary' : 'co-btn-secondary'}`}
+                    className={`co-btn co-btn-sm ${Number(halfDuration) === m ? 'co-btn-primary' : 'co-btn-ghost'}`}
                     onClick={() => setHalfDuration(m)}
                     disabled={!canEdit || busy}
                   >
@@ -166,7 +166,7 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
                   <button
                     key={et}
                     type="button"
-                    className={`co-btn co-btn-sm ${Number(extraTime) === et ? 'co-btn-primary' : 'co-btn-secondary'}`}
+                    className={`co-btn co-btn-sm ${Number(extraTime) === et ? 'co-btn-primary' : 'co-btn-ghost'}`}
                     onClick={() => setExtraTime(et)}
                     disabled={!canEdit || busy}
                   >
@@ -196,12 +196,12 @@ export default function MatchConfigPanel({ fixture, busy, run, collapsible }) {
           )}
 
           {!canEdit && (
-            <p className="co-hint" style={{ color: 'var(--co-accent)' }}>
+            <p className="co-muted" style={{ color: 'var(--co-accent)' }}>
               Match has already started. Settings are locked.
             </p>
           )}
         </form>
       )}
     </section>
-  );
+  )
 }

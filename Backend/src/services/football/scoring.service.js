@@ -1,6 +1,60 @@
 import { HttpError } from '../../utils/httpError.js';
 import { loadFixtureDetail, recomputeFixture } from './fixture.service.js';
-import { computeElapsedSeconds } from './rules.js';
+import { computeElapsedSeconds, computeRosterState } from './rules.js';
+
+const BREAKS = ['half_time', 'extra_time_half_time'];
+
+// Stops the clock, keeping the time played so far.
+function pauseClock(clock, now) {
+  if (!clock.is_running) return;
+  clock.elapsed_seconds = computeElapsedSeconds(clock, now);
+  clock.is_running = false;
+  clock.resumed_at = null;
+}
+
+function ensureKickedOff(fixture, message) {
+  if (fixture.status !== 'live' || fixture.clock.period === 'not_started') throw new HttpError(409, message);
+}
+
+// Checks that the players named in an event belong to that house's lineup and, for a new event,
+// that they can take part right now: the scorer is on the pitch, nobody sent off gets a card or
+// comes back, and a substitution swaps a player on the pitch for one on the bench.
+function checkEventPlayers(fixture, event, { isNew }) {
+  const lineup = fixture[`${event.team}_lineup`] ?? {};
+  const inLineup = new Set([...(lineup.starters ?? []), ...(lineup.bench ?? [])].map(String));
+  const named = [event.player, event.assist_player, event.player_out, event.player_in].filter(Boolean);
+  if (named.some((id) => !inLineup.has(String(id)))) {
+    throw new HttpError(400, "Pick players from that house's lineup");
+  }
+  if (!isNew) return;
+
+  const roster = computeRosterState(lineup.starters, lineup.bench, fixture.events, event.team, {
+    rollingSubs: fixture.config?.rolling_subs ?? true,
+  });
+  const onPitch = new Set(roster.on_pitch);
+  const sentOff = new Set(roster.sent_off);
+
+  if (event.type === 'goal' && event.player && !onPitch.has(String(event.player))) {
+    throw new HttpError(400, 'The scorer must be on the pitch');
+  }
+  if (event.type === 'goal' && event.assist_player && !onPitch.has(String(event.assist_player))) {
+    throw new HttpError(400, 'The player who assisted must be on the pitch');
+  }
+  if ((event.type === 'yellow_card' || event.type === 'red_card') && sentOff.has(String(event.player))) {
+    throw new HttpError(400, 'That player has already been sent off');
+  }
+  if (event.type === 'substitution') {
+    if (!onPitch.has(String(event.player_out))) throw new HttpError(400, 'The player coming off must be on the pitch');
+    if (!roster.bench.includes(String(event.player_in))) {
+      throw new HttpError(
+        400,
+        sentOff.has(String(event.player_in))
+          ? 'A player who was sent off cannot come back on'
+          : 'The player coming on must be on the bench',
+      );
+    }
+  }
+}
 
 /**
  * Handles match clock and period state transitions.
@@ -14,10 +68,13 @@ export async function controlClock(fixture, { action, stoppage_time_minutes, ela
   const halfSeconds = (fixture.config?.half_duration_minutes || 25) * 60;
   const extraHalfSeconds = (fixture.config?.extra_time_duration_minutes || 0) * 60;
 
+  if (action !== 'start') ensureKickedOff(fixture, 'Kick off the match first');
+
   if (action === 'start') {
     if (!fixture.lineup_locked_at) {
       throw new HttpError(409, 'Submit both team slips before starting the match');
     }
+    if (fixture.clock.period !== 'not_started') throw new HttpError(409, 'The match has already kicked off');
 
     if (fixture.clock.period === 'not_started') {
       fixture.clock.period = 'first_half';
@@ -28,12 +85,11 @@ export async function controlClock(fixture, { action, stoppage_time_minutes, ela
     fixture.clock.resumed_at = now;
     fixture.status = 'live';
   } else if (action === 'pause') {
-    if (fixture.clock.is_running) {
-      fixture.clock.elapsed_seconds = computeElapsedSeconds(fixture.clock, now);
-      fixture.clock.is_running = false;
-      fixture.clock.resumed_at = null;
-    }
+    pauseClock(fixture.clock, now);
   } else if (action === 'resume') {
+    if (BREAKS.includes(fixture.clock.period)) {
+      throw new HttpError(409, 'It is a break. Start the next half instead.');
+    }
     if (!fixture.clock.is_running) {
       fixture.clock.is_running = true;
       fixture.clock.resumed_at = now;
@@ -41,12 +97,7 @@ export async function controlClock(fixture, { action, stoppage_time_minutes, ela
   } else if (action === 'stoppage') {
     fixture.clock.stoppage_time_minutes = stoppage_time_minutes;
   } else if (action === 'next_period') {
-    // Pause clock first
-    if (fixture.clock.is_running) {
-      fixture.clock.elapsed_seconds = computeElapsedSeconds(fixture.clock, now);
-      fixture.clock.is_running = false;
-      fixture.clock.resumed_at = null;
-    }
+    pauseClock(fixture.clock, now);
     fixture.clock.stoppage_time_minutes = 0;
 
     const currentPeriod = fixture.clock.period;
@@ -93,19 +144,16 @@ export async function controlClock(fixture, { action, stoppage_time_minutes, ela
     if (next === 'completed') {
       fixture.status = 'completed';
       fixture.completed_at = now;
+    } else if (!BREAKS.includes(next)) {
+      // A new half starts straight away.
+      fixture.clock.is_running = true;
+      fixture.clock.resumed_at = now;
     }
   } else if (action === 'set_time') {
     fixture.clock.elapsed_seconds = elapsed_seconds ?? 0;
     if (fixture.clock.is_running) {
       fixture.clock.resumed_at = now;
     }
-  } else if (action === 'reset') {
-    fixture.clock.is_running = false;
-    fixture.clock.resumed_at = null;
-    fixture.clock.elapsed_seconds = 0;
-    fixture.clock.stoppage_time_minutes = 0;
-    fixture.clock.period = 'not_started';
-    fixture.status = 'scheduled';
   }
 
   await recomputeFixture(fixture);
@@ -116,11 +164,8 @@ export async function controlClock(fixture, { action, stoppage_time_minutes, ela
  * Marks the match as completed / full time.
  */
 export async function finishMatch(fixture) {
-  if (fixture.clock.is_running) {
-    fixture.clock.elapsed_seconds = computeElapsedSeconds(fixture.clock, new Date());
-    fixture.clock.is_running = false;
-    fixture.clock.resumed_at = null;
-  }
+  ensureKickedOff(fixture, 'The match has not kicked off yet');
+  pauseClock(fixture.clock, new Date());
 
   fixture.clock.period = 'completed';
   fixture.status = 'completed';
@@ -137,6 +182,8 @@ export async function addMatchEvent(fixture, eventData) {
   if (fixture.status === 'completed') {
     throw new HttpError(409, 'Cannot add events to a completed match');
   }
+  ensureKickedOff(fixture, 'Kick off the match before recording events');
+  checkEventPlayers(fixture, eventData, { isNew: true });
 
   fixture.events.push(eventData);
   await recomputeFixture(fixture);
@@ -155,8 +202,10 @@ export async function updateMatchEvent(fixture, eventId, eventData) {
   if (!event) {
     throw new HttpError(404, 'Event not found');
   }
+  checkEventPlayers(fixture, eventData, { isNew: false });
 
-  event.set(eventData);
+  // Fields the new version does not use (e.g. an assist on what is now a card) are cleared.
+  event.set({ player: null, assist_player: null, player_out: null, player_in: null, card_type: null, ...eventData });
   await recomputeFixture(fixture);
   return loadFixtureDetail(fixture._id);
 }

@@ -1,250 +1,201 @@
-import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
-import { footballApi } from '../../../api/endpoints.js';
-import Alert from '../../../components/Alert.jsx';
-import PageLoader from '../../../components/PageLoader.jsx';
-import { useResource } from '../../../hooks/useResource.js';
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { footballApi } from '../../../api/endpoints.js'
+import PageLoader from '../../../components/PageLoader.jsx'
+import Toast from '../../../components/Toast.jsx'
+import { useResource } from '../../../hooks/useResource.js'
 import {
   EVENT_TYPE_LABELS,
   fixtureResultText,
   GOAL_TYPE_LABELS,
   PERIOD_LABELS,
-} from '../../../sports/football/format.js';
-import { formatDateTime } from '../../../utils/dates.js';
-import { EditIcon, TrashIcon } from '../../components/icons.jsx';
-import { Breadcrumbs, LoadError, PageHeader, StatusBadge } from '../../components/ui.jsx';
-import { useFootball } from './footballContext.js';
-import FixtureDecision from './FixtureDecision.jsx';
+  sortEvents,
+} from '../../../sports/football/format.js'
+import { formatDateTime } from '../../../utils/dates.js'
+import { CalendarIcon } from '../../components/icons.jsx'
+import { Breadcrumbs, EmptyState, LoadError, StatusBadge } from '../../components/ui.jsx'
+import { useFootball } from './footballContext.js'
+import FixtureDecision from './FixtureDecision.jsx'
 
+// One football fixture for the admin: score, lineups and the referee's event log, plus corrections.
 export default function FixturePage() {
-  const { fixtureId } = useParams();
-  const { data, setData, error, retry } = useResource(fixtureId, () => footballApi.fixture(fixtureId));
+  const { fixtureId } = useParams()
+  const { basePath, breadcrumbs, houseName } = useFootball()
+  const navigate = useNavigate()
+  const { data, setData, error, retry } = useResource(fixtureId, () => footballApi.fixture(fixtureId))
+  const [toast, setToast] = useState('')
 
-  if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />;
+  if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
 
-  return <FixtureDetail fixture={data.fixture} onChange={setData} />;
-}
+  const { fixture } = data
+  const names = { team1: houseName(fixture.team1), team2: houseName(fixture.team2) }
+  const config = fixture.config ?? {}
+  const events = sortEvents(fixture.events)
 
-function FixtureDetail({ fixture, onChange }) {
-  const { tournament, basePath, breadcrumbs, houseName } = useFootball();
-  const navigate = useNavigate();
-  const [actionError, setActionError] = useState('');
-  const [deleting, setDeleting] = useState(false);
-
-  const team1 = houseName(fixture.team1);
-  const team2 = houseName(fixture.team2);
-  const referees = (fixture.referees || []).map((r) => r.name).join(', ');
-
-  async function handleDelete() {
-    if (!window.confirm(`Delete ${team1} vs ${team2}?`)) return;
-    setDeleting(true);
-    setActionError('');
+  async function deleteFixture() {
+    if (!window.confirm(`Delete ${names.team1} vs ${names.team2} with all its events? This cannot be undone.`)) return
     try {
-      await footballApi.deleteFixture(fixture._id);
-      navigate(basePath);
+      await footballApi.deleteFixture(fixture._id)
+      navigate(basePath)
     } catch (err) {
-      setActionError(err.message);
-      setDeleting(false);
+      setToast(err.message)
     }
   }
 
-  const events = [...(fixture.events || [])].sort((a, b) => a.minute - b.minute);
-
   return (
     <>
-      <Breadcrumbs items={breadcrumbs({ label: `${team1} vs ${team2}` })} />
-      <PageHeader
-        title={`${team1} vs ${team2}`}
-        description={`${tournament.tournament_name}${fixture.scheduled_at ? ` · ${formatDateTime(fixture.scheduled_at)}` : ''}`}
-        action={
-          <div className="button-row">
-            <Link to={`${basePath}/fixtures/${fixture._id}/edit`} className="btn btn-secondary">
-              <EditIcon />
-              Edit match
-            </Link>
-            <button
-              type="button"
-              className="btn btn-danger-outline"
-              onClick={handleDelete}
-              disabled={deleting}
-              aria-label="Delete match"
-            >
-              <TrashIcon />
-              {deleting ? 'Deleting…' : 'Delete'}
-            </button>
-          </div>
-        }
-      />
+      <Breadcrumbs items={breadcrumbs({ label: `${names.team1} vs ${names.team2}` })} />
 
-      {actionError && <Alert type="error">{actionError}</Alert>}
-
-      <div className="football-scoreboard">
-        <div className="football-team">
-          <div className={`football-team-name${fixture.result === 'team1' ? ' is-winner' : ''}`}>{team1}</div>
+      <section className="panel scoreboard">
+        <div className="scoreboard-meta">
+          <StatusBadge status={fixture.status} />
+          {fixture.result_type === 'abandoned' && <StatusBadge status="abandoned" />}
+          {fixture.status === 'live' && fixture.clock?.period && (
+            <span className="football-period-badge">{PERIOD_LABELS[fixture.clock.period] ?? fixture.clock.period}</span>
+          )}
+          {fixture.scheduled_at && (
+            <span className="t-card-dates">
+              <CalendarIcon size={15} />
+              {formatDateTime(fixture.scheduled_at)}
+            </span>
+          )}
+          <span className="t-card-dates">
+            {config.players_per_team}-a-side · {config.half_duration_minutes} min halves
+            {config.extra_time_duration_minutes > 0 && ` · ${config.extra_time_duration_minutes} min extra time halves`}
+          </span>
         </div>
-        <div>
-          <div className="football-score">
+
+        <div className="scoreboard-teams">
+          <span className={`scoreboard-team${fixture.result === 'team1' ? ' is-winner' : ''}`}>{names.team1}</span>
+          <span className="scoreboard-score">
             {fixture.status === 'scheduled' ? 'vs' : `${fixture.team1_score} – ${fixture.team2_score}`}
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
-            <StatusBadge status={fixture.status} />
-            {fixture.result_type === 'abandoned' && <StatusBadge status="abandoned" />}
-            {fixture.status === 'live' && fixture.clock?.period && (
-              <span className="football-period-badge">
-                {PERIOD_LABELS[fixture.clock.period] || fixture.clock.period}
-              </span>
-            )}
-          </div>
+          </span>
+          <span className={`scoreboard-team${fixture.result === 'team2' ? ' is-winner' : ''}`}>{names.team2}</span>
         </div>
-        <div className="football-team">
-          <div className={`football-team-name${fixture.result === 'team2' ? ' is-winner' : ''}`}>{team2}</div>
-        </div>
-      </div>
+        <p className="scoreboard-result">{fixtureResultText(fixture, names.team1, names.team2)}</p>
 
-      <section className="panel" style={{ marginBottom: '1.5rem' }}>
-        <h2 className="panel-title">Match details</h2>
-        <dl className="property-list">
-          <div>
-            <dt>Status</dt>
-            <dd>{fixtureResultText(fixture, team1, team2)}</dd>
-          </div>
-          <div>
-            <dt>Referees</dt>
-            <dd>{referees || 'No referee assigned yet'}</dd>
-          </div>
-          <div>
-            <dt>Rules</dt>
-            <dd>
-              {fixture.config?.players_per_team || 7}-a-side · {fixture.config?.half_duration_minutes || 25} min halves
-              {fixture.config?.extra_time_duration_minutes > 0
-                ? ` · ${fixture.config.extra_time_duration_minutes}m Extra Time`
-                : ''}
-              {fixture.config?.rolling_subs ? ' · Rolling substitutions' : ''}
-            </dd>
-          </div>
-        </dl>
+        <p className="scoreboard-referees">
+          {fixture.referees.length > 0
+            ? `Referee${fixture.referees.length > 1 ? 's' : ''}: ${fixture.referees.map((referee) => referee.name).join(', ')}`
+            : 'No referee assigned yet'}
+        </p>
+
+        <div className="page-actions scoreboard-actions">
+          <Link to={`${basePath}/fixtures/${fixture._id}/edit`} className="btn btn-ghost">
+            Edit fixture
+          </Link>
+          <button type="button" className="btn btn-danger" onClick={deleteFixture}>
+            Delete fixture
+          </button>
+        </div>
       </section>
 
-      <div className="field-grid" style={{ marginBottom: '1.5rem' }}>
-        <section className="panel">
-          <h2 className="panel-title">{team1} Lineup</h2>
-          {fixture.team1_lineup?.starters?.length > 0 ? (
-            <div>
-              <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>Starting Lineup:</p>
-              <ul className="house-list" style={{ marginBottom: '0.75rem' }}>
-                {fixture.team1_lineup.starters.map((p) => (
-                  <li key={p._id} className="house-chip">
-                    {p.name} <span className="muted">@{p.username}</span>
-                  </li>
-                ))}
-              </ul>
-              {fixture.team1_lineup.bench?.length > 0 && (
-                <>
-                  <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>Bench / Substitutes:</p>
-                  <ul className="house-list">
-                    {fixture.team1_lineup.bench.map((p) => (
-                      <li key={p._id} className="house-chip">
-                        {p.name} <span className="muted">@{p.username}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          ) : (
-            <p className="field-hint">No lineup submitted yet by the referee.</p>
-          )}
-        </section>
+      <section className="dash-section" aria-labelledby="lineups-heading">
+        <h2 id="lineups-heading" className="section-title">
+          Lineups
+        </h2>
+        <div className="football-lineups">
+          {['team1', 'team2'].map((team) => (
+            <Lineup key={team} lineup={fixture[`${team}_lineup`]} name={names[team]} config={config} />
+          ))}
+        </div>
+      </section>
 
-        <section className="panel">
-          <h2 className="panel-title">{team2} Lineup</h2>
-          {fixture.team2_lineup?.starters?.length > 0 ? (
-            <div>
-              <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>Starting Lineup:</p>
-              <ul className="house-list" style={{ marginBottom: '0.75rem' }}>
-                {fixture.team2_lineup.starters.map((p) => (
-                  <li key={p._id} className="house-chip">
-                    {p.name} <span className="muted">@{p.username}</span>
-                  </li>
-                ))}
-              </ul>
-              {fixture.team2_lineup.bench?.length > 0 && (
-                <>
-                  <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>Bench / Substitutes:</p>
-                  <ul className="house-list">
-                    {fixture.team2_lineup.bench.map((p) => (
-                      <li key={p._id} className="house-chip">
-                        {p.name} <span className="muted">@{p.username}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          ) : (
-            <p className="field-hint">No lineup submitted yet by the referee.</p>
-          )}
-        </section>
-      </div>
-
-      <section className="panel" style={{ marginBottom: '1.5rem' }}>
-        <h2 className="panel-title">Match Timeline & Events ({events.length})</h2>
+      <section className="dash-section" aria-labelledby="events-heading">
+        <h2 id="events-heading" className="section-title">
+          Match events
+        </h2>
         {events.length === 0 ? (
-          <p className="field-hint">No events logged yet. Match events recorded by the referee will appear here.</p>
+          <EmptyState
+            title="No events yet"
+            text="Goals, cards and substitutions recorded by the referee show up here."
+          />
         ) : (
-          <div className="football-timeline">
-            {events.map((ev) => {
-              const eventTeamName = ev.team === 'team1' ? team1 : team2;
-              let badgeClass = 'football-event-badge ';
-              let badgeText = EVENT_TYPE_LABELS[ev.type] || ev.type;
-
-              if (ev.type === 'goal') {
-                badgeClass += 'badge-goal';
-                badgeText = GOAL_TYPE_LABELS[ev.goal_type] || 'Goal';
-              } else if (ev.type === 'yellow_card') {
-                badgeClass += 'badge-yellow';
-                badgeText = ev.card_type === 'second_yellow' ? '2nd Yellow (Red)' : 'Yellow Card';
-              } else if (ev.type === 'red_card') {
-                badgeClass += 'badge-red';
-                badgeText = 'Red Card';
-              } else if (ev.type === 'substitution') {
-                badgeClass += 'badge-sub';
-              }
-
-              return (
-                <div key={ev._id} className="football-event-item">
-                  <span className="football-event-minute">{ev.minute}'</span>
-                  <span className={badgeClass}>{badgeText}</span>
-                  <strong>{eventTeamName}:</strong>
-                  {ev.type === 'goal' && (
-                    <span>
-                      {ev.player?.name || 'Unknown player'}
-                      {ev.assist_player ? ` (assist: ${ev.assist_player.name})` : ''}
-                    </span>
-                  )}
-                  {(ev.type === 'yellow_card' || ev.type === 'red_card') && (
-                    <span>{ev.player?.name || 'Unknown player'}</span>
-                  )}
-                  {ev.type === 'substitution' && (
-                    <span>
-                      {ev.player_out?.name} ➔ {ev.player_in?.name}
-                    </span>
-                  )}
-                  {ev.note && <span className="muted">({ev.note})</span>}
-                </div>
-              );
-            })}
+          <div className="panel football-timeline">
+            {events.map((event) => (
+              <EventRow key={event._id} event={event} names={names} />
+            ))}
           </div>
         )}
       </section>
 
-      <FixtureDecision
-        fixture={fixture}
-        team1={team1}
-        team2={team2}
-        onSaved={(res) => onChange({ fixture: res?.fixture ?? res })}
-        onError={setActionError}
-      />
+      <div className="dash-section">
+        <FixtureDecision
+          key={`${fixture.result_type}-${fixture.updated_at}`}
+          fixture={fixture}
+          team1={names.team1}
+          team2={names.team2}
+          onSaved={(saved) => setData({ ...data, fixture: saved?.fixture ?? saved })}
+          onError={setToast}
+        />
+      </div>
+
+      <Toast message={toast} onClose={() => setToast('')} />
     </>
-  );
+  )
+}
+
+function Lineup({ lineup, name, config }) {
+  const starters = lineup?.starters ?? []
+  const bench = lineup?.bench ?? []
+  return (
+    <section className="panel">
+      <h3 className="panel-title">{name}</h3>
+      {starters.length === 0 ? (
+        <p className="field-hint">The referee has not entered this lineup yet.</p>
+      ) : (
+        <>
+          <p className="field-hint">
+            Starting {starters.length} of {config.players_per_team}
+          </p>
+          <PlayerChips players={starters} />
+          {bench.length > 0 && (
+            <>
+              <p className="field-hint">Substitutes</p>
+              <PlayerChips players={bench} />
+            </>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
+function PlayerChips({ players }) {
+  return (
+    <ul className="house-list">
+      {players.map((player) => (
+        <li key={player._id} className="house-chip">
+          {player.name} <span className="muted">@{player.username}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+const BADGES = { goal: 'badge-goal', yellow_card: 'badge-yellow', red_card: 'badge-red', substitution: 'badge-sub' }
+
+function EventRow({ event, names }) {
+  let label = EVENT_TYPE_LABELS[event.type] ?? event.type
+  if (event.type === 'goal') label = GOAL_TYPE_LABELS[event.goal_type] ?? 'Goal'
+  if (event.card_type === 'second_yellow') label = '2nd yellow (sent off)'
+
+  return (
+    <div className="football-event-item">
+      <span className="football-event-minute">{event.minute}'</span>
+      <span className={`football-event-badge ${BADGES[event.type] ?? ''}`}>{label}</span>
+      <strong>{names[event.team]}:</strong>
+      {event.type === 'substitution' ? (
+        <span>
+          {event.player_out?.name ?? 'Unknown'} ➔ {event.player_in?.name ?? 'Unknown'}
+        </span>
+      ) : (
+        <span>
+          {event.player?.name ?? 'Unknown player'}
+          {event.assist_player && ` (assist: ${event.assist_player.name})`}
+        </span>
+      )}
+      {event.note && <span className="muted">({event.note})</span>}
+    </div>
+  )
 }

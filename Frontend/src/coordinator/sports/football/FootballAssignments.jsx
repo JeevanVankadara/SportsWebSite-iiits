@@ -1,22 +1,22 @@
-import { Link } from 'react-router';
-import { coordinatorFootballApi } from '../../../api/endpoints.js';
-import PageLoader from '../../../components/PageLoader.jsx';
-import { coordinatorPath } from '../../../config.js';
-import { useResource } from '../../../hooks/useResource.js';
-import { houseName, PERIOD_LABELS } from '../../../sports/football/format.js';
-import { formatDateTime } from '../../../utils/dates.js';
-import { CoEmpty, CoError, Eyebrow, StatusPill } from '../../components/ui.jsx';
+import { Link } from 'react-router'
+import { coordinatorFootballApi } from '../../../api/endpoints.js'
+import PageLoader from '../../../components/PageLoader.jsx'
+import { coordinatorPath } from '../../../config.js'
+import { useResource } from '../../../hooks/useResource.js'
+import { houseName, PERIOD_LABELS } from '../../../sports/football/format.js'
+import { formatDateTime } from '../../../utils/dates.js'
+import { CoEmpty, CoError, Eyebrow, StatusPill } from '../../components/ui.jsx'
 
-const ORDER = { live: 0, scheduled: 1, completed: 2 };
+const ORDER = { live: 0, scheduled: 1, completed: 2 }
 
 export default function FootballAssignments({ sectionNumber }) {
   const { data: fixtures, error, retry } = useResource('football-assigned', () =>
     coordinatorFootballApi.fixtures().then((data) => data.fixtures),
-  );
+  )
 
-  const counts = { live: 0, scheduled: 0, completed: 0 };
-  for (const fixture of fixtures ?? []) counts[fixture.status] += 1;
-  const sorted = [...(fixtures ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
+  const counts = { live: 0, scheduled: 0, completed: 0 }
+  for (const fixture of fixtures ?? []) counts[fixture.status] += 1
+  const sorted = [...(fixtures ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status])
 
   return (
     <section className="co-section" aria-labelledby="football-heading">
@@ -61,13 +61,13 @@ export default function FootballAssignments({ sectionNumber }) {
         </ul>
       )}
     </section>
-  );
+  )
 }
 
 function FixtureCard({ fixture }) {
-  const team1 = houseName(fixture.tournament, fixture.team1);
-  const team2 = houseName(fixture.tournament, fixture.team2);
-  const started = fixture.status !== 'scheduled';
+  const team1 = houseName(fixture.tournament, fixture.team1)
+  const team2 = houseName(fixture.tournament, fixture.team2)
+  const started = fixture.status !== 'scheduled'
 
   return (
     <li>
@@ -96,5 +96,5 @@ function FixtureCard({ fixture }) {
         </div>
       </Link>
     </li>
-  );
+  )
 }

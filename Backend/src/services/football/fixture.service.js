@@ -1,9 +1,11 @@
 import { Game } from '../../models/Game.js';
+import { Player } from '../../models/Player.js';
 import { caseInsensitive } from '../../models/schemaOptions.js';
 import { FootballFixture } from '../../models/sports/football/FootballFixture.js';
 import { HttpError } from '../../utils/httpError.js';
+import { ensureAllExist } from '../../utils/validation.js';
 import { refreshPlayerStats } from './playerStats.service.js';
-import { calculateScore, determineWinner } from './rules.js';
+import { calculateScore, computeElapsedSeconds, determineWinner } from './rules.js';
 
 const PLAYER_FIELDS = 'name username roll_number';
 
@@ -32,6 +34,15 @@ export async function loadFixtureDetail(fixtureId) {
 /**
  * Recomputes fixture score, result and stats from the source events list.
  */
+function lineupPlayers(fixture) {
+  return [
+    ...(fixture.team1_lineup?.starters || []),
+    ...(fixture.team1_lineup?.bench || []),
+    ...(fixture.team2_lineup?.starters || []),
+    ...(fixture.team2_lineup?.bench || []),
+  ];
+}
+
 export async function recomputeFixture(fixture) {
   const { team1_score, team2_score } = calculateScore(fixture.events);
   fixture.team1_score = team1_score;
@@ -43,15 +54,7 @@ export async function recomputeFixture(fixture) {
 
   await fixture.save();
 
-  if (fixture.status === 'completed') {
-    const allPlayers = [
-      ...(fixture.team1_lineup?.starters || []),
-      ...(fixture.team1_lineup?.bench || []),
-      ...(fixture.team2_lineup?.starters || []),
-      ...(fixture.team2_lineup?.bench || []),
-    ];
-    await refreshPlayerStats(allPlayers);
-  }
+  if (fixture.status === 'completed') await refreshPlayerStats(lineupPlayers(fixture));
 
   return fixture;
 }
@@ -61,8 +64,20 @@ export async function recomputeFixture(fixture) {
  * Allowed only before kickoff.
  */
 export async function saveMatchConfig(fixture, config) {
-  if (fixture.status !== 'scheduled' && fixture.clock.period !== 'not_started') {
+  if (fixture.status !== 'scheduled') {
     throw new HttpError(409, 'Cannot change match settings after the match has started');
+  }
+
+  // A lineup already submitted must still fit the new squad size.
+  for (const [team, label] of [['team1', 'The first house'], ['team2', 'The second house']]) {
+    if (!fixture.slips?.[`${team}_submitted_at`]) continue;
+    const lineup = fixture[`${team}_lineup`];
+    if (lineup.starters.length !== config.players_per_team || lineup.bench.length > config.max_substitutes) {
+      throw new HttpError(
+        409,
+        `${label}'s lineup has ${lineup.starters.length} starters and ${lineup.bench.length} substitutes. Change that lineup first, or keep the squad size.`,
+      );
+    }
   }
 
   fixture.config = {
@@ -81,6 +96,17 @@ export async function saveLineup(fixture, team, { starters, bench }) {
   if (fixture.status === 'completed') {
     throw new HttpError(409, 'Cannot change lineup for a completed match');
   }
+
+  // A player can play for one house only.
+  const other = fixture[`${team === 'team1' ? 'team2' : 'team1'}_lineup`];
+  const otherIds = new Set([...(other?.starters ?? []), ...(other?.bench ?? [])].map(String));
+  const clash = [...starters, ...bench].find((id) => otherIds.has(String(id)));
+  if (clash) {
+    const player = await Player.findById(clash, 'name username');
+    const who = player ? `${player.name} (@${player.username})` : 'A player';
+    throw new HttpError(400, `${who} is already in the other house's lineup. A player can play for one house only.`);
+  }
+  await ensureAllExist(Player, [...starters, ...bench], 'players');
 
   if (team === 'team1') {
     fixture.team1_lineup = { starters, bench };
@@ -115,14 +141,27 @@ export async function setFixtureDecision(fixture, decision) {
     fixture.result = decision.result;
     fixture.decision_note = decision.decision_note;
     fixture.status = 'completed';
-    fixture.clock.is_running = false;
+    if (fixture.clock.is_running) {
+      fixture.clock.elapsed_seconds = computeElapsedSeconds(fixture.clock, new Date());
+      fixture.clock.is_running = false;
+      fixture.clock.resumed_at = null;
+    }
     fixture.completed_at = fixture.completed_at || new Date();
-  } else {
+  } else if (fixture.clock.period === 'completed') {
+    // The match reached full time: the goals decide it again.
     fixture.result = determineWinner(fixture.team1_score, fixture.team2_score);
     fixture.decision_note = '';
+  } else {
+    // It was stopped early, so removing the decision reopens it where it stopped (clock paused).
+    fixture.result = null;
+    fixture.decision_note = '';
+    fixture.status = fixture.clock.period === 'not_started' ? 'scheduled' : 'live';
+    fixture.completed_at = null;
   }
 
   await recomputeFixture(fixture);
+  // A reopened match no longer counts in the players' records.
+  if (fixture.status !== 'completed') await refreshPlayerStats(lineupPlayers(fixture));
   return loadFixtureDetail(fixture._id);
 }
 
@@ -165,12 +204,7 @@ export async function deleteFixtures(filter) {
   const fixtures = await FootballFixture.find(filter);
   if (fixtures.length === 0) return;
 
-  const playerIds = fixtures.flatMap((f) => [
-    ...(f.team1_lineup?.starters || []),
-    ...(f.team1_lineup?.bench || []),
-    ...(f.team2_lineup?.starters || []),
-    ...(f.team2_lineup?.bench || []),
-  ]);
+  const playerIds = fixtures.flatMap(lineupPlayers);
 
   await FootballFixture.deleteMany(filter);
   await refreshPlayerStats(playerIds);

@@ -58,6 +58,8 @@ export const footballApi = {
   deleteFixture: (fixtureId) => request(`/api/football/fixtures/${id(fixtureId)}`, { method: 'DELETE' }),
   setDecision: (fixtureId, data) =>
     request(`/api/football/fixtures/${id(fixtureId)}/decision`, { method: 'PUT', body: data }),
+}
+
 export const cricketApi = {
   fixtures: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/fixtures`),
   standings: (tournamentId) => request(`/api/cricket/tournaments/${id(tournamentId)}/standings`),

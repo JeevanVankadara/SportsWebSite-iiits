@@ -1,9 +1,22 @@
 import { Player } from '../../models/Player.js';
 import { FootballFixture } from '../../models/sports/football/FootballFixture.js';
 
+// Did the player take the field for that house: a starter, or a substitute who came on.
+function tookPart(fixture, team, id) {
+  const lineup = fixture[`${team}_lineup`];
+  if (lineup?.starters?.some((p) => String(p) === id)) return true;
+  return (
+    lineup?.bench?.some((p) => String(p) === id) &&
+    (fixture.events || []).some(
+      (event) => event.type === 'substitution' && event.team === team && String(event.player_in) === id,
+    )
+  );
+}
+
 /**
  * Refreshes player.sports.football = { played, won, goals, yellow_cards, red_cards }
  * Recomputed from completed fixtures so corrections never cause numbers to drift.
+ * A substitute who never came on has not played.
  */
 export async function refreshPlayerStats(playerIds = []) {
   const ids = [...new Set(playerIds.map(String))].filter(Boolean);
@@ -21,22 +34,17 @@ export async function refreshPlayerStats(playerIds = []) {
         ],
       }).select('team1_lineup team2_lineup result events');
 
-      let played = fixtures.length;
+      let played = 0;
       let won = 0;
       let goals = 0;
       let yellowCards = 0;
       let redCards = 0;
 
       for (const fixture of fixtures) {
-        const inTeam1 =
-          fixture.team1_lineup?.starters?.some((p) => String(p) === id) ||
-          fixture.team1_lineup?.bench?.some((p) => String(p) === id);
-        const inTeam2 =
-          fixture.team2_lineup?.starters?.some((p) => String(p) === id) ||
-          fixture.team2_lineup?.bench?.some((p) => String(p) === id);
-
-        if ((inTeam1 && fixture.result === 'team1') || (inTeam2 && fixture.result === 'team2')) {
-          won += 1;
+        const team = ['team1', 'team2'].find((side) => tookPart(fixture, side, id));
+        if (team) {
+          played += 1;
+          if (fixture.result === team) won += 1;
         }
 
         for (const event of fixture.events || []) {

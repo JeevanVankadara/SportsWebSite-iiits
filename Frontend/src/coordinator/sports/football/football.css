@@ -1,6 +1,6 @@
 .co-football-clock {
-  background: var(--co-surface-1);
-  border: 1px solid var(--co-border);
+  background: var(--co-panel);
+  border: 1px solid var(--co-line);
   border-radius: var(--co-radius);
   padding: 1.25rem 0.875rem;
   margin-bottom: 1.25rem;
@@ -15,7 +15,7 @@
 }
 
 .co-clock-display {
-  font-family: var(--co-font-display);
+  font-family: var(--co-display-font);
   font-size: clamp(2.5rem, 12vw, 4rem);
   line-height: 1;
   color: var(--co-accent);
@@ -30,7 +30,7 @@
 }
 
 .co-clock-period {
-  font-family: var(--co-font-display);
+  font-family: var(--co-display-font);
   font-size: clamp(1.125rem, 4.5vw, 1.5rem);
   letter-spacing: 0.08em;
   color: var(--co-text);
@@ -50,7 +50,7 @@
 }
 
 /* Mobile responsive match scoreboard */
-.co-match-scoreboard {
+.co-match-board {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,24 +59,24 @@
   padding: 0.5rem 0;
 }
 
-.co-scoreboard-team {
+.co-match-team {
   flex: 1 1 0;
   min-width: 0;
 }
 
-.co-scoreboard-team h2 {
+.co-match-team h2 {
   font-size: clamp(1.125rem, 5vw, 2.25rem);
   line-height: 1.1;
   word-break: break-word;
   margin: 0;
 }
 
-.co-scoreboard-vs {
+.co-match-vs {
   flex-shrink: 0;
   padding: 0 0.25rem;
 }
 
-.co-scoreboard-score {
+.co-match-score {
   font-family: var(--co-display-font, 'Bebas Neue', sans-serif);
   font-size: clamp(2.25rem, 10vw, 3.75rem);
   color: var(--co-accent);
@@ -106,11 +106,11 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1rem;
-  background: var(--co-surface-1);
-  border: 1px solid var(--co-border);
+  background: var(--co-panel);
+  border: 1px solid var(--co-line);
   border-radius: var(--co-radius);
   color: var(--co-text);
-  font-family: var(--co-font-display);
+  font-family: var(--co-display-font);
   font-size: 1.125rem;
   letter-spacing: 0.05em;
   cursor: pointer;
@@ -118,7 +118,7 @@
 }
 
 .co-quick-btn:hover:not(:disabled) {
-  background: var(--co-surface-2);
+  background: var(--co-panel-raised);
   border-color: var(--co-accent);
   color: var(--co-accent);
 }
@@ -133,8 +133,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem;
-  background: var(--co-surface-1);
-  border: 1px solid var(--co-border);
+  background: var(--co-panel);
+  border: 1px solid var(--co-line);
   border-radius: var(--co-radius);
   margin-bottom: 0.5rem;
   gap: 0.75rem;
@@ -148,7 +148,7 @@
 }
 
 .co-event-min {
-  font-family: var(--co-font-display);
+  font-family: var(--co-display-font);
   font-size: 1.25rem;
   color: var(--co-accent);
   min-width: 2.5rem;
@@ -192,7 +192,7 @@
 
 .co-event-btn {
   background: transparent;
-  border: 1px solid var(--co-border);
+  border: 1px solid var(--co-line);
   color: var(--co-muted);
   border-radius: var(--co-radius-sm);
   min-height: 36px;
@@ -229,8 +229,8 @@
 }
 
 .co-modal {
-  background: var(--co-surface-1);
-  border: 1px solid var(--co-border);
+  background: var(--co-panel);
+  border: 1px solid var(--co-line);
   border-radius: var(--co-radius);
   width: 100%;
   max-width: 520px;
@@ -254,11 +254,11 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--co-border);
+  border-bottom: 1px solid var(--co-line);
 }
 
 .co-modal-title {
-  font-family: var(--co-font-display);
+  font-family: var(--co-display-font);
   font-size: clamp(1.25rem, 5vw, 1.5rem);
   color: var(--co-text);
   letter-spacing: 0.05em;
@@ -276,4 +276,24 @@
 
 .co-modal-close:hover {
   color: var(--co-text);
+}
+
+/* Modal form layout */
+.co-modal-field {
+  margin-bottom: 1rem;
+}
+
+.co-modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.co-event-team {
+  margin-bottom: 1rem;
+}
+
+.co-tab-check.is-pending {
+  color: var(--co-warn);
 }

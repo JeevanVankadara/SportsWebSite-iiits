@@ -8,7 +8,6 @@ import {
   assertTournamentEditAllowed as assertFootballEditAllowed,
   deleteFixtures as deleteFootballFixtures,
 } from '../services/football/fixture.service.js';
-import { assertTournamentEditAllowed, deleteFixtures } from '../services/badminton/fixture.service.js';
 import {
   assertTournamentEditAllowed as assertCricketEditAllowed,
   deleteFixtures as deleteCricketFixtures,
@@ -57,7 +56,6 @@ async function applyChanges(tournament, body) {
   // Sports and houses that already have fixtures cannot be removed.
   await assertBadmintonEditAllowed(tournament, { games, houses });
   await assertFootballEditAllowed(tournament, { games, houses });
-  await assertTournamentEditAllowed(tournament, { games, houses });
   await assertCricketEditAllowed(tournament, { games, houses });
 
   if (games) {
@@ -106,7 +104,6 @@ export async function deleteTournament(req, res) {
   const tournament = await findByIdOr404(Tournament, req.params.id, 'Tournament not found');
   await deleteBadmintonFixtures({ tournament: tournament._id });
   await deleteFootballFixtures({ tournament: tournament._id });
-  await deleteFixtures({ tournament: tournament._id });
   await deleteCricketFixtures({ tournament: tournament._id });
   await tournament.deleteOne();
   res.status(204).end();
