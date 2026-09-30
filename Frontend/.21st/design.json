@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "project": {
+    "name": "frontend",
+    "productType": null,
+    "stack": [
+      "react",
+      "vite"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/viewer/viewer.css"
+    ],
+    "components": [
+      "src/viewer/ViewerApp.jsx",
+      "src/viewer/SportsContent.jsx"
+    ],
+    "assets": [
+      "public/iiits-logo.jpg",
+      "public/illustrations/players-atlas.png"
+    ],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "light and dark",
+    "colors": {
+      "--color-bg": {
+        "value": "#f4f7fb",
+        "source": "src/index.css"
+      },
+      "--color-surface": {
+        "value": "#ffffff",
+        "source": "src/index.css"
+      },
+      "--color-subtle": {
+        "value": "#f1f5f9",
+        "source": "src/index.css"
+      },
+      "--color-border": {
+        "value": "#e2e8f0",
+        "source": "src/index.css"
+      },
+      "--color-border-strong": {
+        "value": "#cbd5e1",
+        "source": "src/index.css"
+      },
+      "--color-text": {
+        "value": "#0f172a",
+        "source": "src/index.css"
+      },
+      "--color-text-soft": {
+        "value": "#334155",
+        "source": "src/index.css"
+      },
+      "--color-muted": {
+        "value": "#64748b",
+        "source": "src/index.css"
+      },
+      "--color-danger": {
+        "value": "#dc2626",
+        "source": "src/index.css"
+      },
+      "--color-danger-bg": {
+        "value": "#fef2f2",
+        "source": "src/index.css"
+      },
+      "--color-danger-border": {
+        "value": "#fecaca",
+        "source": "src/index.css"
+      },
+      "--color-live": {
+        "value": "#dc2626",
+        "source": "src/index.css"
+      },
+      "--color-live-bg": {
+        "value": "#fee2e2",
+        "source": "src/index.css"
+      },
+      "--focus-ring": {
+        "value": "0 0 0 3px rgb(37 99 235 / 0.35)",
+        "source": "src/index.css"
+      }
+    },
+    "typography": {
+      "--font": {
+        "value": "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "source": "src/index.css"
+      }
+    },
+    "spacing": {},
+    "radius": {
+      "--radius-lg": {
+        "value": "14px",
+        "source": "src/index.css"
+      },
+      "--radius": {
+        "value": "10px",
+        "source": "src/index.css"
+      },
+      "--radius-sm": {
+        "value": "8px",
+        "source": "src/index.css"
+      }
+    },
+    "shadows": {
+      "--shadow-sm": {
+        "value": "0 1px 2px rgb(15 23 42 / 0.05)",
+        "source": "src/index.css"
+      },
+      "--shadow": {
+        "value": "0 1px 3px rgb(15 23 42 / 0.06), 0 6px 16px rgb(15 23 42 / 0.05)",
+        "source": "src/index.css"
+      }
+    },
+    "motion": {},
+    "density": "unknown",
+    "tokens": {
+      "source": "src/viewer/viewer.css",
+      "palette": [
+        "white",
+        "charcoal",
+        "neutral gray"
+      ],
+      "spacing": "4px multiples",
+      "radius": "20px cards, 999px navigation",
+      "typography": "SF Pro system stack with Inter fallback"
+    }
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    "User selected monochrome Apple and ChatGPT inspired rounded surfaces.",
+    "Floating pill navbar grounded in 21st Tubelight Navbar by Ayushmaan Singh (MIT). Custom implementation avoids bright tubelight effect and preserves React Router navigation.",
+    "Fictional generated atlas portraits; no gender inference or real likeness claims. Remotion profile entrance honors reduced motion.",
+    "21st review completed: token declaration colors are intentional; autofocus is limited to user-opened search dialog, with trigger focus restoration."
+  ],
+  "evidence": [
+    {
+      "fact": "Tubelight Navbar, MIT; lucide-react and framer-motion dependencies; source import requires API key",
+      "source": "https://21st.dev/@ayushmxxn/components/tubelight-navbar"
+    }
+  ],
+  "generatedAt": "2026-09-30T14:20:07.005Z"
+}
