@@ -23,20 +23,23 @@ export function CricketLiveHeader({ data, live }) {
   const bowling = houseName(data.tournament, data.fixture[inning.bowling_team])
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
-  return <div className="st-live-score-hero st-fx-hero" data-event={event?.kind}>
+  return <div className="st-fx-hero" data-event={event?.kind}>
     <SportCelebration event={event} />
-    <div className="st-live-team">
-      <TeamLogo name={batting} size={56} />
-      <div>
-        <span data-tip={`${batting} are batting`}>{batting}<small>{inningsTitle(inning)}</small></span>
-        <strong><CountUp value={inning.runs} /><i>/{inning.wickets}</i> <small>{oversText(inning.legal_balls)} ov</small></strong>
+    <div className="st-hero-top">
+      <div className="st-hero-team">
+        <TeamLogo name={batting} size={52} />
+        <div><strong data-tip={`${batting} are batting`}>{batting}</strong><small>{inningsTitle(inning)}</small></div>
       </div>
+      <span className="st-hero-vs">vs <TeamLogo name={bowling} size={20} /> {bowling}</span>
     </div>
-    <div className="st-live-rates">
-      <div><span data-tip="Current run rate">CRR <b>{runRate(inning.runs, inning.legal_balls)}</b></span>{needed != null && remaining > 0 && <span data-tip="Required run rate">RRR <b>{runRate(needed, remaining)}</b></span>}</div>
-      <p>{needed != null ? `${needed} runs needed in ${remaining} balls` : `${remaining} balls remaining · ${inning.overs ?? data.fixture.overs} overs`}</p>
-      <small className="st-vs-line">vs <TeamLogo name={bowling} size={18} /> {bowling}</small>
+    <div className="st-hero-score"><strong><CountUp value={inning.runs} /><i>/{inning.wickets}</i></strong><small>{oversText(inning.legal_balls)} ov</small></div>
+    <div className="st-hero-stats">
+      <div data-tip="Current run rate"><small>CRR</small><b>{runRate(inning.runs, inning.legal_balls)}</b></div>
+      {needed != null && remaining > 0 && <div data-tip="Required run rate"><small>RRR</small><b>{runRate(needed, remaining)}</b></div>}
+      <div><small>Balls left</small><b>{remaining}</b></div>
+      <div><small>Overs</small><b>{inning.overs ?? data.fixture.overs}</b></div>
     </div>
+    {needed != null && <p className="st-hero-note">{needed} runs needed in {remaining} balls</p>}
   </div>
 }
 
