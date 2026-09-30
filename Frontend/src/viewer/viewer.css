@@ -1210,6 +1210,25 @@
   color: var(--st-muted);
   font-size: 11px;
 }
+.st-kabaddi-log-scroll {
+  max-height: 480px;
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--st-line) transparent;
+}
+.st-kabaddi-log-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.st-kabaddi-log-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.st-kabaddi-log-scroll::-webkit-scrollbar-thumb {
+  background: var(--st-line);
+  border-radius: 999px;
+}
 .st-player-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1948,8 +1967,8 @@
 .st-app .st-live-rates > div { display:flex; justify-content:flex-end; gap:16px; font-size:12px; color:var(--st-muted); }
 .st-app .st-live-rates b { color:var(--st-ink); margin-left:4px; }
 .st-app .st-live-rates p { color:var(--st-warm); font-size:13px; font-weight:500; margin-top:12px; }
-.st-app .st-cricket-live-layout { display:grid; grid-template-columns:minmax(0,3fr) minmax(280px,2fr); gap:24px; }
-.st-app .st-live-main, .st-app .st-live-sidebar { display:flex; flex-direction:column; gap:24px; min-width:0; }
+.st-app .st-cricket-live-layout { display:grid; grid-template-columns:1fr; gap:24px; }
+.st-app .st-live-main { display:flex; flex-direction:column; gap:24px; min-width:0; }
 .st-app .st-live-section-title { display:flex; justify-content:space-between; align-items:center; gap:16px; }
 .st-app .st-live-section-title h2, .st-app .st-live-section-title h3 { margin:0; font-size:16px; font-weight:600; }
 .st-app .st-live-section-title span { color:var(--st-muted); font-size:11px; display:inline-flex; align-items:center; gap:4px; }

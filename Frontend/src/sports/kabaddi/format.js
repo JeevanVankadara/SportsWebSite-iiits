@@ -75,7 +75,10 @@ export function lineupPlayers(fixture) {
   for (const team of TEAMS) {
     const lineup = fixture[`${team}_lineup`] ?? {}
     for (const player of [...(lineup.starters ?? []), ...(lineup.bench ?? [])]) {
-      if (player?._id) players.set(player._id, player)
+      if (player?._id) {
+        players.set(player._id, player)
+        players.set(String(player._id), player)
+      }
     }
   }
   return players

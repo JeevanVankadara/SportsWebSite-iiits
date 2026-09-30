@@ -11,7 +11,8 @@
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed:data": "node src/scripts/seedData.js",
     "seed:players": "node src/scripts/seedMockPlayers.js",
-    "seed:cricket": "node src/scripts/seedCricket.js"
+    "seed:cricket": "node src/scripts/seedCricket.js",
+    "seed:reset": "node src/scripts/resetAndSeed.js"
   },
   "engines": {
     "node": ">=20.11"

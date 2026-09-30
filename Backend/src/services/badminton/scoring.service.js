@@ -1,3 +1,4 @@
+import { BadmintonFixture } from '../../models/sports/badminton/BadmintonFixture.js';
 import { BadmintonMatch } from '../../models/sports/badminton/BadmintonMatch.js';
 import { BadmintonSet } from '../../models/sports/badminton/BadmintonSet.js';
 import { HttpError } from '../../utils/httpError.js';
@@ -89,6 +90,9 @@ export async function changeScore(match, { team, change, expected }) {
     { $set: { team1_points: next.team1, team2_points: next.team2 } },
   );
   if (!updated) throw new HttpError(409, STALE_SCORE);
+
+  // Touch the fixture so the viewer's polling detects score changes.
+  await BadmintonFixture.updateOne({ _id: match.fixture }, { $set: { updated_at: new Date() } });
 }
 
 // "Next set": closes the won set and opens the next one.
@@ -112,6 +116,9 @@ export async function startNextSet(match) {
   match.sets.push(next._id);
   match[`${winner}_sets_won`] += 1;
   await match.save();
+
+  // Touch the fixture so the viewer's polling detects the set change.
+  await BadmintonFixture.updateOne({ _id: match.fixture }, { $set: { updated_at: new Date() } });
 }
 
 // "Finish match": closes the last set and the match once a house has won enough sets.

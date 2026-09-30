@@ -52,7 +52,6 @@ import { LivePulse } from './animations.jsx'
 import ThemeToggle from './ThemeToggle.jsx'
 import { useViewerMotion } from './motion.js'
 import { CricketLiveHeader } from './CricketLive.jsx'
-import { TeamLogo } from './Cartoon.jsx'
 import ClayIcon from './Clay.jsx'
 import { advancePreview, advancePreviewFootball, useLiveFeed, usePreviewTicker, useScoreEvent } from './liveFeed.js'
 import { SportCelebration } from './Fx.jsx'
@@ -370,12 +369,8 @@ function SectionTitle({ eyebrow, title, detail, action, as: Heading = 'h2' }) {
   )
 }
 
-function HouseBadge({ name }) {
-  return (
-    <span className="st-house-badge" aria-hidden="true">
-      <TeamLogo name={name} size={32} />
-    </span>
-  )
+function HouseBadge() {
+  return null
 }
 
 function SportIcon({ sport }) {
@@ -406,12 +401,10 @@ function MatchCard({ item, tournament, variant = '' }) {
           : 'Time not announced'}
       </div>
       <div className="st-team-row">
-        <HouseBadge name={first} />
         <strong>{first}</strong>
         <b>{score(item, 'team1')}</b>
       </div>
       <div className="st-team-row">
-        <HouseBadge name={second} />
         <strong>{second}</strong>
         <b>{score(item, 'team2')}</b>
       </div>
@@ -1431,7 +1424,7 @@ function FixturePage() {
                     className={`st-house-dot st-house-${first.toLowerCase().split(' ')[0]}`}
                   />
                   <strong>{first}</strong>
-                  <b>{score(f, 'team1')}</b>
+                  <b>{score(data, 'team1')}</b>
                 </div>
                 <span className="st-versus">VS</span>
                 <div>
@@ -1439,10 +1432,10 @@ function FixturePage() {
                     className={`st-house-dot st-house-${second.toLowerCase().split(' ')[0]}`}
                   />
                   <strong>{second}</strong>
-                  <b>{score(f, 'team2')}</b>
+                  <b>{score(data, 'team2')}</b>
                 </div>
               </div>
-              <p>{resultLine(f, data.tournament)}</p>
+              <p>{resultLine(data, data.tournament)}</p>
               </>}
               <div className="st-fixture-extra">
                 <span>

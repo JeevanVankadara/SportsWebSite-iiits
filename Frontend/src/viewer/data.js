@@ -24,9 +24,21 @@ export function firstSportPath(tournaments, sport) {
 
 export function score(item, team) {
   const f = item.fixture ?? item
+  const sport = item.sport ?? f.sport
   if (f.status === 'scheduled') return '—'
-  if (item.sport === 'football' || item.sport === 'kabaddi') return String(f[`${team}_score`] ?? 0)
-  if (item.sport === 'badminton') return String(f[`${team}_matches_won`] ?? 0)
+  if (sport === 'football' || sport === 'kabaddi') return String(f[`${team}_score`] ?? 0)
+  if (sport === 'badminton') {
+    // When matches detail is available, show the live set score
+    const matches = item.detail?.matches ?? item.matches
+    if (matches?.length) {
+      const liveMatch = matches.find((m) => m.status === 'live')
+      if (liveMatch) {
+        const liveSet = liveMatch.sets?.find((s) => s.status === 'live')
+        if (liveSet) return String(liveSet[`${team}_points`] ?? 0)
+      }
+    }
+    return String(f[`${team}_matches_won`] ?? 0)
+  }
   const inning = f.innings?.find(
     (row) => row.super_over === 0 && row.batting_team === team,
   )
@@ -35,18 +47,42 @@ export function score(item, team) {
     : 'Yet to bat'
 }
 
+// Builds a full badminton score line for the fixture detail hero:
+// e.g. "Match 2 · Set 1 — 15 : 12" when live, or "3 – 2" (matches won) when finished.
+export function badmintonLiveScore(data, team) {
+  const matches = data?.detail?.matches ?? []
+  const liveMatch = matches.find((m) => m.status === 'live')
+  if (liveMatch) {
+    const liveSet = liveMatch.sets?.find((s) => s.status === 'live')
+    if (liveSet) return String(liveSet[`${team}_points`] ?? 0)
+  }
+  const f = data?.fixture ?? data
+  return String(f?.[`${team}_matches_won`] ?? 0)
+}
+
 export function resultLine(item, tournament) {
   const f = item.fixture ?? item
+  const sport = item.sport ?? f.sport
   const first = houseName(tournament, f.team1)
   const second = houseName(tournament, f.team2)
   if (f.status === 'scheduled')
     return f.scheduled_at ? formatDate(f.scheduled_at) : 'Time to be announced'
-  if (item.sport === 'kabaddi') return kabaddiResultText(f, first, second)
+  if (sport === 'kabaddi') return kabaddiResultText(f, first, second)
   if (f.status === 'live') {
-    if (item.sport === 'football')
+    if (sport === 'football')
       return `${PERIOD_LABELS[f.clock?.period] ?? 'Live'} · ${Math.floor(calculateCurrentSeconds(f.clock) / 60)}′`
-    if (item.sport === 'badminton')
+    if (sport === 'badminton') {
+      const matches = item.detail?.matches ?? item.matches
+      const liveMatch = matches?.find((m) => m.status === 'live')
+      if (liveMatch) {
+        const liveSet = liveMatch.sets?.find((s) => s.status === 'live')
+        if (liveSet) {
+          return `Match ${liveMatch.match_no} · Set ${liveSet.set_no} · ${liveSet.team1_points}–${liveSet.team2_points}`
+        }
+        return `Match ${liveMatch.match_no} · ${liveMatch.team1_sets_won}–${liveMatch.team2_sets_won} sets`
+      }
       return `${f.team1_matches_won}–${f.team2_matches_won} matches won`
+    }
     const innings = (f.innings ?? []).filter((row) => !row.super_over)
     if (innings.length > 1) {
       const chasing = innings.at(-1)
@@ -62,7 +98,7 @@ export function resultLine(item, tournament) {
   if (!f.result) return 'Result to be announced'
   const winner = f.result === 'team1' ? first : second
   if (f.result_type === 'abandoned') return `${winner} awarded the match`
-  if (item.sport === 'cricket' && f.margin?.by)
+  if (sport === 'cricket' && f.margin?.by)
     return f.margin.by === 'super_over'
       ? `${winner} won in the super over`
       : `${winner} won by ${f.margin.value} ${f.margin.by}`

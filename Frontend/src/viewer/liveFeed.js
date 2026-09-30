@@ -113,18 +113,6 @@ export function useLiveFeed(data) {
   return { event: state.event, feed: state.feed }
 }
 
-// Heuristic estimate: projects the final score from run rate and wickets in hand.
-export function winProbability(inning, fixture) {
-  if (!inning) return null
-  const maxBalls = (inning.overs ?? fixture.overs ?? 0) * 6
-  const left = Math.max(0, maxBalls - inning.legal_balls)
-  const crr = inning.legal_balls ? inning.runs / (inning.legal_balls / 6) : 6
-  const projected = inning.runs + (left / 6) * Math.max(crr, 5) * (0.5 + 0.05 * (10 - inning.wickets))
-  const target = inning.target ?? (maxBalls / 6) * 7.5 + 1
-  const batting = 1 / (1 + Math.exp(-(projected - target) / (7 + (left / 6) * 1.4)))
-  const value = inning.target != null && inning.runs >= inning.target ? 1 : Math.min(0.99, Math.max(0.01, batting))
-  return { batting: Math.round(value * 100), chase: inning.target != null }
-}
 
 const OUTCOMES = ['0', '0', '0', '1', '1', '1', '1', '2', '3', '4', '4', '4', '6', '6', 'W', 'wd', 'nb']
 // Preview mode only: advances the existing demo innings by one delivery so the live UI can be seen moving.

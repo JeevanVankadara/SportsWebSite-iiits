@@ -25,15 +25,16 @@
   line-height: 1.45;
 }
 
+.st-app .kb,
 .co-app .kb {
-  --kb-surface: var(--co-panel);
-  --kb-raised: var(--co-panel-raised);
-  --kb-line: var(--co-line);
-  --kb-line-strong: var(--co-line-strong);
-  --kb-text: var(--co-text);
-  --kb-muted: var(--co-muted);
-  --kb-accent: var(--co-accent);
-  --kb-accent-soft: var(--co-accent-soft);
+  --kb-surface: #0f172a;
+  --kb-raised: #141e36;
+  --kb-line: rgb(148 163 184 / 0.14);
+  --kb-line-strong: rgb(148 163 184 / 0.3);
+  --kb-text: #f4f1ea;
+  --kb-muted: #9aa3b2;
+  --kb-accent: #3b82f6;
+  --kb-accent-soft: rgb(59 130 246 / 0.15);
   --kb-good: #4ade80;
   --kb-good-soft: rgb(34 197 94 / 0.15);
   --kb-warn: #fbbf24;
@@ -522,6 +523,9 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  max-height: 480px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .kb-log-row {

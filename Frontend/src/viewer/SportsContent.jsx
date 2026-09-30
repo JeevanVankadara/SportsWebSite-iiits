@@ -24,7 +24,9 @@ import {
   lineupPlayers as kabaddiLineupPlayers,
   PERIOD_LABELS as KABADDI_PERIOD_LABELS,
   remainingSeconds as kabaddiRemainingSeconds,
+  TEAMS as KABADDI_TEAMS,
 } from '../sports/kabaddi/format.js'
+import '../sports/kabaddi/kabaddi.css'
 import { houseName, idOf, resultLine, sportName, formatDate } from './data.js'
 
 function playerIndex(fixture) {
@@ -378,30 +380,102 @@ function FootballTimeline({ data }) {
 function KabaddiTimeline({ data }) {
   const { fixture, tournament, detail } = data
   const players = kabaddiLineupPlayers(fixture)
-  const timeline = new Map((detail.state?.timeline ?? []).map((entry) => [idOf(entry.event_id), entry]))
-  const events = [...(fixture.events ?? [])].reverse()
+  const state = detail?.state ?? {
+    sides: { team1: { on_court: [], out: [], bench: [] }, team2: { on_court: [], out: [], bench: [] } },
+    timeline: [],
+  }
+  const names = {
+    team1: houseName(tournament, fixture.team1),
+    team2: houseName(tournament, fixture.team2),
+  }
+  const rows = (fixture.events ?? [])
+    .map((event, index) => ({ event, entry: state.timeline?.[index], number: index + 1 }))
+    .reverse()
+  const sides = state.sides
+
   return (
-    <div className="st-detail-stack">
-      <section className="st-detail-panel st-football-clock">
+    <div className="kb">
+      <section className="st-detail-panel st-football-clock" style={{ background: 'var(--kb-surface)', borderColor: 'var(--kb-line)', color: 'var(--kb-text)' }}>
         <Clock3 size={20} />
         <strong>{KABADDI_PERIOD_LABELS[fixture.clock?.period] ?? 'Pre-match'} · {formatKabaddiClock(kabaddiRemainingSeconds(fixture))}</strong>
-        <span>{fixture.clock?.is_running ? 'Clock running' : 'Clock paused'}</span>
+        <span style={{ color: 'var(--kb-muted)' }}>{fixture.clock?.is_running ? 'Clock running' : 'Clock paused'}</span>
       </section>
-      {events.map((event, index) => {
-        const entry = timeline.get(idOf(event))
-        return (
-          <section className="st-detail-panel st-event-row" key={idOf(event) || index}>
-            <strong>{event.half === 'first_half' ? '1st' : event.half === 'second_half' ? '2nd' : 'FT'}</strong>
-            <div>
-              <b>{KABADDI_EVENT_LABELS[event.type] ?? event.type}</b>
-              <p>{describeKabaddiEvent(event, players)}</p>
-              {entry?.all_out && <p>All out · {houseName(tournament, fixture[entry.all_out])}</p>}
-            </div>
-            <span>{entry ? `${entry.score_after.team1}–${entry.score_after.team2}` : houseName(tournament, fixture[event.team])}</span>
-          </section>
-        )
-      })}
-      {!events.length && <div className="st-message st-message-small">No match events yet.</div>}
+
+      {sides && (
+        <section className="kb-court">
+          {KABADDI_TEAMS.map((team) => {
+            const side = sides[team] ?? { on_court: [], out: [], bench: [] }
+            return (
+              <div key={team} className="kb-panel">
+                <h3 className="kb-title">{names[team]}</h3>
+                <p className="kb-step">On court ({side.on_court.length})</p>
+                {side.on_court.length === 0 ? (
+                  <p className="kb-hint">Nobody on court</p>
+                ) : (
+                  <div className="kb-chips">
+                    {side.on_court.map((id) => (
+                      <span key={id} className="kb-chip kb-chip-static">
+                        {players.get(id)?.name ?? 'Unknown'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <p className="kb-step">Out, next back first ({side.out.length})</p>
+                {side.out.length === 0 ? (
+                  <p className="kb-hint">Nobody out</p>
+                ) : (
+                  <div className="kb-chips">
+                    {side.out.map((id, index) => (
+                      <span key={id} className="kb-chip kb-chip-static">
+                        <span className="kb-chip-order">{index + 1}</span>
+                        {players.get(id)?.name ?? 'Unknown'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </section>
+      )}
+
+      <section className="kb-panel">
+        <h3 className="kb-title">Events</h3>
+        {rows.length === 0 ? (
+          <p className="kb-hint">Nothing recorded yet.</p>
+        ) : (
+          <ol className="kb-log">
+            {rows.map(({ event, entry, number }) => {
+              const gained = ['team1', 'team2'].filter((team) => entry?.points?.[team])
+              return (
+                <li key={event._id || number} className="kb-log-row">
+                  <span className="kb-log-no">{number}</span>
+                  <span className={`kb-tag kb-tag-${event.type}`}>{KABADDI_EVENT_LABELS[event.type] ?? event.type}</span>
+                  <span className="kb-log-text">
+                    <strong>{names[event.team]}</strong> {describeKabaddiEvent(event, players)}
+                    {entry?.super_raid && <span className="kb-tag kb-tag-good">Super raid</span>}
+                    {entry?.super_tackle && <span className="kb-tag kb-tag-good">Super tackle</span>}
+                    {entry?.do_or_die && <span className="kb-tag kb-tag-warn">Do-or-die</span>}
+                    {entry?.all_out && <span className="kb-tag kb-tag-bad">All out: {names[entry.all_out]}</span>}
+                  </span>
+                  <span className="kb-log-points">
+                    {gained.map((team) => (
+                      <span key={team}>
+                        {entry.points[team] > 0 ? '+' : ''}
+                        {entry.points[team]} {names[team]}
+                      </span>
+                    ))}
+                  </span>
+                  <span className="kb-log-score">
+                    {entry?.score_after ? `${entry.score_after.team1}–${entry.score_after.team2}` : ''}
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        )}
+      </section>
     </div>
   )
 }
