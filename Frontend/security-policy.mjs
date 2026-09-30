@@ -1,6 +1,7 @@
 // Shared by production HTML, Vite preview, and hosts supporting a _headers file.
 export function securityHeaders(apiUrl = '') {
   let apiOrigin = ''
+  if (/[\r\n\u0000]/.test(apiUrl)) throw new Error('VITE_API_URL must be a valid HTTP(S) URL.')
   if (apiUrl.trim()) {
     const url = new URL(apiUrl)
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash)

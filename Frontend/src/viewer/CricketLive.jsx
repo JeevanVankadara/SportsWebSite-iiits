@@ -22,6 +22,8 @@ export function CricketLiveHeader({ data, live }) {
   const batting = houseName(data.tournament, data.fixture[inning.batting_team])
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
+  const lastBall = inning.this_over?.at(-1) ?? inning.over_history?.at(-1)?.balls?.at(-1)
+  const lastKind = lastBall == null ? '' : String(lastBall).includes('W') ? 'wicket' : ['4', '6'].includes(String(lastBall)) ? 'boundary' : ''
   return <div className="st-fx-hero" data-event={event?.kind}>
     <SportCelebration event={event} sport="cricket" />
     <div className="st-cx-left">
@@ -31,13 +33,18 @@ export function CricketLiveHeader({ data, live }) {
         <div className="st-cx-score"><strong><CountUp value={inning.runs} />-{inning.wickets}</strong><small>{oversText(inning.legal_balls)}</small></div>
       </div>
     </div>
+    <span className="st-cx-slash" aria-hidden="true" />
+    <div className="st-cx-last" data-kind={lastKind} aria-label="Last ball">{lastBall == null ? '-' : String(lastBall)}</div>
     <div className="st-cx-centre"><b>{resultLine(data.fixture, data.tournament)}</b></div>
     <div className="st-cx-right">
       <div className="st-cx-rates">
         <span data-tip="Current run rate">CRR :<b>{runRate(inning.runs, inning.legal_balls)}</b></span>
         {needed != null && remaining > 0 && <span data-tip="Required run rate">RRR :<b>{runRate(needed, remaining)}</b></span>}
       </div>
-      <p className="st-cx-need">{needed != null ? `${batting} need ${needed} runs in ${remaining} balls` : `${remaining} balls remaining · ${inning.overs ?? data.fixture.overs} overs`}</p>
+      <p className="st-cx-need">
+        <span className="st-cx-long">{needed != null ? `${batting} need ${needed} runs in ${remaining} balls` : `${remaining} balls remaining · ${inning.overs ?? data.fixture.overs} overs`}</span>
+        <span className="st-cx-short">{inning.target != null ? `Target : ${inning.target}` : `${remaining} balls left`}</span>
+      </p>
     </div>
   </div>
 }
@@ -69,6 +76,7 @@ function Probability({ inning, fixture, batting, bowling }) {
 }
 
 function FeedItem({ item }) {
+  if (item.kind === 'sync') return <li className="st-feed-item st-feed-over"><div><b>Score update</b><span>{item.text}</span></div></li>
   if (item.kind === 'over-end') return <li className="st-feed-item st-feed-over"><div><b>Over {item.over} complete</b><span>{item.text} Score {item.runs}/{item.wickets}</span></div></li>
   if (item.kind === 'milestone') return <li className="st-feed-item st-feed-milestone"><PlayerAvatar id={item.id} /><div><b>{item.word} {shortName(item.name)}</b><span>{item.stats.runs} ({item.stats.balls}) · {item.stats.fours} fours · {item.stats.sixes} sixes</span></div></li>
   return <li className={`st-feed-item st-feed-${item.kind}`}>

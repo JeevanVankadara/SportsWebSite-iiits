@@ -65,13 +65,13 @@ export function createSession(storageKey) {
           : 'Connection interrupted. Refresh to check whether your change was saved before trying again.')
       }
 
-      const data = await readResponse(response)
-      if (!response.ok) {
-        if (response.status === 401 && sentToken && token === sentToken) {
+      if (response.status === 401 && sentToken && token === sentToken) {
           token = null
           try { sessionStorage.removeItem(storageKey); localStorage.removeItem(storageKey) } catch { /* Memory is already cleared. */ }
           handleUnauthorized()
-        }
+      }
+      const data = await readResponse(response)
+      if (!response.ok) {
         throw new ApiError(response.status, data?.message ?? `Request failed (${response.status}). Please try again.`)
       }
       return data
@@ -91,7 +91,7 @@ async function readResponse(response) {
   if (response.status === 204) return null
   try { return await response.json() }
   catch {
-    throw new ApiError(response.status, 'The server returned an unreadable response. Please refresh and try again.')
+    throw new ApiError(response.ok ? 502 : response.status, 'The server returned an unreadable response. Refresh to check the latest state before trying again.')
   }
 }
 

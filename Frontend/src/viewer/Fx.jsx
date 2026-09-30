@@ -27,7 +27,7 @@ export function CountUp({ value, decimals = 0, suffix = '' }) {
   const shown = useRef({ n: value })
   useEffect(() => {
     if (reduced()) { shown.current.n = value; node.current.textContent = value.toFixed(decimals) + suffix; return }
-    const tween = gsap.to(shown.current, { n: value, duration: .8, ease: 'power3.out', onUpdate: () => { node.current.textContent = shown.current.n.toFixed(decimals) + suffix } })
+    const tween = gsap.to(shown.current, { n: value, duration: .8, ease: 'power3.out', onUpdate: () => { if (node.current) node.current.textContent = shown.current.n.toFixed(decimals) + suffix } })
     return () => tween.kill()
   }, [value, decimals, suffix])
   return <span ref={node}>{value.toFixed(decimals)}{suffix}</span>
@@ -101,13 +101,15 @@ function Shuttle() {
 }
 
 function Scene({ kind }) {
-  return <svg className="st-cel-scene" viewBox="-14 20 414 160" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+  return <svg className="st-cel-scene" viewBox="-14 8 428 184" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
     <defs>
       <radialGradient id="g-ball" cx=".34" cy=".3" r=".9"><stop offset="0" stopColor="#e5343d" /><stop offset=".55" stopColor="#b0121c" /><stop offset="1" stopColor="#5e070d" /></radialGradient>
       <linearGradient id="g-willow" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#f1d8a4" /><stop offset=".5" stopColor="#e3bd80" /><stop offset="1" stopColor="#c99656" /></linearGradient>
       <radialGradient id="g-foot" cx=".35" cy=".3" r=".9"><stop offset="0" stopColor="#fff" /><stop offset="1" stopColor="#cfd3da" /></radialGradient>
+      <linearGradient id="g-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--c-grass-near)" /><stop offset="1" stopColor="var(--c-grass-far)" /></linearGradient>
     </defs>
     <rect x="-2000" y={FLOOR} width="4400" height="60" className="c-turf" />
+    <g className="c-field-lines"><path d="M-14 184h428M-14 191h428" fill="none" stroke="var(--c-grass-line)" strokeWidth="2" />{!['goal', 'point'].includes(kind) && <><path d="M30 177h110l18 15H12Z" fill="var(--c-pitch)" opacity=".7" /><path d="M44 180h88M36 189h104" fill="none" stroke="#fff9e8" strokeWidth="1" opacity=".65" /></>}</g>
     <line x1="-2000" y1={FLOOR} x2="2400" y2={FLOOR} className="cs-mute" strokeWidth="1.6" />
     {(kind === 'hit' || kind === 'wicket' || kind === 'signal' || kind === 'raise') && <><rect x="40" y={FLOOR} width="300" height="3" className="c-pitch" /><Stumps /></>}
     {kind === 'hit' && <>
@@ -126,11 +128,13 @@ function Scene({ kind }) {
     </>}
     <g className="c-trail">{Array.from({ length: 7 }, (_, i) => <circle key={i} r={BALL - i * .8} fill="#b0121c" />)}</g>
     <ellipse className="c-shadow cs-soft" cx="0" cy={FLOOR + 1} rx="8" ry="2.2" />
+    <g className="c-cams">{[[30, 60], [70, 40], [120, 52], [170, 36], [230, 58], [280, 42], [330, 66], [370, 48], [60, 100], [310, 96], [150, 90], [250, 84]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="2.4" className="cs-white" opacity="0" />)}</g>
+    <g className="c-rays">{Array.from({ length: 20 }, (_, i) => <line key={i} x1="0" y1="-24" x2="0" y2="-74" className="cs-spark" strokeWidth="1.6" strokeLinecap="round" transform={`rotate(${i * 18})`} />)}</g>
     <g className="c-sparks">{Array.from({ length: 10 }, (_, i) => <line key={i} x1="0" y1="-12" x2="0" y2="-24" className="cs-spark" strokeWidth="2.6" strokeLinecap="round" transform={`rotate(${i * 36})`} />)}</g>
     <circle className="c-impact cs-line" r="12" fill="none" strokeWidth="3" opacity="0" />
     <g className="c-dust">{Array.from({ length: 6 }, (_, i) => <circle key={i} r="3" className="cs-soft" opacity="0" />)}</g>
     {kind === 'goal' ? <FootBall /> : kind === 'point' ? <Shuttle /> : <CricketBall />}
-    <g className="c-conf">{Array.from({ length: 22 }, (_, i) => <rect key={i} width="7" height="3.5" rx="1" className={['cs-fill', 'cs-white', 'cs-ink'][i % 3]} opacity="0" />)}</g>
+    <g className="c-conf">{Array.from({ length: 14 }, (_, i) => <rect key={i} width="5" height="2.5" rx="1" fill={['#d7ad55', '#ebf2ee', '#619779'][i % 3]} opacity="0" />)}</g>
   </svg>
 }
 
@@ -145,11 +149,12 @@ function play(el, kind) {
   const scene = one('.st-cel-scene')
   gsap.set(ball, { autoAlpha: 0, transformOrigin: `0px ${BALL}px`, scale: 1 })
   gsap.set(q('.c-conf rect, .c-dust circle, .c-trail circle, .c-shadow'), { autoAlpha: 0 })
-  gsap.set(q('.c-sparks'), { autoAlpha: 0 })
+  gsap.set(q('.c-sparks, .c-rays, .c-cams circle'), { autoAlpha: 0 })
   gsap.set(word, { autoAlpha: 0 })
 
   // Decaying random shake: the whole scene (and the word) vibrates on impact.
   const rumble = (target, at, amp, dur = .6, step = .032) => {
+    amp = Math.min(amp, 1.2)
     const n = Math.round(dur / step)
     for (let i = 0; i < n; i++) {
       const k = 1 - i / n
@@ -157,7 +162,19 @@ function play(el, kind) {
     }
     tl.to(target, { x: 0, y: 0, duration: step }, at + n * step)
   }
-  const flash = (at, strength = .55) => tl.fromTo(one('.st-cel-flash'), { autoAlpha: 0 }, { autoAlpha: strength, duration: .05, yoyo: true, repeat: 1, ease: 'none' }, at)
+  const rays = (at, x, y) => {
+    tl.set(one('.c-rays'), { x, y, scale: .25, autoAlpha: 1, transformOrigin: '0px 0px' }, at)
+    tl.to(one('.c-rays'), { scale: 2.1, duration: .42, ease: 'power3.out' }, at)
+    tl.to(one('.c-rays'), { autoAlpha: 0, duration: .3 }, at + .12)
+  }
+  // Stadium camera flashes twinkle around the frame.
+  const cams = at => tl.fromTo(q('.c-cams circle'), { autoAlpha: 0, scale: .8 }, { autoAlpha: .45, scale: 1.1, duration: .2, yoyo: true, repeat: 1, stagger: .035, transformOrigin: '50% 50%' }, at)
+  // Camera punch: the frame zooms and tilts on impact, then springs back.
+  const punch = at => {
+    tl.fromTo(scene, { scale: 1, rotation: 0, transformOrigin: '50% 70%' }, { scale: 1.025, rotation: 0, duration: .18, ease: 'power2.out' }, at)
+    tl.to(scene, { scale: 1, duration: .45, ease: 'power2.out' }, at + .18)
+  }
+  const flash = (at, strength = .55) => tl.fromTo(one('.st-cel-flash'), { autoAlpha: 0 }, { autoAlpha: Math.min(strength, .12), duration: .18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, at)
   const sparks = (at, x, y) => {
     tl.set(one('.c-sparks'), { x, y, scale: .3, autoAlpha: 1 }, at)
     tl.to(one('.c-sparks'), { scale: 1.5, duration: .28, ease: 'power3.out' }, at)
@@ -178,15 +195,18 @@ function play(el, kind) {
     tl.to(puff, { x: x + (i - 2.5) * 9, y: y - gsap.utils.random(8, 22), scale: 2.4, autoAlpha: 0, duration: .55, ease: 'power2.out' }, at)
   })
   const impact = (at, x, y) => tl.fromTo(one('.c-impact'), { x, y, scale: .3, autoAlpha: 1 }, { scale: 3, autoAlpha: 0, duration: .45, ease: 'power2.out' }, at)
-  // The word slams in from oversize, then vibrates.
+  // Kinetic word: letters slam in one after another, a light sweeps across, then the word vibrates.
   const slam = (at, amp = 7) => {
-    tl.fromTo(word, { autoAlpha: 0, scale: 2.4, y: 10 }, { autoAlpha: 1, scale: 1, y: 0, duration: .32, ease: 'power4.out' }, at)
-    rumble(word, at + .3, amp, .7)
+    const chars = q('.st-cel-word .ch')
+    tl.set(word, { autoAlpha: 1, scale: 1, y: 0 }, at)
+    tl.fromTo(chars, { autoAlpha: 0, y: 12, scale: .97, rotation: 0 }, { autoAlpha: 1, y: 0, scale: 1, rotation: 0, duration: .4, ease: 'power3.out', stagger: .025 }, at)
+    tl.fromTo(one('.st-cel-sweep'), { xPercent: -130, autoAlpha: .95 }, { xPercent: 130, duration: .7, ease: 'power2.inOut' }, at + .25)
+    rumble(word, at + .32, Math.min(amp, .5), .3)
   }
   const squashHop = (at, base, amp) => {
     tl.to(ball, { y: base - amp, duration: .13, ease: 'power2.out' }, at)
     tl.to(ball, { y: base, duration: .13, ease: 'power2.in' }, at + .13)
-    tl.to(ball, { scaleX: 1.18, scaleY: .8, duration: .04, yoyo: true, repeat: 1 }, at + .25)
+    tl.to(ball, { scaleX: 1.035, scaleY: .965, duration: .04, yoyo: true, repeat: 1 }, at + .25)
   }
   // A bowler's delivery: releases high on the right, drops under gravity, pitches, then rises to the batter.
   const delivery = (target, postDuration, endY) => {
@@ -195,7 +215,7 @@ function play(el, kind) {
     tl.to(ball, { x: 240, duration: .37, ease: 'none' }, .05)
     tl.to(ball, { y: base, duration: .37, ease: 'power2.in' }, .05)
     tl.to(spin, { rotation: -1100, duration: .6, ease: 'none' }, .05)
-    tl.to(ball, { scaleX: 1.2, scaleY: .8, duration: .04, yoyo: true, repeat: 1 }, .4)
+    tl.to(ball, { scaleX: 1.035, scaleY: .965, duration: .04, yoyo: true, repeat: 1 }, .4)
     dust(.42, 240, FLOOR - 3)
     tl.to(ball, { x: target, duration: postDuration, ease: 'none' }, .42)
     tl.to(ball, { y: endY, duration: postDuration, ease: 'power1.out' }, .42)
@@ -211,7 +231,7 @@ function play(el, kind) {
     delivery(121, .2, 149)
     tl.to(bat, { rotation: -30, duration: .18, ease: 'power3.in' }, .44)
     tl.to(bat, { rotation: -108, duration: .35, ease: 'power2.out' }, .62)
-    impact(.62, 121, 149); sparks(.62, 121, 149); flash(.62, .5); rumble(scene, .62, 7, .55)
+    impact(.62, 121, 149); sparks(.62, 121, 149); rays(.62, 121, 149); flash(.62, .5); rumble(scene, .62, 7, .55); punch(.62)
     if (isSix) {
       const launch = index => {
         const t = index === 0 ? ball : q('.c-trail circle')[index - 1]
@@ -231,7 +251,7 @@ function play(el, kind) {
       })
       tl.to(q('.c-fan'), { y: -9, duration: .15, yoyo: true, repeat: 3, ease: 'sine.inOut', stagger: .04 }, 1.1)
       tl.fromTo(one('.c-glow'), { autoAlpha: .8, scale: 1, transformOrigin: '50% 50%' }, { autoAlpha: 0, scale: 3.2, duration: .8, ease: 'power2.out' }, 1.1)
-      slam(.72, 8); confetti(1.12, 336, 120, 1.25)
+      slam(.72, 8); confetti(1.12, 336, 120, 1.25); cams(1.1)
     } else {
       const shadow = one('.c-shadow')
       tl.set(shadow, { x: 121, autoAlpha: .55 }, .62)
@@ -245,7 +265,7 @@ function play(el, kind) {
       tl.to(one('.c-flag'), { rotation: 16, transformOrigin: '0% 100%', duration: .1, yoyo: true, repeat: 7, ease: 'sine.inOut' }, 1.28)
       tl.to(one('.c-board'), { x: 4, duration: .05, yoyo: true, repeat: 5 }, 1.5)
       dust(1.3, 336, FLOOR - 3)
-      slam(1.3, 8); flash(1.3, .35); rumble(scene, 1.3, 5, .45); confetti(1.34, 340, 130, 1)
+      slam(1.3, 8); flash(1.3, .35); rumble(scene, 1.3, 5, .45); confetti(1.34, 340, 130, 1); cams(1.28); punch(1.3)
     }
   } else if (kind === 'wicket') {
     const bat = one('.c-bat')
@@ -254,7 +274,7 @@ function play(el, kind) {
     delivery(55, .36, 150)
     tl.to(bat, { rotation: -70, duration: .24, ease: 'power3.in' }, .6)
     // The ball strikes the stumps behind the batter at t = .78: stumps are knocked backwards (to the left) and the bails fly.
-    impact(.78, 55, 150); sparks(.78, 55, 150); flash(.78, .7); rumble(scene, .78, 10, .65)
+    impact(.78, 55, 150); sparks(.78, 55, 150); rays(.78, 55, 150); flash(.78, .7); rumble(scene, .78, 10, .65); punch(.78)
     const stumps = q('.c-stump')
     tl.to(stumps[0], { rotation: -34, x: -22, duration: .5, ease: 'power2.out' }, .78)
     tl.to(stumps[1], { rotation: -74, x: -46, y: -8, duration: .55, ease: 'power2.out' }, .78)
@@ -285,7 +305,7 @@ function play(el, kind) {
     tl.to(bat, { rotation: 172, duration: .55, ease: 'back.out(1.8)' }, .15)
     tl.to(bat, { rotation: 164, duration: .09, yoyo: true, repeat: 7 }, .8)
     tl.to(q('.c-fan'), { y: -10, duration: .16, yoyo: true, repeat: 5, ease: 'sine.inOut', stagger: .04 }, .55)
-    sparks(.62, 100, 62); flash(.6, .4); rumble(scene, .6, 5, .5)
+    sparks(.62, 100, 62); rays(.62, 120, 70); flash(.6, .4); rumble(scene, .6, 5, .5); cams(.6); punch(.6)
     slam(.5, 7); confetti(.62, 120, 70, 1.3)
   } else if (kind === 'goal') {
     const base = FLOOR - 16.5
@@ -297,7 +317,7 @@ function play(el, kind) {
     tl.to(one('.c-net'), { scaleX: 1.08, skewY: 4, transformOrigin: '100% 50%', duration: .09, yoyo: true, repeat: 7, ease: 'sine.inOut' }, 1.12)
     tl.to(ball, { x: 360, duration: .3, ease: 'power2.out' }, 1.15)
     tl.to(ball, { y: base, duration: .5, ease: 'bounce.out' }, 1.15)
-    impact(1.12, 344, 124); sparks(1.12, 344, 124); flash(1.12, .5); rumble(scene, 1.12, 8, .6)
+    impact(1.12, 344, 124); sparks(1.12, 344, 124); rays(1.12, 344, 124); flash(1.12, .5); rumble(scene, 1.12, 8, .6); cams(1.1); punch(1.12)
     slam(1.12, 9); confetti(1.16, 345, 110, 1.1)
   } else if (kind === 'point') {
     const racket = one('.c-racket')
@@ -309,7 +329,7 @@ function play(el, kind) {
     tl.to(ball, { y: 34, duration: .38, ease: 'power2.out' }, .24)
     tl.to(ball, { y: FLOOR - 4, duration: .57, ease: 'power3.in' }, .62)
     tl.fromTo(ball, { rotation: -20 }, { rotation: 110, duration: .95, ease: 'sine.inOut' }, .24)
-    impact(1.16, 332, FLOOR - 4); sparks(1.16, 332, FLOOR - 6); dust(1.16, 332, FLOOR - 3); flash(1.16, .5); rumble(scene, 1.16, 8, .6)
+    impact(1.16, 332, FLOOR - 4); sparks(1.16, 332, FLOOR - 6); rays(1.16, 332, FLOOR - 6); dust(1.16, 332, FLOOR - 3); flash(1.16, .5); rumble(scene, 1.16, 8, .6); punch(1.16)
     slam(1.14, 9); confetti(1.18, 332, 130, 1)
   }
   tl.to(word, { autoAlpha: 0, y: -14, scale: .94, duration: .3, ease: 'power2.in' }, 2.2)
@@ -321,8 +341,17 @@ function play(el, kind) {
 // Only celebrated events start an animation; ordinary deliveries that arrive mid-animation never cut it short.
 export function SportCelebration({ event, sport = 'cricket' }) {
   const root = useRef(null)
-  const [active, setActive] = useState(null)
-  if (event && event !== active && !event.seeded && CELEBRATED.includes(event.kind)) setActive(event)
+  const [state, setState] = useState({ seen: null, queue: [] })
+  if (event !== state.seen) {
+    const received = (event?.sequence ?? (event ? [event] : [])).filter(item => !item.seeded && CELEBRATED.includes(item.kind))
+    setState({ seen: event, queue: event ? [...state.queue, ...received].slice(-12) : [] })
+  }
+  const active = state.queue[0] ?? null
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setTimeout(() => setState(previous => ({ ...previous, queue: previous.queue.slice(1) })), reduced() ? 0 : 2800)
+    return () => window.clearTimeout(timer)
+  }, [active])
   useEffect(() => {
     if (!active || reduced()) return
     const el = root.current
@@ -330,10 +359,11 @@ export function SportCelebration({ event, sport = 'cricket' }) {
     return () => context.revert()
   }, [active, sport])
   const kind = active?.kind ?? 'four'
-  return <div ref={root} className="st-celebrate" data-kind={kind} aria-hidden="true">
+  return <div ref={root} className="st-celebrate" data-kind={kind} data-sport={sport} aria-hidden="true">
     <Scene kind={SCENE[kind]} />
     <div className="st-cel-flash" />
-    <b className="st-cel-word">{active?.word ?? ''}</b>
+    <b className="st-cel-word">{[...(active?.word ?? '')].map((ch, i) => <span className="ch" key={i}>{ch}</span>)}</b>
+    <div className="st-cel-sweep" />
     {active?.team && <span className="st-cel-sub">{active.team}</span>}
   </div>
 }

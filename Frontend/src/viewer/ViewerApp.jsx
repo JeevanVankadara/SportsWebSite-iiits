@@ -1,3 +1,4 @@
+import { instituteLogo, useAppearance } from '../hooks/useAppearance.js'
 import { useEffect, useRef, useState } from 'react'
 import {
   Link,
@@ -86,38 +87,7 @@ function StatusBadge({ status }) {
 }
 
 function Shell({ children }) {
-  // The theme follows the device (and its live changes) until the user picks the other one; picking the device's own theme clears the override.
-  const [stored, setStored] = useState(() => {
-    try {
-      const saved = localStorage.getItem('iiits-viewer-theme-choice')
-      return saved === 'dark' || saved === 'light' ? saved : null
-    } catch {
-      return null
-    }
-  })
-  const [system, setSystem] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-color-scheme: dark)')
-    const change = (event) => setSystem(event.matches ? 'dark' : 'light')
-    query.addEventListener('change', change)
-    return () => query.removeEventListener('change', change)
-  }, [])
-  const theme = stored ?? system
-  useEffect(() => {
-    const root = document.documentElement
-    root.style.backgroundColor = theme === 'dark' ? '#000' : '#f5f5f7'
-    root.style.colorScheme = theme
-    return () => { root.style.backgroundColor = ''; root.style.colorScheme = '' }
-  }, [theme])
-  const changeTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    const override = next === system ? null : next
-    setStored(override)
-    try {
-      if (override) localStorage.setItem('iiits-viewer-theme-choice', override)
-      else localStorage.removeItem('iiits-viewer-theme-choice')
-    } catch { /* Session appearance */ }
-  }
+  const { theme, changeTheme } = useAppearance()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchButton = useRef(null)
@@ -144,7 +114,7 @@ function Shell({ children }) {
             aria-label="IIITS Sports home"
           >
             <img
-              src="/iiits-logo-transparent.png"
+              src={instituteLogo(theme)}
               alt="IIIT Sri City"
               width="44"
               height="48"
@@ -315,7 +285,7 @@ function DataState({
         <CircleHelp size={28} />
         <h3>Couldn’t load the scores.</h3>
         <p>{error}</p>
-        <p className="st-retry-note"><span className="st-spinner" aria-hidden="true" /> Trying again automatically…</p>
+        <p className="st-retry-note">Check your connection or try loading this page again.</p>
         <button onClick={onRetry}>Try now</button>
         <Link to="/?preview=1">Explore design preview</Link>
       </div>
@@ -616,7 +586,7 @@ function Home({ view = 'home' }) {
                   ))}
                   {!tournaments.length && (
                     <p className="st-panel-note">
-                      Published campus tournaments will appear here.
+                      {error ? 'Tournaments will return when the scoreboard reconnects.' : 'Published campus tournaments will appear here.'}
                     </p>
                   )}
                 </div>
@@ -675,7 +645,7 @@ function Home({ view = 'home' }) {
                     ))}
                   {!fixtures.some((item) => item.status === 'scheduled') && (
                     <p className="st-panel-note">
-                      No upcoming fixtures announced.
+                      {error ? 'Upcoming fixtures are temporarily unavailable.' : 'No upcoming fixtures announced.'}
                     </p>
                   )}
                 </div>
@@ -852,7 +822,7 @@ function Breadcrumb({ items }) {
   return (
     <div className="st-crumbbar">
       <Link className="st-back" to={withPreview(parent)}><ArrowLeft size={18} /> Back</Link>
-      <nav className="st-crumbs" aria-label="Breadcrumb" ref={(node) => { if (node) node.scrollLeft = node.scrollWidth }}>
+      <nav className="st-crumbs" aria-label="Breadcrumb">
         <Link to={withPreview('/')}>Home</Link>
         {items.map((item, index) => typeof item === 'string'
           ? <span key={`${item}-${index}`} aria-current="page">{item}</span>
@@ -1446,6 +1416,7 @@ function FixturePage() {
           <>
             <div className="st-fixture-hero">
               {sport !== 'cricket' && <SportCelebration event={scoreEvent} sport={sport} />}
+              {sport === 'cricket' && f.status !== 'live' && <SportCelebration event={liveFeed.event} sport="cricket" />}
               <h1 className="st-sr-only">
                 {first} vs {second}
               </h1>
@@ -1636,4 +1607,3 @@ export default function ViewerApp() {
     </Shell>
   )
 }
-

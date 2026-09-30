@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Trophy, Users, Zap } from 'lucide-react'
 import { playersApi } from '../api/endpoints.js'
 import './register.css'
+import { instituteLogo, useAppearance } from '../hooks/useAppearance.js'
+import ThemeToggle from '../viewer/ThemeToggle.jsx'
 
 const MIN_PASSWORD_LENGTH = 8
 const EMPTY_FORM = { name: '', email: '', roll_number: '', username: '', password: '', confirm: '' }
@@ -35,6 +37,7 @@ function Secret({ id, value, onChange, autoComplete, invalid }) {
 
 // Player sign-up. Referees pick players for matches by the username chosen here.
 export default function RegisterPage() {
+  const { theme, changeTheme } = useAppearance()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -58,9 +61,9 @@ export default function RegisterPage() {
     }
   }
 
-  return <main className="reg-page">
+  return <main className="reg-page" data-theme={theme}>
     <aside className="reg-side">
-      <img src="/iiits-logo.jpg" alt="IIIT Sri City" className="reg-logo" width="435" height="459" />
+      <div className="reg-brand"><img src="/iiits-logo-dark.png" alt="IIIT Sri City" className="reg-logo" width="56" height="60" /><strong>IIITS Sports</strong></div>
       <div>
         <h2>Play for your house.</h2>
         <p>One sign-up gets you into every IIITS tournament.</p>
@@ -73,7 +76,8 @@ export default function RegisterPage() {
       <small>IIIT Sri City · Sports</small>
     </aside>
     <section className="reg-panel">
-      <Link to="/" className="reg-back"><ArrowLeft size={16} /> Back to home</Link>
+      <div className="reg-toolbar"><Link to="/" className="reg-back"><ArrowLeft size={16} /> Back to home</Link><ThemeToggle theme={theme} onChange={changeTheme} /></div>
+      <img src={instituteLogo(theme)} alt="" className="reg-mobile-logo" width="52" height="56" />
       {registered ? <div className="reg-done">
         <span className="reg-done-icon"><Check size={28} /></span>
         <h1>You're registered</h1>

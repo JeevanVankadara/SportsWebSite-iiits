@@ -1,10 +1,20 @@
 /* Register page only. Split layout: black brand panel + clean form. Apple blue for the single action. */
 .reg-page { --reg-blue:#0071e3; --reg-blue-hover:#0077ed; --reg-bg:#fff; --reg-ink:#1d1d1f; --reg-muted:#6e6e73; --reg-line:#d2d2d7; --reg-field:#fff; --reg-red:#d70015;
   min-height:100dvh; display:grid; grid-template-columns:minmax(320px,44%) 1fr; background:var(--reg-bg); color:var(--reg-ink); font-family:var(--st-font, -apple-system,BlinkMacSystemFont,'SF Pro Text','Inter Variable',Inter,system-ui,sans-serif); }
-@media (prefers-color-scheme:dark) { .reg-page { --reg-blue:#0a84ff; --reg-blue-hover:#409cff; --reg-bg:#000; --reg-ink:#f5f5f7; --reg-muted:#98989d; --reg-line:#38383a; --reg-field:#1c1c1e; --reg-red:#ff453a; } }
+.reg-page[data-theme='dark'] { --reg-blue:#0a84ff; --reg-blue-hover:#409cff; --reg-bg:#000; --reg-ink:#f5f5f7; --reg-muted:#98989d; --reg-line:#38383a; --reg-field:#1c1c1e; --reg-red:#ff453a; }
 
 .reg-side { display:flex; flex-direction:column; justify-content:space-between; gap:40px; padding:48px; background:linear-gradient(160deg,#2c2c2e 0%,#111 55%,#000 100%); color:#fff; }
-.reg-logo { width:56px; height:auto; background:#fff; border-radius:14px; padding:4px; }
+.reg-logo { width:56px; height:60px; object-fit:contain; background:transparent; padding:0; }
+.reg-brand { display:flex; align-items:center; gap:12px; font-size:20px; }
+.reg-mobile-logo { display:none; }
+.reg-toolbar { position:absolute; top:20px; left:32px; right:32px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.reg-toolbar .reg-back { position:static; min-height:44px; }
+.reg-toolbar .st-theme-toggle { position:relative; flex:none; width:68px; height:44px; display:grid; grid-template-columns:1fr 1fr; place-items:center; padding:4px; border:1px solid var(--reg-line); border-radius:999px; background:var(--reg-field); color:var(--reg-muted); cursor:pointer; }
+.reg-toolbar .st-theme-thumb { position:absolute; width:28px; height:28px; left:4px; top:7px; border-radius:50%; background:var(--reg-bg); box-shadow:0 1px 5px rgba(0,0,0,.14); }
+.reg-toolbar .st-theme-toggle svg { position:relative; z-index:1; width:16px; height:16px; }
+.reg-page[data-theme='light'] .reg-toolbar .st-theme-toggle svg:first-of-type { color:var(--reg-ink); }
+.reg-page[data-theme='dark'] .reg-toolbar .st-theme-toggle svg:last-of-type { color:var(--reg-ink); }
+.reg-toolbar .st-theme-toggle:focus-visible { outline:2px solid var(--reg-blue); outline-offset:3px; }
 .reg-side h2 { margin:0 0 12px; font-size:40px; line-height:1.08; letter-spacing:-.03em; font-weight:700; }
 .reg-side p { margin:0 0 28px; font-size:17px; color:rgba(255,255,255,.7); max-width:34ch; }
 .reg-side ul { list-style:none; margin:0; padding:0; display:grid; gap:14px; }
@@ -12,7 +22,7 @@
 .reg-side li svg { flex:none; color:#409cff; }
 .reg-side small { color:rgba(255,255,255,.5); }
 
-.reg-panel { position:relative; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:72px 32px 48px; }
+.reg-panel { position:relative; min-width:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:84px 32px 48px; }
 .reg-back { position:absolute; top:24px; left:32px; display:inline-flex; align-items:center; gap:6px; color:var(--reg-muted); font-size:14px; text-decoration:none; transition:color .2s ease; }
 .reg-back:hover { color:var(--reg-ink); }
 .reg-form, .reg-done { width:100%; max-width:460px; display:grid; gap:20px; }
@@ -23,7 +33,7 @@
 .reg-label { font-size:13px; font-weight:600; }
 .reg-hint { margin:0; font-size:12px; color:var(--reg-muted); }
 
-.reg-input { width:100%; box-sizing:border-box; height:46px; padding:0 14px; border:1px solid var(--reg-line); border-radius:12px; background:var(--reg-field); color:var(--reg-ink); font:inherit; font-size:15px; transition:border-color .2s ease,box-shadow .2s ease; }
+.reg-input { width:100%; min-width:0; box-sizing:border-box; height:48px; padding:0 12px; border:1px solid var(--reg-line); border-radius:12px; background:var(--reg-field); color:var(--reg-ink); font:inherit; font-size:16px; transition:border-color .2s ease,box-shadow .2s ease; }
 .reg-input:hover { border-color:color-mix(in srgb,var(--reg-ink) 30%,var(--reg-line)); }
 .reg-input:focus { outline:0; border-color:var(--reg-blue); box-shadow:0 0 0 4px color-mix(in srgb,var(--reg-blue) 22%,transparent); }
 .reg-input[aria-invalid='true'] { border-color:var(--reg-red); }
@@ -33,7 +43,7 @@
 .reg-prefix .reg-input { padding-left:30px; }
 .reg-secret { position:relative; }
 .reg-secret .reg-input { padding-right:44px; }
-.reg-secret button { position:absolute; right:4px; top:4px; width:38px; height:38px; display:grid; place-items:center; border:0; border-radius:9px; background:none; color:var(--reg-muted); cursor:pointer; transition:color .2s ease; }
+.reg-secret button { position:absolute; right:2px; top:2px; width:44px; height:44px; display:grid; place-items:center; border:0; border-radius:9px; background:none; color:var(--reg-muted); cursor:pointer; transition:color .2s ease; }
 .reg-secret button:hover { color:var(--reg-ink); }
 .reg-secret button:focus-visible { outline:2px solid var(--reg-blue); }
 
@@ -54,11 +64,12 @@
 
 @media (max-width:860px) {
   .reg-page { grid-template-columns:1fr; }
-  .reg-side { padding:24px; gap:20px; }
-  .reg-side h2 { font-size:28px; }
-  .reg-side p { margin-bottom:0; }
-  .reg-side ul, .reg-side small { display:none; }
-  .reg-panel { padding:64px 20px 32px; }
-  .reg-back { left:20px; top:20px; }
+  .reg-side { display:none; }
+  .reg-panel { justify-content:flex-start; padding:84px 24px max(32px,env(safe-area-inset-bottom)); }
+  .reg-toolbar { left:24px; right:24px; top:16px; }
+  .reg-mobile-logo { display:block; object-fit:contain; margin:0 0 16px; align-self:flex-start; }
+  .reg-form, .reg-done { max-width:520px; gap:20px; }
+  .reg-form header h1, .reg-done h1 { font-size:28px; line-height:1.15; }
 }
-@media (max-width:520px) { .reg-row { grid-template-columns:1fr; } }
+@media (max-width:520px) { .reg-row { grid-template-columns:minmax(0,1fr); gap:20px; } }
+@media (max-width:359px) { .reg-panel { padding-left:16px; padding-right:16px; } .reg-toolbar { left:16px; right:16px; } .reg-form header h1 { font-size:26px; } }

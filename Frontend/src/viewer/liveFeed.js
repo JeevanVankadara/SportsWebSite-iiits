@@ -56,10 +56,12 @@ export function build(prev, next, inning) {
     ? { bo: shortName(next.players.get(prev.bowler)?.name ?? 'The bowler'), ba: shortName(next.players.get(prev.striker)?.name ?? 'The batter') }
     : { bo: 'The bowler', ba: 'The batter' }
   let legalBefore = overAdvanced ? 0 : prev.thisOver.filter(t => deliveryValue(t).legal).length
-  if (overAdvanced) {
+  if (overAdvanced && prev.thisOver.filter(token => deliveryValue(token).legal).length === 6) {
     const total = prev.thisOver.reduce((n, t) => n + deliveryValue(t).runs, 0)
     events.push({ kind: 'over-end', over: prev.overNo, text: `End of over ${prev.overNo}: ${total} run${total === 1 ? '' : 's'}.`, runs: inning.runs, wickets: inning.wickets })
   }
+  const missed = next.count != null && prev.count != null ? next.count - prev.count - tokens.length : 0
+  if (missed > 0 || next.overNo > prev.overNo + 1) events.push({ kind: 'sync', text: 'Scores refreshed. Some earlier deliveries were not supplied in the latest update.' })
   tokens.forEach(token => {
     const kind = ballKind(token)
     if (deliveryValue(token).legal) legalBefore += 1
@@ -103,7 +105,7 @@ export function useLiveFeed(data) {
       else if (isCorrection(state.snap, next)) setState({ seen: data, snap: next, event: null, feed: seedFeed(next) })
       else {
         const events = build(state.snap, next, inning)
-        const celebrations = events.filter(e => e.kind !== 'over-end')
+        const celebrations = events.filter(e => !['over-end', 'sync'].includes(e.kind))
         setState({ seen: data, snap: next, event: celebrations.length ? { ...celebrations.at(-1), sequence: celebrations } : state.event, feed: events.length ? [...[...events].reverse(), ...state.feed].slice(0, 90) : state.feed })
       }
     }
@@ -178,19 +180,22 @@ export function advancePreviewFootball(data) {
 
 // Goals (football) and match wins (badminton) become a celebration event when the live score goes up.
 export function useScoreEvent(data, sport) {
-  const [state, setState] = useState({ seen: null, key: null, event: null })
+  const [state, setState] = useState({ seen: null, fixtureId: null, key: null, event: null })
   if (data !== state.seen) {
     const f = data?.fixture
+    const fixtureId = f ? `${sport}:${idOf(f)}` : null
     let key = null
-    if (f?.status === 'live' && sport === 'football') key = [f.team1_score ?? 0, f.team2_score ?? 0]
-    if (f?.status === 'live' && sport === 'badminton') key = [f.team1_matches_won ?? 0, f.team2_matches_won ?? 0]
-    let event = state.event
-    if (key && state.key && (key[0] > state.key[0] || key[1] > state.key[1])) {
+    if (f && f.status !== 'scheduled' && sport === 'football') key = [f.team1_score ?? 0, f.team2_score ?? 0]
+    if (f && f.status !== 'scheduled' && sport === 'badminton') key = [f.team1_matches_won ?? 0, f.team2_matches_won ?? 0]
+    const sameFixture = fixtureId === state.fixtureId
+    const correction = key && state.key && (key[0] < state.key[0] || key[1] < state.key[1])
+    let event = sameFixture && !correction ? state.event : null
+    if (sameFixture && !correction && key && state.key && (key[0] > state.key[0] || key[1] > state.key[1])) {
       const team = key[0] > state.key[0] ? 'team1' : 'team2'
       // eslint-disable-next-line react-hooks/purity -- timestamp only orders preview-triggered events against real ones
       event = { uid: ++serial, at: Date.now(), kind: sport === 'football' ? 'goal' : 'point', word: sport === 'football' ? 'GOAL!' : 'SMASH!', team: houseName(data.tournament, f[team]) }
     }
-    setState({ seen: data, key: key ?? state.key, event })
+    setState({ seen: data, fixtureId, key, event })
   }
   return state.event
 }
