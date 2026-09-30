@@ -1,4 +1,4 @@
-import { adminSession, coordinatorSession } from './client.js'
+import { adminSession, coordinatorSession, publicRequest } from './client.js'
 
 const id = (value) => encodeURIComponent(value)
 
@@ -155,4 +155,16 @@ export const coordinatorCricketApi = {
   setBowler: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/bowler`), { method: 'PUT', body: data }),
   swapStrike: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/swap-strike`), { method: 'POST' }),
   endInnings: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/end`), { method: 'POST' }),
+}
+
+export const viewerApi = {
+  tournaments: () => publicRequest('/api/tournaments'),
+  tournament: (tournamentId) =>
+    publicRequest(`/api/tournaments/${id(tournamentId)}`),
+  fixtures: (tournamentId, sport) =>
+    publicRequest(`/api/${sport}/tournaments/${id(tournamentId)}/fixtures`),
+  standings: (tournamentId, sport) =>
+    publicRequest(`/api/${sport}/tournaments/${id(tournamentId)}/standings`),
+  fixture: (fixtureId, sport) =>
+    publicRequest(`/api/${sport}/fixtures/${id(fixtureId)}`),
 }

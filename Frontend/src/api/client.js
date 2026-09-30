@@ -69,3 +69,25 @@ export function createSession(storageKey) {
 
 export const adminSession = createSession('iiits-sports-admin-token')
 export const coordinatorSession = createSession('iiits-sports-coordinator-token')
+
+// Public viewer reads never inherit an admin/co-ordinator token.
+export async function publicRequest(path) {
+  let response
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch {
+    throw new ApiError(
+      0,
+      'The scoreboard is temporarily unavailable. Please try again.',
+    )
+  }
+  const data = await response.json().catch(() => null)
+  if (!response.ok)
+    throw new ApiError(
+      response.status,
+      data?.message ?? 'Could not load this scoreboard.',
+    )
+  return data
+}

@@ -1,0 +1,127 @@
+/* Live match visuals: cartoon avatars, animated card backgrounds, toggles, tooltips, celebrations. Loaded after viewer.css. */
+.st-app { --st-accent:#20c9b5; --st-gold:#ffb400; --st-hot:#ff4d5a; --st-spring:cubic-bezier(.22,1.4,.36,1); transition:background-color .5s ease,color .5s ease; }
+.st-app .st-mesh *, .st-app .st-celebrate *, .st-app .st-seg-thumb, .st-app .st-abar span { transition:none; }
+
+/* Cartoon puppets */
+.st-app .st-portrait { background:linear-gradient(160deg,var(--st-wash),var(--st-subtle)); background-image:none; overflow:hidden; display:block; position:relative; }
+.st-cartoon { display:block; width:100%; height:100%; overflow:visible; }
+.st-cartoon-head { transform-box:fill-box; transform-origin:50% 90%; animation:st-nod 4.2s ease-in-out infinite; }
+.st-cartoon-eyes { transform-box:fill-box; transform-origin:center; animation:st-blink 5s infinite; }
+.st-cartoon-body { transform-box:fill-box; transform-origin:50% 100%; animation:st-breathe 3.6s ease-in-out infinite; }
+.st-app .st-active-player:hover .st-cartoon-head, .st-app .st-feed-item:hover .st-cartoon-head { animation-duration:.7s; }
+@keyframes st-nod { 0%,100% { transform:rotate(-2.5deg) translateY(0) } 50% { transform:rotate(2.5deg) translateY(-1.5px) } }
+@keyframes st-blink { 0%,44%,50%,100% { transform:scaleY(1) } 47% { transform:scaleY(.1) } }
+@keyframes st-breathe { 0%,100% { transform:scale(1) } 50% { transform:scale(1.025,1.015) } }
+.st-app .st-house-badge { background:transparent; border:0; width:auto; height:auto; padding:0; display:inline-grid; place-items:center; }
+.st-team-logo { display:block; filter:drop-shadow(0 3px 6px rgba(20,30,70,.28)); }
+.st-float { animation:st-float 3.4s ease-in-out infinite; }
+@keyframes st-float { 0%,100% { transform:translateY(0) rotate(-3deg) } 50% { transform:translateY(-5px) rotate(3deg) } }
+
+/* Animated card backgrounds */
+.st-app .st-fx-card, .st-app .st-match-card, .st-app .st-home-panel { position:relative; isolation:isolate; overflow:hidden; }
+.st-app .st-fx-card::before, .st-app .st-match-card::after { content:''; position:absolute; inset:-40%; z-index:-1; pointer-events:none; opacity:.55; background:conic-gradient(from 0deg at 50% 50%,transparent 0 55%,color-mix(in srgb,var(--st-accent) 22%,transparent) 70%,transparent 85%,color-mix(in srgb,var(--st-brand) 20%,transparent) 95%,transparent); animation:st-spin 22s linear infinite; }
+.st-app .st-fx-card::after { content:''; position:absolute; inset:1px; z-index:-1; border-radius:inherit; background:linear-gradient(135deg,var(--st-surface) 40%,color-mix(in srgb,var(--st-surface) 82%,var(--st-wash))); }
+.st-app .st-fx-card:hover, .st-app .st-match-card:hover { box-shadow:0 14px 40px color-mix(in srgb,var(--st-brand) 22%,transparent); }
+@keyframes st-spin { to { transform:rotate(360deg) } }
+.st-mesh { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.st-mesh i { position:absolute; display:block; width:52%; aspect-ratio:1; border-radius:50%; filter:blur(48px); opacity:.55; }
+.st-mesh i:nth-child(1) { left:-8%; top:-40%; background:radial-gradient(circle,#2f6bff,transparent 65%); }
+.st-mesh i:nth-child(2) { right:-10%; top:-10%; background:radial-gradient(circle,var(--st-accent),transparent 65%); }
+.st-mesh i:nth-child(3) { left:30%; bottom:-60%; background:radial-gradient(circle,#8e4ec6,transparent 65%); }
+.st-mesh-warm i { opacity:.28; }
+.st-mesh-warm i:nth-child(1) { background:radial-gradient(circle,var(--st-gold),transparent 65%); }
+.st-mesh-warm i:nth-child(2) { background:radial-gradient(circle,#ff7a59,transparent 65%); }
+.st-fx-card > :not(.st-mesh) { position:relative; z-index:1; }
+
+/* Hero */
+.st-app .st-fx-hero { --st-ink:#fff; --st-muted:rgba(255,255,255,.72); position:relative; overflow:hidden; isolation:isolate; color:#fff; border-radius:24px; padding:28px 32px; background:linear-gradient(115deg,#0a1630,#123064 55%,#0d4d5f); box-shadow:0 18px 50px rgba(10,30,80,.35); }
+.st-app .st-fx-hero > :not(.st-mesh):not(.st-celebrate) { position:relative; z-index:2; }
+.st-app .st-fx-hero .st-latest-delivery { background:rgba(255,255,255,.1); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.18); border-radius:20px; }
+.st-app .st-fx-hero .st-latest-delivery b { color:var(--st-gold); }
+.st-app .st-fx-hero .st-latest-delivery b[data-kind='wicket'] { color:var(--st-hot); }
+.st-app .st-fx-hero .st-latest-delivery b[data-kind='six'] { color:#ffd54a; text-shadow:0 0 18px rgba(255,200,40,.7); }
+.st-app .st-fx-hero .st-latest-delivery b[data-kind='four'] { color:#6ee7ff; }
+.st-app .st-fx-hero .st-live-rates span { background:rgba(255,255,255,.12); border-radius:999px; padding:2px 10px; }
+.st-app .st-fx-hero .st-live-team strong { color:#fff; }
+.st-vs-line { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:8px; opacity:.85; }
+.st-app .st-fixture-hero:has(.st-fx-hero) { background:transparent; border:0; box-shadow:none; padding:0; }
+
+/* Sliding segmented toggle */
+.st-seg { position:relative; display:inline-flex; gap:0; padding:4px; border-radius:999px; background:var(--st-subtle); border:1px solid var(--st-line); max-width:100%; overflow-x:auto; scrollbar-width:none; }
+.st-seg-thumb { position:absolute; left:0; top:4px; width:0; height:0; border-radius:999px; background:linear-gradient(135deg,var(--st-brand),var(--st-accent)); box-shadow:0 4px 14px color-mix(in srgb,var(--st-brand) 45%,transparent); pointer-events:none; }
+.st-seg button { position:relative; z-index:1; border:0; background:none; padding:8px 16px; min-height:36px; border-radius:999px; font:inherit; font-weight:600; font-size:13px; color:var(--st-muted); cursor:pointer; white-space:nowrap; transition:color .3s ease,transform .3s var(--st-spring); }
+.st-seg button:hover { transform:translateY(-1px); color:var(--st-ink); }
+.st-seg button[aria-checked='true'] { color:#fff; }
+.st-seg button:focus-visible { outline:2px solid var(--st-brand); outline-offset:2px; }
+.st-commentary .st-seg { margin:8px 0 4px; }
+.st-app .st-theme-toggle { background:linear-gradient(135deg,#ffd27a,#ff9e5e); border-color:transparent; transition:background .6s ease; }
+.st-app[data-theme='dark'] .st-theme-toggle { background:linear-gradient(135deg,#1c2a55,#4a3f9e); }
+.st-app .st-theme-thumb { background:#fff; box-shadow:0 3px 10px rgba(0,0,0,.25); }
+
+/* Tooltips */
+[data-tip] { position:relative; cursor:help; }
+[data-tip]::after { content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translate(-50%,6px) scale(.92); white-space:nowrap; padding:5px 10px; border-radius:10px; background:#0d1b34; color:#fff; font:600 12px/1.3 var(--st-font); box-shadow:0 8px 22px rgba(0,0,0,.28); opacity:0; pointer-events:none; z-index:30; transition:opacity .2s ease,transform .3s var(--st-spring); }
+[data-tip]:hover::after, [data-tip]:focus-visible::after { opacity:1; transform:translate(-50%,0) scale(1); }
+
+/* Overs strip and probability */
+.st-app .st-numbered-over b { transition:transform .3s var(--st-spring); }
+.st-app .st-numbered-over b:hover { transform:scale(1.25); }
+.st-app .st-numbered-over b.is-boundary { background:linear-gradient(135deg,#2f6bff,#20c9b5); color:#fff; border-color:transparent; }
+.st-app .st-numbered-over b.is-wicket { background:linear-gradient(135deg,#ff4d5a,#b3122a); color:#fff; border-color:transparent; }
+.st-app .st-numbered-over div > b:last-of-type { animation:st-pop .6s var(--st-spring); }
+@keyframes st-pop { from { transform:scale(.3); opacity:0 } to { transform:scale(1); opacity:1 } }
+.st-abar { height:12px; border-radius:999px; background:var(--st-subtle); overflow:hidden; margin:12px 0; }
+.st-abar span { display:block; height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#2f6bff,#20c9b5,#ffb400); background-size:200% 100%; animation:st-shift 4s linear infinite; }
+@keyframes st-shift { to { background-position:200% 0 } }
+.st-prob-row { display:flex; justify-content:space-between; gap:12px; font-weight:600; }
+.st-prob-row span { display:flex; align-items:center; gap:6px; }
+.st-prob-row b { font-size:20px; margin-left:6px; font-variant-numeric:tabular-nums; }
+
+/* Commentary feed */
+.st-feed { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:12px; max-height:640px; overflow:auto; scrollbar-width:thin; }
+.st-feed-item { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:16px; background:var(--st-subtle); animation:st-feed-in .6s var(--st-spring); }
+@keyframes st-feed-in { from { opacity:0; transform:translateY(-16px) scale(.96) } to { opacity:1; transform:none } }
+.st-feed-item p { margin:2px 0 0; }
+.st-feed-item small { color:var(--st-muted); font-weight:600; }
+.st-feed-ball { flex:none; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-weight:700; background:var(--st-surface); border:2px solid var(--st-line); }
+.st-ball-four { background:linear-gradient(135deg,#2f6bff,#20c9b5); color:#fff; border-color:transparent; }
+.st-ball-six { background:linear-gradient(135deg,#ffb400,#ff7a59); color:#fff; border-color:transparent; box-shadow:0 0 14px rgba(255,180,0,.55); }
+.st-ball-wicket { background:linear-gradient(135deg,#ff4d5a,#b3122a); color:#fff; border-color:transparent; animation:st-shake .6s; }
+@keyframes st-shake { 0%,100% { transform:none } 20% { transform:translateX(-4px) } 40% { transform:translateX(4px) } 60% { transform:translateX(-3px) } 80% { transform:translateX(3px) } }
+.st-feed-over { background:transparent; border:1px dashed var(--st-line); }
+.st-feed-over span { display:block; color:var(--st-muted); }
+.st-feed-milestone { background:linear-gradient(120deg,#1c3f7a,#0f6d78); color:#fff; align-items:center; }
+.st-feed-milestone span { color:rgba(255,255,255,.8); display:block; }
+.st-feed-milestone .st-portrait, .st-out-card .st-portrait { width:52px; height:56px; border-radius:16px; flex:none; }
+.st-out-card { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; position:relative; margin-top:10px; padding:12px 14px; border-radius:18px; color:#fff; background:linear-gradient(120deg,#8f1220,#c4202e); box-shadow:0 8px 24px rgba(180,20,40,.35); }
+.st-out-card b em { font-style:normal; color:#ffe08a; margin-left:4px; }
+.st-out-card span { font-size:12px; opacity:.85; }
+.st-out-stats { text-align:right; display:grid; grid-template-columns:auto auto; gap:0 8px; align-items:baseline; }
+.st-out-stats small { color:rgba(255,255,255,.7); }
+.st-out-tag { position:absolute; left:12px; bottom:-6px; background:#fff; color:#b3122a !important; font-weight:800; font-size:10px !important; letter-spacing:.08em; padding:1px 8px; border-radius:999px; opacity:1 !important; }
+
+/* Celebrations */
+.st-celebrate { position:absolute; inset:0; z-index:5; pointer-events:none; visibility:hidden; opacity:0; overflow:hidden; border-radius:inherit; }
+.st-cel-flash { position:absolute; inset:0; opacity:0; background:radial-gradient(circle at 50% 50%,#fff,transparent 70%); }
+.st-celebrate[data-kind='wicket'] .st-cel-flash { background:radial-gradient(circle,#ff4d5a,transparent 72%); }
+.st-celebrate[data-kind='six'] .st-cel-flash { background:radial-gradient(circle,#ffd54a,transparent 72%); }
+.st-cel-stage { position:absolute; inset:0; display:grid; place-items:center; }
+.st-cel-word { position:absolute; font:900 clamp(48px,11vw,112px)/1 var(--st-font); letter-spacing:-.02em; color:#fff; -webkit-text-stroke:3px #12122a; paint-order:stroke fill; text-shadow:0 8px 0 #12122a,0 0 40px rgba(255,255,255,.5); }
+.st-celebrate[data-kind='six'] .st-cel-word { color:#ffd54a; }
+.st-celebrate[data-kind='four'] .st-cel-word { color:#6ee7ff; }
+.st-celebrate[data-kind='wicket'] .st-cel-word { color:#ff4d5a; }
+.st-celebrate[data-kind='milestone'] .st-cel-word { color:#7dffb0; }
+.st-cel-ring { position:absolute; width:120px; height:120px; border-radius:50%; border:6px solid #fff; opacity:0; }
+.st-celebrate[data-kind='six'] .st-cel-ring { border-color:#ffd54a; }
+.st-celebrate[data-kind='wicket'] .st-cel-ring { border-color:#ff4d5a; }
+.st-cel-dot { position:absolute; width:12px; height:12px; border-radius:3px; opacity:0; background:hsl(calc(var(--h)*1deg) 95% 60%); }
+.st-cel-ball { position:absolute; left:0; width:34px; height:34px; border-radius:50%; opacity:0; background:radial-gradient(circle at 35% 30%,#ff6b6b,#b3122a); box-shadow:inset -3px -3px 6px rgba(0,0,0,.3); }
+.st-cel-ball::after { content:''; position:absolute; left:4px; right:4px; top:50%; border-top:2px dashed rgba(255,255,255,.8); }
+.st-cel-rope { position:absolute; left:0; right:0; bottom:22%; height:5px; background:repeating-linear-gradient(90deg,#fff 0 14px,#2f6bff 14px 28px); opacity:0; transform-origin:left; }
+.st-cel-stumps { position:absolute; width:110px; bottom:16%; fill:#f3d9a4; stroke:#12122a; stroke-width:1.5; }
+
+@media (max-width:720px) { .st-app .st-fx-hero { padding:20px 16px; } .st-out-card { grid-template-columns:auto 1fr; } .st-out-stats { grid-column:1/-1; text-align:left; } }
+@media (prefers-reduced-motion:reduce) {
+  .st-cartoon *, .st-float, .st-fx-card::before, .st-match-card::after, .st-abar span, .st-feed-item, .st-ball-wicket { animation:none !important; }
+}
+.st-out-card > div > span { display:block; margin-top:2px; }
