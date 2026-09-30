@@ -7,7 +7,7 @@ Badminton is the finished example; section 8 is a step-by-step checklist for add
 **Before writing backend code:** section 5. **Before writing frontend code:** section 7.
 **Adding a sport:** sections 6 and 8.
 
-Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md) and [docs/cricket-coordinator/README.md](cricket-coordinator/README.md) and [docs/football-coordinator/README.md](football-coordinator/README.md): what a referee can do in each sport, screen by screen.
+Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md) and [docs/cricket-coordinator/README.md](cricket-coordinator/README.md) and [docs/football-coordinator/README.md](football-coordinator/README.md): what a referee can do in each sport, screen by screen. [docs/student-site/README.md](student-site/README.md): how the public live score pages should look, sport by sport (not built yet).
 
 ---
 

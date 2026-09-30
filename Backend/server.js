@@ -15,6 +15,8 @@ import footballCoordinatorRoutes from './src/routes/football/coordinator.routes.
 import cricketCoordinatorRoutes from './src/routes/cricket/coordinator.routes.js';
 import cricketRoutes from './src/routes/cricket/cricket.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
+import kabaddiCoordinatorRoutes from './src/routes/kabaddi/coordinator.routes.js';
+import kabaddiRoutes from './src/routes/kabaddi/kabaddi.routes.js';
 import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
 
@@ -38,6 +40,8 @@ app.use('/api/football', footballRoutes);
 app.use('/api/coordinator/football', footballCoordinatorRoutes);
 app.use('/api/cricket', cricketRoutes);
 app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
+app.use('/api/kabaddi', kabaddiRoutes);
+app.use('/api/coordinator/kabaddi', kabaddiCoordinatorRoutes);
 app.use('/api/coordinator', coordinatorRoutes);
 
 app.use(notFound);

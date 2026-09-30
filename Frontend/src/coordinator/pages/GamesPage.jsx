@@ -3,6 +3,7 @@ import { Eyebrow } from '../components/ui.jsx'
 import BadmintonAssignments from '../sports/badminton/BadmintonAssignments.jsx'
 import FootballAssignments from '../sports/football/FootballAssignments.jsx'
 import CricketAssignments from '../sports/cricket/CricketAssignments.jsx'
+import KabaddiAssignments from '../sports/kabaddi/KabaddiAssignments.jsx'
 
 // Everything assigned to the co-ordinator, one section per sport.
 // A new sport adds its own <XAssignments /> section here.
@@ -23,6 +24,7 @@ export default function GamesPage() {
       <BadmintonAssignments sectionNumber="02" />
       <FootballAssignments sectionNumber="03" />
       <CricketAssignments sectionNumber="04" />
+      <KabaddiAssignments sectionNumber="05" />
     </>
   )
 }

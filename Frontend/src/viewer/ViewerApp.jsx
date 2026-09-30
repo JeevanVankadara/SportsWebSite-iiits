@@ -60,13 +60,10 @@ import './viewer.css'
 import './live.css'
 import '@fontsource-variable/inter'
 
-const isPreview = () =>
-  new URLSearchParams(window.location.search).get('preview') === '1'
-const withPreview = (path) =>
-  `${path}${isPreview() ? `${path.includes('?') ? '&' : '?'}preview=1` : ''}`
+// The viewer shows static sample data only; it never calls the backend APIs.
+const withPreview = (path) => path
 function usePreview() {
-  const { search } = useLocation()
-  return new URLSearchParams(search).get('preview') === '1'
+  return true
 }
 
 function LiveBadge({ compact = false }) {
@@ -197,14 +194,6 @@ function Shell({ children }) {
           </div>
         </SearchDialog>
       )}
-      {isPreview() && (
-        <div className="st-preview-banner">
-          Design preview · illustrative scores and players{' '}
-          <Link to={location.pathname}>
-            View live data <ArrowRight size={14} />
-          </Link>
-        </div>
-      )}
       {children}
       <nav className="st-tabbar" aria-label="Primary">
         {[['/', 'Home', House, true], ['/fixtures', 'Fixtures', CalendarDays], ['/tournaments', 'Tournaments', Trophy], ['/players', 'Players', Users]].map(([to, label, Icon, end]) => (
@@ -287,7 +276,6 @@ function DataState({
         <p>{error}</p>
         <p className="st-retry-note">Check your connection or try loading this page again.</p>
         <button onClick={onRetry}>Try now</button>
-        <Link to="/?preview=1">Explore design preview</Link>
       </div>
     )
   if (empty)
@@ -965,7 +953,6 @@ function SportPage() {
         onChange={(name) =>
           setParams({
             ...(name === 'table' ? { tab: 'table' } : {}),
-            ...(preview ? { preview: '1' } : {}),
           })
         }
       />
@@ -1116,9 +1103,7 @@ function SearchPage() {
           value={query}
           onChange={(event) =>
             setParams(
-              isPreview()
-                ? { preview: '1', q: event.target.value }
-                : { q: event.target.value },
+              { q: event.target.value },
               { replace: true },
             )
           }
@@ -1218,9 +1203,7 @@ function PlayersPage() {
           value={query}
           onChange={(event) =>
             setParams(
-              isPreview()
-                ? { preview: '1', q: event.target.value }
-                : { q: event.target.value },
+              { q: event.target.value },
               { replace: true },
             )
           }

@@ -16,7 +16,7 @@
 
 .co-clock-display {
   font-family: var(--co-display-font);
-  font-size: clamp(2.5rem, 12vw, 4rem);
+  font-size: clamp(2rem, 8vw, 2.75rem);
   line-height: 1;
   color: var(--co-accent);
   letter-spacing: 0.05em;
@@ -65,7 +65,7 @@
 }
 
 .co-match-team h2 {
-  font-size: clamp(1.125rem, 5vw, 2.25rem);
+  font-size: clamp(1rem, 4vw, 1.5rem);
   line-height: 1.1;
   word-break: break-word;
   margin: 0;
@@ -78,7 +78,7 @@
 
 .co-match-score {
   font-family: var(--co-display-font, 'Bebas Neue', sans-serif);
-  font-size: clamp(2.25rem, 10vw, 3.75rem);
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
   color: var(--co-accent);
   letter-spacing: 0.05em;
   line-height: 1;

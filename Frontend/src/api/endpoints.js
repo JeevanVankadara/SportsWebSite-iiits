@@ -71,6 +71,30 @@ export const cricketApi = {
   setDecision: (fixtureId, data) => request(`/api/cricket/fixtures/${id(fixtureId)}/decision`, { method: 'PUT', body: data }),
 }
 
+// Every kabaddi action answers with { fixture, state, tournament }. The admin can do everything a referee can.
+const kabaddiPath = (path) => `/api/kabaddi/${path}`
+
+export const kabaddiApi = {
+  fixtures: (tournamentId) => request(kabaddiPath(`tournaments/${id(tournamentId)}/fixtures`)),
+  standings: (tournamentId) => request(kabaddiPath(`tournaments/${id(tournamentId)}/standings`)),
+  fixture: (fixtureId) => request(kabaddiPath(`fixtures/${id(fixtureId)}`)),
+  createFixture: (tournamentId, data) =>
+    request(kabaddiPath(`tournaments/${id(tournamentId)}/fixtures`), { method: 'POST', body: data }),
+  updateFixture: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}`), { method: 'PATCH', body: data }),
+  deleteFixture: (fixtureId) => request(kabaddiPath(`fixtures/${id(fixtureId)}`), { method: 'DELETE' }),
+  setDecision: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+  saveConfig: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/config`), { method: 'PUT', body: data }),
+  saveSlip: (fixtureId, team, data) =>
+    request(kabaddiPath(`fixtures/${id(fixtureId)}/slips/${team}`), { method: 'PUT', body: data }),
+  firstRaid: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/first-raid`), { method: 'PUT', body: data }),
+  clock: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/clock`), { method: 'POST', body: data }),
+  finish: (fixtureId) => request(kabaddiPath(`fixtures/${id(fixtureId)}/finish`), { method: 'POST' }),
+  addEvent: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/events`), { method: 'POST', body: data }),
+  undo: (fixtureId) => request(kabaddiPath(`fixtures/${id(fixtureId)}/undo`), { method: 'POST' }),
+  deleteEvent: (fixtureId, eventId) =>
+    request(kabaddiPath(`fixtures/${id(fixtureId)}/events/${id(eventId)}`), { method: 'DELETE' }),
+}
+
 // Co-ordinator area.
 const coordinatorRequest = coordinatorSession.request
 
@@ -167,4 +191,25 @@ export const viewerApi = {
     publicRequest(`/api/${sport}/tournaments/${id(tournamentId)}/standings`),
   fixture: (fixtureId, sport) =>
     publicRequest(`/api/${sport}/fixtures/${id(fixtureId)}`),
+}
+
+const kabaddiCoordinatorPath = (path) => `/api/coordinator/kabaddi/${path}`
+
+export const coordinatorKabaddiApi = {
+  fixtures: () => coordinatorRequest(kabaddiCoordinatorPath('fixtures')),
+  fixture: (fixtureId) => coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}`)),
+  saveConfig: (fixtureId, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/config`), { method: 'PUT', body: data }),
+  saveSlip: (fixtureId, team, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/slips/${team}`), { method: 'PUT', body: data }),
+  firstRaid: (fixtureId, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/first-raid`), { method: 'PUT', body: data }),
+  decideFixture: (fixtureId, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+  clock: (fixtureId, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/clock`), { method: 'POST', body: data }),
+  finish: (fixtureId) => coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/finish`), { method: 'POST' }),
+  addEvent: (fixtureId, data) =>
+    coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/events`), { method: 'POST', body: data }),
+  undo: (fixtureId) => coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/undo`), { method: 'POST' }),
 }

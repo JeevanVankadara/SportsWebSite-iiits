@@ -43,6 +43,11 @@
   -webkit-text-size-adjust: 100%;
 }
 
+/* The admin and co-ordinator areas use a compact type scale: every rem-based size shrinks with the root. */
+html:has(.admin-shell, .auth-page, .co-app) {
+  font-size: 14px;
+}
+
 *,
 *::before,
 *::after {
