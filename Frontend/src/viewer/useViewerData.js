@@ -10,9 +10,11 @@ export function useViewerData(key, load, live = false, enabled = true) {
     let active = true
     let pending = false
     let failures = 0
+    let loaded = false
     let timer
     const refresh = async () => {
-      if (!active || pending || document.visibilityState === 'hidden') return
+      // The first load always runs (the data is static); only repeat refreshes wait for a visible tab.
+      if (!active || pending || (loaded && document.visibilityState === 'hidden')) return
       window.clearTimeout(timer)
       if (navigator.onLine === false) {
         setState(current => ({ ...current, key, data: current.key === key ? current.data : null, error: 'You’re offline. Scores will reconnect when your connection returns.' }))
@@ -22,6 +24,7 @@ export function useViewerData(key, load, live = false, enabled = true) {
       let delay = live ? 10000 : null
       try {
         const data = await runLoad()
+        loaded = true
         failures = 0
         if (active) setState(previous => ({ key, data: retainObservedOvers(previous.key === key ? previous.data : null, data), error: '', updated: new Date() }))
       } catch (error) {

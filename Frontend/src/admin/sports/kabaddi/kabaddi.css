@@ -1,0 +1,36 @@
+/* Kabaddi admin pages. The match screens come from src/sports/kabaddi/kabaddi.css. */
+
+.kb-admin-head {
+  display: grid;
+  gap: 8px;
+}
+
+.kb-admin-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kb-admin-title h1 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.kb-admin-title .page-actions {
+  margin: 0;
+}
+
+.kb-admin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.kb-admin-panel {
+  margin-bottom: 16px;
+}
