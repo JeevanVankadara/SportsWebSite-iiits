@@ -19,6 +19,8 @@ import kabaddiCoordinatorRoutes from './src/routes/kabaddi/coordinator.routes.js
 import kabaddiRoutes from './src/routes/kabaddi/kabaddi.routes.js';
 import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
+import volleyballRoutes from './src/routes/volleyball/volleyball.routes.js';
+import volleyballCoordinatorRoutes from './src/routes/volleyball/coordinator.routes.js';
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use('/api/cricket', cricketRoutes);
 app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
 app.use('/api/kabaddi', kabaddiRoutes);
 app.use('/api/coordinator/kabaddi', kabaddiCoordinatorRoutes);
+app.use('/api/volleyball', volleyballRoutes);
+app.use('/api/coordinator/volleyball', volleyballCoordinatorRoutes);
 app.use('/api/coordinator', coordinatorRoutes);
 
 app.use(notFound);

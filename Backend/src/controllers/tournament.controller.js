@@ -16,6 +16,10 @@ import {
   assertTournamentEditAllowed as assertKabaddiEditAllowed,
   deleteFixtures as deleteKabaddiFixtures,
 } from '../services/kabaddi/fixture.service.js';
+import {
+  assertTournamentEditAllowed as assertVolleyballEditAllowed,
+  deleteFixtures as deleteVolleyballFixtures,
+} from '../services/volleyball/fixture.service.js';
 import { HttpError } from '../utils/httpError.js';
 import {
   ensureAllExist,
@@ -62,6 +66,7 @@ async function applyChanges(tournament, body) {
   await assertFootballEditAllowed(tournament, { games, houses });
   await assertCricketEditAllowed(tournament, { games, houses });
   await assertKabaddiEditAllowed(tournament, { games, houses });
+  await assertVolleyballEditAllowed(tournament, { games, houses });
 
   if (games) {
     await ensureAllExist(Game, games, 'sports');
@@ -111,6 +116,7 @@ export async function deleteTournament(req, res) {
   await deleteFootballFixtures({ tournament: tournament._id });
   await deleteCricketFixtures({ tournament: tournament._id });
   await deleteKabaddiFixtures({ tournament: tournament._id });
+  await deleteVolleyballFixtures({ tournament: tournament._id });
   await tournament.deleteOne();
   res.status(204).end();
 }

@@ -4,8 +4,9 @@ import {
   PERIOD_LABELS,
 } from '../sports/football/format.js'
 import { fixtureResultText as kabaddiResultText } from '../sports/kabaddi/format.js'
+import { fixtureResultText as volleyballResultText } from '../sports/volleyball/format.js'
 
-export const sports = ['cricket', 'football', 'badminton', 'kabaddi']
+export const sports = ['cricket', 'football', 'badminton', 'kabaddi', 'volleyball']
 export const sportName = (sport) =>
   sport.charAt(0).toUpperCase() + sport.slice(1)
 export const idOf = (item) => String(item?._id ?? item ?? '')
@@ -27,6 +28,13 @@ export function score(item, team) {
   const sport = item.sport ?? f.sport
   if (f.status === 'scheduled') return '—'
   if (sport === 'football' || sport === 'kabaddi') return String(f[`${team}_score`] ?? 0)
+  if (sport === 'volleyball') {
+    if (f.status === 'live') {
+      const liveSet = (f.sets ?? []).find((s) => s.status === 'live') ?? (f.sets ?? []).at(-1)
+      if (liveSet) return String(liveSet[`${team}_points`] ?? 0)
+    }
+    return String(f[`${team}_sets_won`] ?? 0)
+  }
   if (sport === 'badminton') {
     // When matches detail is available, show the live set score
     const matches = item.detail?.matches ?? item.matches
@@ -68,6 +76,14 @@ export function resultLine(item, tournament) {
   if (f.status === 'scheduled')
     return f.scheduled_at ? formatDate(f.scheduled_at) : 'Time to be announced'
   if (sport === 'kabaddi') return kabaddiResultText(f, first, second)
+  if (sport === 'volleyball') {
+    if (f.status === 'live') {
+      const live = (f.sets ?? []).find((set) => set.status === 'live') ?? (f.sets ?? []).at(-1)
+      if (live) return `Set ${live.set_no}`
+      return 'Live'
+    }
+    return volleyballResultText(f, first, second)
+  }
   if (f.status === 'live') {
     if (sport === 'football')
       return `${PERIOD_LABELS[f.clock?.period] ?? 'Live'} · ${Math.floor(calculateCurrentSeconds(f.clock) / 60)}′`
@@ -534,7 +550,7 @@ export async function loadPlayers(overview) {
           tally(row.player, 'cricket', 'conceded', row.runs)
         }
       }
-    } else if (item.sport === 'football' || item.sport === 'kabaddi') {
+    } else if (item.sport === 'football' || item.sport === 'kabaddi' || item.sport === 'volleyball') {
       for (const team of ['team1', 'team2']) {
         for (const player of [
           ...(fixture[`${team}_lineup`]?.starters ?? []),
@@ -561,6 +577,22 @@ export async function loadPlayers(overview) {
         for (const [id, stats] of Object.entries(detail.state?.players ?? {})) {
           tally(id, 'kabaddi', 'raidPoints', stats.raid_points)
           tally(id, 'kabaddi', 'tacklePoints', stats.tackle_points)
+        }
+      } else if (item.sport === 'volleyball') {
+        if (fixture.status === 'completed') {
+          for (const team of ['team1', 'team2']) {
+            const entered = new Set((fixture.events ?? [])
+              .filter((event) => event.team === team)
+              .map((event) => idOf(event.player_in)))
+            const participants = [
+              ...(fixture[`${team}_lineup`]?.starters ?? []),
+              ...(fixture[`${team}_lineup`]?.bench ?? []).filter((player) => entered.has(idOf(player))),
+            ]
+            for (const player of participants) {
+              tally(player, 'volleyball', 'played', 1)
+              if (fixture.result === team) tally(player, 'volleyball', 'won', 1)
+            }
+          }
         }
       } else for (const event of fixture.events ?? []) {
         if (event.type === 'goal' && event.goal_type !== 'own_goal') {

@@ -1472,18 +1472,25 @@ function FixturePage() {
               id="fixture-tabs"
               value={tab}
               onChange={setTab}
-              items={[
-                ['summary', f.status === 'live' ? 'Live' : 'Match info'],
-                [
-                  'scorecard',
-                  sport === 'football' || sport === 'kabaddi'
-                    ? 'Timeline'
-                    : sport === 'badminton'
-                      ? 'Matches'
-                      : 'Scorecard',
-                ],
-                ['squads', 'Squads'],
-              ]}
+              items={
+                sport === 'volleyball'
+                  ? [
+                      ['summary', 'Sets'],
+                      ['squads', 'Squads'],
+                    ]
+                  : [
+                      ['summary', f.status === 'live' ? 'Live' : 'Match info'],
+                      [
+                        'scorecard',
+                        sport === 'football' || sport === 'kabaddi'
+                          ? 'Timeline'
+                          : sport === 'badminton'
+                            ? 'Matches'
+                            : 'Scorecard',
+                      ],
+                      ['squads', 'Squads'],
+                    ]
+              }
             />
             <div
               id="fixture-tabs-panel"

@@ -15,6 +15,7 @@ import BadmintonFixturePage from './sports/badminton/BadmintonFixturePage.jsx'
 import FootballFixturePage from './sports/football/FootballFixturePage.jsx'
 import CricketFixturePage from './sports/cricket/CricketFixturePage.jsx'
 import KabaddiFixturePage from './sports/kabaddi/KabaddiFixturePage.jsx'
+import VolleyballFixturePage from './sports/volleyball/VolleyballFixturePage.jsx'
 
 // Co-ordinator (referee) area. Each sport keeps its screens in its own folder under sports/.
 export default function CoordinatorApp() {
@@ -37,6 +38,7 @@ export default function CoordinatorApp() {
             <Route path="football/:fixtureId" element={<FootballFixturePage />} />
             <Route path="cricket/:fixtureId" element={<CricketFixturePage />} />
             <Route path="kabaddi/:fixtureId" element={<KabaddiFixturePage />} />
+            <Route path="volleyball/:fixtureId" element={<VolleyballFixturePage />} />
           </Route>
           <Route path="*" element={<CoNotFound />} />
         </Routes>

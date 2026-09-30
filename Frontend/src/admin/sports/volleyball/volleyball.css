@@ -1,0 +1,36 @@
+/* Volleyball admin pages. The match screens come from src/sports/volleyball/volleyball.css. */
+
+.vb-admin-head {
+  display: grid;
+  gap: 8px;
+}
+
+.vb-admin-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vb-admin-title h1 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.vb-admin-title .page-actions {
+  margin: 0;
+}
+
+.vb-admin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.vb-admin-panel {
+  margin-bottom: 16px;
+}

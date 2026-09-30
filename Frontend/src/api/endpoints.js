@@ -86,6 +86,21 @@ export const kabaddiApi = {
   setDecision: (fixtureId, data) => request(kabaddiPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
 }
 
+// Public reads answer with { fixture, state, tournament }. Like every other sport, the admin only
+// manages the fixture and the final decision; the referee runs the match from the co-ordinator area.
+const volleyballPath = (path) => `/api/volleyball/${path}`
+
+export const volleyballApi = {
+  fixtures: (tournamentId) => request(volleyballPath(`tournaments/${id(tournamentId)}/fixtures`)),
+  standings: (tournamentId) => request(volleyballPath(`tournaments/${id(tournamentId)}/standings`)),
+  fixture: (fixtureId) => request(volleyballPath(`fixtures/${id(fixtureId)}`)),
+  createFixture: (tournamentId, data) =>
+    request(volleyballPath(`tournaments/${id(tournamentId)}/fixtures`), { method: 'POST', body: data }),
+  updateFixture: (fixtureId, data) => request(volleyballPath(`fixtures/${id(fixtureId)}`), { method: 'PATCH', body: data }),
+  deleteFixture: (fixtureId) => request(volleyballPath(`fixtures/${id(fixtureId)}`), { method: 'DELETE' }),
+  setDecision: (fixtureId, data) => request(volleyballPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+}
+
 // Co-ordinator area.
 const coordinatorRequest = coordinatorSession.request
 
@@ -170,6 +185,33 @@ export const coordinatorCricketApi = {
   setBowler: (inningsId, data) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/bowler`), { method: 'PUT', body: data }),
   swapStrike: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/swap-strike`), { method: 'POST' }),
   endInnings: (inningsId) => coordinatorRequest(cricketPath(`innings/${id(inningsId)}/end`), { method: 'POST' }),
+}
+
+// Every action answers with the whole fixture: { fixture, state, tournament }.
+const volleyballCoordinatorPath = (path) => `/api/coordinator/volleyball/${path}`
+
+export const coordinatorVolleyballApi = {
+  fixtures: () => coordinatorRequest(volleyballCoordinatorPath('fixtures')),
+  fixture: (fixtureId) => coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}`)),
+  saveConfig: (fixtureId, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/config`), { method: 'PUT', body: data }),
+  saveSlip: (fixtureId, team, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/slips/${team}`), { method: 'PUT', body: data }),
+  decideFixture: (fixtureId, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+  startMatch: (fixtureId) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/start`), { method: 'POST' }),
+  score: (fixtureId, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/score`), { method: 'POST', body: data }),
+  nextSet: (fixtureId) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/next-set`), { method: 'POST' }),
+  finishMatch: (fixtureId) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/finish`), { method: 'POST' }),
+  substitute: (fixtureId, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/substitution`), { method: 'POST', body: data }),
+  undo: (fixtureId) => coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/undo`), { method: 'POST' }),
+  editSet: (fixtureId, setId, data) =>
+    coordinatorRequest(volleyballCoordinatorPath(`fixtures/${id(fixtureId)}/sets/${id(setId)}`), { method: 'PUT', body: data }),
 }
 
 export const viewerApi = {
