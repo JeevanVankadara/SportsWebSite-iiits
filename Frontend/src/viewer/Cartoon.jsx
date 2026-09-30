@@ -62,7 +62,6 @@ const TEAM_PALETTES = {
   green: ['#12a86a', '#0a5a3c', '#8ce8bf', 3, 4],
   yellow: ['#ffb400', '#a86200', '#ffe08a', 2, 0],
 }
-const FALLBACK = [['#8e4ec6', '#4a1d7a', '#d4b0f5'], ['#0ea5e9', '#0a4d75', '#9be1ff'], ['#ef6c00', '#8a3800', '#ffc48a'], ['#e11d74', '#7d0f41', '#ffa8cf']]
 
 function teamKey(name = '') {
   const first = String(name).toLowerCase().split(/\s+/)[0]
@@ -74,12 +73,11 @@ export function TeamLogo({ name = '', size = 44, className = '' }) {
   const uid = useId().replace(/:/g, '')
   const key = teamKey(name)
   const h = hash(name)
-  const [a, b, c, shape, emblem] = key ? TEAM_PALETTES[key] : [...FALLBACK[h % FALLBACK.length], h % SHAPES.length, (h >> 3) % EMBLEMS.length]
+  const [shape, emblem] = key ? TEAM_PALETTES[key].slice(3) : [h % SHAPES.length, (h >> 3) % EMBLEMS.length]
   const stroked = emblem === 3
   return <svg className={`st-team-logo ${className}`} width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={`${name} logo`}>
-    <defs><linearGradient id={`t${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient></defs>
-    <path d={SHAPES[shape]} fill={`url(#t${uid})`} stroke="#12122a" strokeWidth="3" strokeLinejoin="round" />
-    <path d={SHAPES[shape]} fill="none" stroke={c} strokeOpacity=".55" strokeWidth="1.6" transform="translate(32 32) scale(.84) translate(-32 -32)" />
-    <path d={EMBLEMS[emblem]} fill={stroked ? 'none' : '#fff'} stroke={stroked ? '#fff' : '#12122a'} strokeWidth={stroked ? 4 : 1.6} strokeLinecap="round" strokeLinejoin="round" />
+    <defs><linearGradient id={`t${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#48484a" /><stop offset="1" stopColor="#1c1c1e" /></linearGradient></defs>
+    <path d={SHAPES[shape]} fill={`url(#t${uid})`} stroke="#8e8e93" strokeOpacity=".55" strokeWidth="1.5" strokeLinejoin="round" />
+    <path d={EMBLEMS[emblem]} fill={stroked ? 'none' : '#fff'} stroke="#fff" strokeWidth={stroked ? 4 : 0} strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 }

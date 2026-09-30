@@ -51,7 +51,7 @@ export function BallCelebration({ event }) {
     const kind = event.kind
     const context = gsap.context(() => {
       const timeline = gsap.timeline({ onComplete: () => gsap.set(el, { autoAlpha: 0 }) })
-      gsap.set(el, { autoAlpha: 1 })
+      timeline.fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: .18, ease: 'power1.out' }, 0)
       gsap.set(q('.st-cel-word'), { scale: 0, rotation: kind === 'six' ? -14 : 0, x: 0, autoAlpha: 1 })
       timeline.fromTo(q('.st-cel-flash'), { autoAlpha: 0 }, { autoAlpha: kind === 'wicket' ? .55 : .4, duration: .12, yoyo: true, repeat: 1 }, 0)
       timeline.fromTo(q('.st-cel-ring'), { scale: .1, autoAlpha: .9 }, { scale: kind === 'six' ? 4.2 : 3, autoAlpha: 0, duration: 1, stagger: .12, ease: 'power2.out' }, 0)
@@ -68,7 +68,8 @@ export function BallCelebration({ event }) {
           duration: () => gsap.utils.random(.9, 1.5), ease: 'power2.out', stagger: { each: .008, from: 'center' },
         }, .05)
       }
-      timeline.to(q('.st-cel-word'), { autoAlpha: 0, y: -24, duration: .4, ease: 'power2.in' }, 1.35)
+      timeline.to(q('.st-cel-word'), { autoAlpha: 0, y: -24, duration: .35, ease: 'power2.in' }, 1.3)
+      timeline.to(el, { autoAlpha: 0, duration: .3, ease: 'power1.in' }, 1.5)
     }, root)
     return () => context.revert()
   }, [event])

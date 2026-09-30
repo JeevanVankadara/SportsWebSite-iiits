@@ -4,7 +4,7 @@ import { Activity, ArrowUpRight, Clock3 } from 'lucide-react'
 import PlayerAvatar from './PlayerAvatar.jsx'
 import { TeamLogo } from './Cartoon.jsx'
 import { AnimatedBar, BallCelebration, CountUp, SegToggle } from './Fx.jsx'
-import { liveInning, shortName, usePop, winProbability } from './liveFeed.js'
+import { liveInning, shortName, winProbability } from './liveFeed.js'
 import { idOf, houseName, formatDate } from './data.js'
 import { inningsTitle, oversText, runRate, strikeRate } from '../sports/cricket/format.js'
 import { deliveryValue, overNumber, partnership } from './cricketLiveData.js'
@@ -15,19 +15,14 @@ function PlayerName({ player }) {
   return <Link to={`/players/${idOf(player)}${preview ? '?preview=1' : ''}`}>{player.name}</Link>
 }
 
-const EVENT_LABEL = { six: 'SIX', four: 'FOUR', wicket: 'WICKET', wide: 'WIDE', noball: 'NO BALL', milestone: 'MILESTONE' }
-
 export function CricketLiveHeader({ data, live }) {
   const inning = liveInning(data)
   const event = live?.event
-  const chip = usePop(event?.uid)
   if (!inning) return <p>Waiting for the innings to begin.</p>
   const batting = houseName(data.tournament, data.fixture[inning.batting_team])
   const bowling = houseName(data.tournament, data.fixture[inning.bowling_team])
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
-  const last = inning.this_over?.at(-1)
-  const centre = event && !event.seeded ? (event.kind === 'milestone' ? event.word : EVENT_LABEL[event.kind]) ?? 'LIVE' : last === '0' ? 'Dot ball' : last === '4' ? 'FOUR' : last === '6' ? 'SIX' : last?.includes('W') ? 'WICKET' : last ?? 'Ready to play'
   return <div className="st-live-score-hero st-fx-hero" data-event={event?.kind}>
     <BallCelebration event={event} />
     <div className="st-live-team">
@@ -36,10 +31,6 @@ export function CricketLiveHeader({ data, live }) {
         <span data-tip={`${batting} are batting`}>{batting}<small>{inningsTitle(inning)}</small></span>
         <strong><CountUp value={inning.runs} /><i>/{inning.wickets}</i> <small>{oversText(inning.legal_balls)} ov</small></strong>
       </div>
-    </div>
-    <div className="st-latest-delivery" aria-live="polite">
-      <small>Latest delivery</small>
-      <b ref={chip} data-kind={event?.kind}>{centre}</b>
     </div>
     <div className="st-live-rates">
       <div><span data-tip="Current run rate">CRR <b>{runRate(inning.runs, inning.legal_balls)}</b></span>{needed != null && remaining > 0 && <span data-tip="Required run rate">RRR <b>{runRate(needed, remaining)}</b></span>}</div>

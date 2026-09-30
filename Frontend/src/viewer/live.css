@@ -110,3 +110,10 @@
 
 @media (max-width:720px) { .st-app .st-fx-hero { padding:20px 16px; } .st-out-card { grid-template-columns:auto 1fr; } .st-out-stats { grid-column:1/-1; text-align:left; } }
 @media (prefers-reduced-motion:reduce) { .st-cartoon *, .st-feed-item { animation:none !important; } }
+
+/* Celebration sits on its own opaque black layer so nothing behind it competes with the animation */
+.st-celebrate { background:linear-gradient(160deg,#2c2c2e 0%,#111 55%,#000 100%); }
+.st-cel-flash { display:none; }
+.st-app .st-fx-hero { display:grid; grid-template-columns:1fr auto; align-items:center; gap:24px; }
+.st-app .st-fx-hero .st-live-rates { text-align:right; }
+@media (max-width:560px) { .st-app .st-fx-hero { grid-template-columns:1fr; } .st-app .st-fx-hero .st-live-rates { text-align:left; } .st-vs-line { justify-content:flex-start; } }

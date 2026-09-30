@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
-import gsap from 'gsap'
+import { useEffect, useState } from 'react'
 import { deliveryValue, overNumber } from './cricketLiveData.js'
 
 const idOf = item => String(item?._id ?? item ?? '')
@@ -163,15 +162,4 @@ export function usePreviewTicker(base, enabled, intervalMs = 4200) {
     return () => window.clearInterval(timer)
   }, [base, enabled, intervalMs])
   return enabled ? current : base
-}
-
-// Small pop for elements that mount or change (chips, badges).
-export function usePop(dep) {
-  const node = useRef(null)
-  useEffect(() => {
-    if (!node.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const tween = gsap.fromTo(node.current, { scale: .7, autoAlpha: .2 }, { scale: 1, autoAlpha: 1, duration: .55, ease: 'back.out(2.4)' })
-    return () => tween.kill()
-  }, [dep])
-  return node
 }
