@@ -144,7 +144,7 @@ function Shell({ children }) {
             aria-label="IIITS Sports home"
           >
             <img
-              src="/iiits-logo.jpg"
+              src="/iiits-logo-transparent.png"
               alt="IIIT Sri City"
               width="44"
               height="48"
@@ -1445,7 +1445,7 @@ function FixturePage() {
         {f && (
           <>
             <div className="st-fixture-hero">
-              {sport !== 'cricket' && <SportCelebration event={scoreEvent} />}
+              {sport !== 'cricket' && <SportCelebration event={scoreEvent} sport={sport} />}
               <h1 className="st-sr-only">
                 {first} vs {second}
               </h1>
@@ -1636,3 +1636,4 @@ export default function ViewerApp() {
     </Shell>
   )
 }
+

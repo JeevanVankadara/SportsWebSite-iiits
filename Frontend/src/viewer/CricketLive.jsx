@@ -5,7 +5,7 @@ import PlayerAvatar from './PlayerAvatar.jsx'
 import { TeamLogo } from './Cartoon.jsx'
 import { AnimatedBar, SportCelebration, CountUp, SegToggle } from './Fx.jsx'
 import { liveInning, shortName, winProbability } from './liveFeed.js'
-import { idOf, houseName, formatDate } from './data.js'
+import { idOf, houseName, formatDate, resultLine } from './data.js'
 import { inningsTitle, oversText, runRate, strikeRate } from '../sports/cricket/format.js'
 import { deliveryValue, overNumber, partnership } from './cricketLiveData.js'
 
@@ -20,28 +20,25 @@ export function CricketLiveHeader({ data, live }) {
   const event = live?.event
   if (!inning) return <p>Waiting for the innings to begin.</p>
   const batting = houseName(data.tournament, data.fixture[inning.batting_team])
-  const bowling = houseName(data.tournament, data.fixture[inning.bowling_team])
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
   return <div className="st-fx-hero" data-event={event?.kind}>
-    <SportCelebration event={event} />
-    <span className="st-hero-live">LIVE</span>
-    <div className="st-hero-top">
-      <div className="st-hero-team">
-        <TeamLogo name={batting} size={52} />
-        <div><strong data-tip={`${batting} are batting`}>{batting}</strong><small>{inningsTitle(inning)}</small></div>
+    <SportCelebration event={event} sport="cricket" />
+    <div className="st-cx-left">
+      <TeamLogo name={batting} size={56} />
+      <div>
+        <span className="st-cx-name" data-tip={`${batting} are batting`}>{batting}<em>P{inning.innings_no ?? 1}</em></span>
+        <div className="st-cx-score"><strong><CountUp value={inning.runs} />-{inning.wickets}</strong><small>{oversText(inning.legal_balls)}</small></div>
       </div>
-      <span className="st-hero-vs">vs <TeamLogo name={bowling} size={20} /> {bowling}</span>
     </div>
-    <div className="st-hero-score"><strong><CountUp value={inning.runs} /><i>/{inning.wickets}</i></strong><small>{oversText(inning.legal_balls)} ov</small></div>
-    <div className="st-hero-stats">
-      <div data-tip="Current run rate"><small>CRR</small><b>{runRate(inning.runs, inning.legal_balls)}</b></div>
-      {needed != null && remaining > 0 && <div data-tip="Required run rate"><small>RRR</small><b>{runRate(needed, remaining)}</b></div>}
-      <div><small>Balls left</small><b>{remaining}</b></div>
-      <div><small>Overs</small><b>{inning.overs ?? data.fixture.overs}</b></div>
+    <div className="st-cx-centre"><b>{resultLine(data.fixture, data.tournament)}</b></div>
+    <div className="st-cx-right">
+      <div className="st-cx-rates">
+        <span data-tip="Current run rate">CRR :<b>{runRate(inning.runs, inning.legal_balls)}</b></span>
+        {needed != null && remaining > 0 && <span data-tip="Required run rate">RRR :<b>{runRate(needed, remaining)}</b></span>}
+      </div>
+      <p className="st-cx-need">{needed != null ? `${batting} need ${needed} runs in ${remaining} balls` : `${remaining} balls remaining · ${inning.overs ?? data.fixture.overs} overs`}</p>
     </div>
-    <AnimatedBar percent={Math.min(100, (inning.legal_balls / (((inning.overs ?? data.fixture.overs ?? 1) * 6) || 1)) * 100)} />
-    {needed != null && <p className="st-hero-note">{needed} runs needed in {remaining} balls</p>}
   </div>
 }
 
@@ -103,6 +100,9 @@ export default function CricketLive({ data, live }) {
   const batters = [inning.striker, inning.non_striker].filter(Boolean).map(id => ({ ...inning.batting?.find(row => idOf(row.player) === idOf(id)), player: id }))
   const bowler = inning.bowling?.find(row => idOf(row.player) === idOf(inning.bowler))
   const stand = partnership(inning)
+  const fall = inning.fall_of_wickets?.at(-1)
+  const fallRow = fall && inning.batting?.find(row => idOf(row.player) === idOf(fall.player))
+  const lastWkt = fall && `${shortName(players.get(idOf(fall.player))?.name ?? 'Batter')} ${fallRow?.runs ?? 0}(${fallRow?.balls ?? 0})`
   const maxBalls = (inning.overs ?? f.overs ?? 0) * 6
   const remaining = Math.max(0, maxBalls - inning.legal_balls)
   const rate = Number(runRate(inning.runs, inning.legal_balls))
@@ -113,7 +113,7 @@ export default function CricketLive({ data, live }) {
         {batters.map(row => <div className="st-active-player" key={idOf(row.player)}><PlayerAvatar id={idOf(row.player)} team={batting} /><div><small>{idOf(row.player) === idOf(inning.striker) ? 'On strike' : 'Non-striker'}</small><PlayerName player={players.get(idOf(row.player))} /><p><b><CountUp value={row.runs ?? 0} /></b> <span>({row.balls ?? 0})</span></p><small>{row.fours ?? 0} fours · {row.sixes ?? 0} sixes</small><small>SR {strikeRate(row.runs ?? 0, row.balls ?? 0)}</small></div></div>)}
         {bowler && <div className="st-active-player st-current-bowler"><PlayerAvatar id={idOf(bowler.player)} team={bowling} /><div><small>Bowling</small><PlayerName player={players.get(idOf(bowler.player))} /><p><b>{bowler.wickets}–{bowler.runs}</b> <span>({oversText(bowler.balls)})</span></p><small>Economy {runRate(bowler.runs, bowler.balls)}</small></div></div>}
       </div>
-      {stand && <div className="st-partnership"><span>Partnership</span><strong>{stand.runs} <small>({stand.balls} balls)</small></strong></div>}
+      {(stand || lastWkt) && <div className="st-partnership"><span>P'ship : <b>{stand ? `${stand.runs}(${stand.balls})` : '-'}</b></span>{lastWkt && <span>Last Wkt : <b>{lastWkt}</b></span>}</div>}
       {inning.free_hit && <div className="st-chase-line">Free hit · next delivery</div>}
       {inning.powerplay && <div className="st-chase-line">Powerplay in progress</div>}
       <OverStrip inning={inning} />
