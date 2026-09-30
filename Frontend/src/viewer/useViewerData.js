@@ -2,80 +2,54 @@ import { retainObservedOvers } from './cricketLiveData.js'
 import { useEffect, useEffectEvent, useState } from 'react'
 
 export function useViewerData(key, load, live = false, enabled = true) {
-  const [state, setState] = useState({
-    key: null,
-    data: null,
-    error: '',
-    updated: null,
-  })
+  const [state, setState] = useState({ key: null, data: null, error: '', updated: null })
   const [attempt, setAttempt] = useState(0)
   const runLoad = useEffectEvent(load)
-  const hasLiveData = useEffectEvent(() => {
-    const data = state.data
-    return (
-      !data ||
-      data?.fixture?.status === 'live' ||
-      data?.fixtures?.some((fixture) => fixture.status === 'live')
-    )
-  })
-
   useEffect(() => {
     if (!enabled) return
     let active = true
     let pending = false
-    const refresh = () => {
-      if (document.visibilityState === 'hidden' || pending) return
+    let failures = 0
+    let timer
+    const refresh = async () => {
+      if (!active || pending || document.visibilityState === 'hidden') return
+      window.clearTimeout(timer)
+      if (navigator.onLine === false) {
+        setState(current => ({ ...current, key, data: current.key === key ? current.data : null, error: 'You’re offline. Scores will reconnect when your connection returns.' }))
+        return
+      }
       pending = true
-      Promise.resolve()
-        .then(() => runLoad())
-        .then(
-          (data) => {
-            if (active) setState(previous => ({ key, data: retainObservedOvers(previous.key === key ? previous.data : null, data), error: '', updated: new Date() }))
-          },
-          (error) => {
-            if (active)
-              setState((current) => ({
-                ...current,
-                key,
-                data: current.key === key ? current.data : null,
-                error: error.message,
-              }))
-          },
-        )
-        .finally(() => {
-          pending = false
-        })
+      let delay = live ? 10000 : null
+      try {
+        const data = await runLoad()
+        failures = 0
+        if (active) setState(previous => ({ key, data: retainObservedOvers(previous.key === key ? previous.data : null, data), error: '', updated: new Date() }))
+      } catch (error) {
+        const retryable = !error.status || error.status === 408 || error.status === 429 || error.status >= 500
+        delay = retryable ? Math.min(30000, 3000 * 2 ** Math.min(failures++, 4)) : null
+        if (active) setState(current => ({ ...current, key, data: retryable && current.key === key ? current.data : null, error: error.message || 'Scores are unavailable. Please try again.' }))
+      } finally {
+        pending = false
+        if (active && delay != null) timer = window.setTimeout(refresh, delay)
+      }
+    }
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
+    const onOffline = () => {
+      window.clearTimeout(timer)
+      setState(current => ({ ...current, key, data: current.key === key ? current.data : null, error: 'You’re offline. Scores will reconnect when your connection returns.' }))
     }
     refresh()
-    const onVisible = () => {
-      if (document.visibilityState === 'visible' && hasLiveData()) refresh()
-    }
     document.addEventListener('visibilitychange', onVisible)
-    const timer = live
-      ? window.setInterval(() => {
-          if (hasLiveData()) refresh()
-        }, 10000)
-      : null
+    window.addEventListener('online', refresh)
+    window.addEventListener('offline', onOffline)
     return () => {
       active = false
-      if (timer) window.clearInterval(timer)
+      window.clearTimeout(timer)
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('offline', onOffline)
     }
   }, [key, attempt, live, enabled])
-
-  // With nothing to show yet, keep retrying quietly (3s, 6s, 12s… up to 30s) so the page recovers on its own.
-  const failed = enabled && state.key === key && !state.data && Boolean(state.error)
-  useEffect(() => {
-    if (!failed) return
-    const timer = window.setTimeout(() => setAttempt(n => n + 1), Math.min(30000, 3000 * 2 ** Math.min(attempt, 4)))
-    return () => window.clearTimeout(timer)
-  }, [failed, attempt])
-
   const current = state.key === key
-  return {
-    data: current ? state.data : null,
-    error: current ? state.error : '',
-    updated: current ? state.updated : null,
-    retry: () => setAttempt((n) => n + 1),
-  }
+  return { data: current ? state.data : null, error: current ? state.error : '', updated: current ? state.updated : null, retry: () => setAttempt(n => n + 1) }
 }

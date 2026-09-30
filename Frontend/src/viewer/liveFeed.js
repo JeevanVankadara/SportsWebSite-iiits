@@ -36,16 +36,25 @@ function textFor(kind, token, names, seed) {
   const n = deliveryValue(token).runs
   return pick(TEXT[kind], seed).replace('{bo}', names.bo).replace('{ba}', names.ba).replace('{n}', n).replace('{s}', n === 1 ? '' : 's')
 }
-function snapshot(data, inning) {
+export function snapshot(data, inning) {
   const rows = new Map((inning.batting ?? []).map(row => [idOf(row.player), { ...row }]))
-  return { id: idOf(inning), overNo: overNumber(inning), thisOver: [...(inning.this_over ?? [])], striker: idOf(inning.striker), bowler: idOf(inning.bowler), rows, players: playerMap(data.fixture), legal: inning.legal_balls }
+  return { id: idOf(inning), overNo: overNumber(inning), thisOver: [...(inning.this_over ?? [])], striker: idOf(inning.striker), bowler: idOf(inning.bowler), rows, players: playerMap(data.fixture), legal: inning.legal_balls, count: inning.ball_count, runs: inning.runs, wickets: inning.wickets }
+}
+export function isCorrection(prev, next) {
+  return next.legal < prev.legal || next.runs < prev.runs || next.wickets < prev.wickets ||
+    (next.count != null && prev.count != null && next.count < prev.count) ||
+    (next.overNo === prev.overNo && prev.thisOver.some((token, index) => next.thisOver[index] !== token))
 }
 let serial = 0
-function build(prev, next, inning) {
+export function build(prev, next, inning) {
+  if (isCorrection(prev, next)) return []
   const events = []
-  const names = { bo: shortName(next.players.get(prev.bowler)?.name ?? 'The bowler'), ba: shortName(next.players.get(prev.striker)?.name ?? 'The batter') }
   const overAdvanced = next.overNo !== prev.overNo
   const tokens = overAdvanced ? next.thisOver : next.thisOver.slice(prev.thisOver.length)
+  // A snapshot does not identify every delivery's participants. Avoid attributing a batch incorrectly.
+  const names = tokens.length === 1 && !overAdvanced
+    ? { bo: shortName(next.players.get(prev.bowler)?.name ?? 'The bowler'), ba: shortName(next.players.get(prev.striker)?.name ?? 'The batter') }
+    : { bo: 'The bowler', ba: 'The batter' }
   let legalBefore = overAdvanced ? 0 : prev.thisOver.filter(t => deliveryValue(t).legal).length
   if (overAdvanced) {
     const total = prev.thisOver.reduce((n, t) => n + deliveryValue(t).runs, 0)
@@ -64,10 +73,11 @@ function build(prev, next, inning) {
     }
     events.push({ kind, token, over: `${next.overNo - 1}.${legalBefore}`, word: WORD[kind], text: textFor(kind, token, out ? { ...names, ba: shortName(out.name) } : names, seed), out })
   })
-  const striker = next.rows.get(prev.striker)
-  const before = prev.rows.get(prev.striker)
-  if (striker && before) [50, 100, 150].forEach(mark => {
-    if ((before.runs ?? 0) < mark && (striker.runs ?? 0) >= mark) events.push({ kind: 'milestone', mark, over: `${next.overNo - 1}.${legalBefore}`, word: mark === 50 ? 'FIFTY!' : mark === 100 ? 'HUNDRED!' : `${mark}!`, id: prev.striker, name: next.players.get(prev.striker)?.name, text: `${shortName(next.players.get(prev.striker)?.name)} reaches ${mark} off ${striker.balls ?? 0} balls.`, stats: { runs: striker.runs, balls: striker.balls, fours: striker.fours, sixes: striker.sixes } })
+  next.rows.forEach((striker, id) => {
+    const before = prev.rows.get(id)
+    if (before) [50, 100, 150, 200].forEach(mark => {
+      if ((before.runs ?? 0) < mark && (striker.runs ?? 0) >= mark) events.push({ kind: 'milestone', mark, over: `${next.overNo - 1}.${legalBefore}`, word: mark === 50 ? 'FIFTY!' : mark === 100 ? 'HUNDRED!' : `${mark}!`, id, name: next.players.get(id)?.name, text: `${shortName(next.players.get(id)?.name)} reaches ${mark} off ${striker.balls ?? 0} balls.`, stats: { runs: striker.runs, balls: striker.balls, fours: striker.fours, sixes: striker.sixes } })
+    })
   })
   return events.map(event => ({ ...event, uid: ++serial, at: Date.now() }))
 }
@@ -85,14 +95,16 @@ function seedFeed(next) {
 export function useLiveFeed(data) {
   const [state, setState] = useState({ seen: null, snap: null, event: null, feed: [] })
   if (data !== state.seen) {
-    const inning = liveInning(data)
-    if (!inning) setState({ ...state, seen: data })
+    const inning = liveInning(data) ?? data?.detail?.innings?.at(-1)
+    if (!inning) setState({ seen: data, snap: null, event: null, feed: [] })
     else {
       const next = snapshot(data, inning)
       if (!state.snap || state.snap.id !== next.id) setState({ seen: data, snap: next, event: null, feed: seedFeed(next) })
+      else if (isCorrection(state.snap, next)) setState({ seen: data, snap: next, event: null, feed: seedFeed(next) })
       else {
         const events = build(state.snap, next, inning)
-        setState({ seen: data, snap: next, event: events.filter(e => e.kind !== 'over-end').at(-1) ?? state.event, feed: events.length ? [...[...events].reverse(), ...state.feed].slice(0, 90) : state.feed })
+        const celebrations = events.filter(e => e.kind !== 'over-end')
+        setState({ seen: data, snap: next, event: celebrations.length ? { ...celebrations.at(-1), sequence: celebrations } : state.event, feed: events.length ? [...[...events].reverse(), ...state.feed].slice(0, 90) : state.feed })
       }
     }
   }
@@ -175,7 +187,8 @@ export function useScoreEvent(data, sport) {
     let event = state.event
     if (key && state.key && (key[0] > state.key[0] || key[1] > state.key[1])) {
       const team = key[0] > state.key[0] ? 'team1' : 'team2'
-      event = { uid: ++serial, kind: sport === 'football' ? 'goal' : 'point', word: sport === 'football' ? 'GOAL!' : 'SMASH!', team: houseName(data.tournament, f[team]) }
+      // eslint-disable-next-line react-hooks/purity -- timestamp only orders preview-triggered events against real ones
+      event = { uid: ++serial, at: Date.now(), kind: sport === 'football' ? 'goal' : 'point', word: sport === 'football' ? 'GOAL!' : 'SMASH!', team: houseName(data.tournament, f[team]) }
     }
     setState({ seen: data, key: key ?? state.key, event })
   }

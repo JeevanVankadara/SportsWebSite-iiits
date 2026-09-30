@@ -7,16 +7,16 @@ export class ApiError extends Error {
   }
 }
 
-// One signed-in area of the site (admin or co-ordinator). The token lives in memory and is mirrored
-// to localStorage so a reload keeps the person signed in. Each area has its own key, so an admin and
-// a co-ordinator can be signed in on the same browser.
+// Limit credential persistence to the current tab. Backend authorization remains authoritative.
 export function createSession(storageKey) {
   let token = readStoredToken()
   let handleUnauthorized = () => {}
 
   function readStoredToken() {
     try {
-      return localStorage.getItem(storageKey)
+      const saved = sessionStorage.getItem(storageKey)
+      localStorage.removeItem(storageKey)
+      return saved
     } catch {
       return null
     }
@@ -28,8 +28,9 @@ export function createSession(storageKey) {
     setToken(value) {
       token = value
       try {
-        if (value) localStorage.setItem(storageKey, value)
-        else localStorage.removeItem(storageKey)
+        if (value) sessionStorage.setItem(storageKey, value)
+        else sessionStorage.removeItem(storageKey)
+        localStorage.removeItem(storageKey)
       } catch {
         // Storage is blocked (e.g. strict privacy settings): the session lasts until the tab closes.
       }
@@ -41,6 +42,7 @@ export function createSession(storageKey) {
     },
 
     async request(path, { method = 'GET', body } = {}) {
+      assertApiPath(path)
       const sentToken = token
       const headers = {}
       if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -52,14 +54,24 @@ export function createSession(storageKey) {
           method,
           headers,
           body: body === undefined ? undefined : JSON.stringify(body),
+          credentials: 'omit',
+          redirect: 'error',
+          cache: 'no-store',
+          signal: AbortSignal.timeout(15000),
         })
       } catch {
-        throw new ApiError(0, 'Could not reach the server. Check your connection and try again.')
+        throw new ApiError(0, method === 'GET'
+          ? 'Could not reach the server. Check your connection and try again.'
+          : 'Connection interrupted. Refresh to check whether your change was saved before trying again.')
       }
 
-      const data = response.status === 204 ? null : await response.json().catch(() => null)
+      const data = await readResponse(response)
       if (!response.ok) {
-        if (response.status === 401 && sentToken) handleUnauthorized()
+        if (response.status === 401 && sentToken && token === sentToken) {
+          token = null
+          try { sessionStorage.removeItem(storageKey); localStorage.removeItem(storageKey) } catch { /* Memory is already cleared. */ }
+          handleUnauthorized()
+        }
         throw new ApiError(response.status, data?.message ?? `Request failed (${response.status}). Please try again.`)
       }
       return data
@@ -70,12 +82,29 @@ export function createSession(storageKey) {
 export const adminSession = createSession('iiits-sports-admin-token')
 export const coordinatorSession = createSession('iiits-sports-coordinator-token')
 
+function assertApiPath(path) {
+  if (typeof path !== 'string' || !path.startsWith('/api/') || /[\\\r\n]/.test(path))
+    throw new ApiError(0, 'Invalid API request.')
+}
+
+async function readResponse(response) {
+  if (response.status === 204) return null
+  try { return await response.json() }
+  catch {
+    throw new ApiError(response.status, 'The server returned an unreadable response. Please refresh and try again.')
+  }
+}
+
 // Public viewer reads never inherit an admin/co-ordinator token.
 export async function publicRequest(path) {
+  assertApiPath(path)
   let response
   try {
     response = await fetch(`${API_URL}${path}`, {
       signal: AbortSignal.timeout(15000),
+      credentials: 'omit',
+      redirect: 'error',
+      cache: 'no-store',
     })
   } catch {
     throw new ApiError(
@@ -83,7 +112,7 @@ export async function publicRequest(path) {
       'The scoreboard is temporarily unavailable. Please try again.',
     )
   }
-  const data = await response.json().catch(() => null)
+  const data = await readResponse(response)
   if (!response.ok)
     throw new ApiError(
       response.status,
