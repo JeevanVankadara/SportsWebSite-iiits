@@ -11,6 +11,7 @@ import {
 } from 'react-router'
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   CalendarDays,
   ChevronRight,
@@ -847,20 +848,17 @@ function TournamentList() {
 }
 
 function Breadcrumb({ items }) {
+  const parent = [...items].reverse().find(item => typeof item !== 'string')?.to ?? '/'
   return (
-    <nav className="st-breadcrumb" aria-label="Breadcrumb">
-      <Link to={withPreview('/')}>Home</Link>
-      {items.map((item, index) => (
-        <span key={`${item}-${index}`}>
-          <ChevronRight size={14} />
-          {typeof item === 'string' ? (
-            item
-          ) : (
-            <Link to={withPreview(item.to)}>{item.label}</Link>
-          )}
-        </span>
-      ))}
-    </nav>
+    <div className="st-crumbbar">
+      <Link className="st-back" to={withPreview(parent)}><ArrowLeft size={18} /> Back</Link>
+      <nav className="st-crumbs" aria-label="Breadcrumb" ref={(node) => { if (node) node.scrollLeft = node.scrollWidth }}>
+        <Link to={withPreview('/')}>Home</Link>
+        {items.map((item, index) => typeof item === 'string'
+          ? <span key={`${item}-${index}`} aria-current="page">{item}</span>
+          : <Link key={`${item.to}-${index}`} to={withPreview(item.to)}>{item.label}</Link>)}
+      </nav>
+    </div>
   )
 }
 

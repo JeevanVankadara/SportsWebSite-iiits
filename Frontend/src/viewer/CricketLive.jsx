@@ -25,6 +25,7 @@ export function CricketLiveHeader({ data, live }) {
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
   return <div className="st-fx-hero" data-event={event?.kind}>
     <SportCelebration event={event} />
+    <span className="st-hero-live">LIVE</span>
     <div className="st-hero-top">
       <div className="st-hero-team">
         <TeamLogo name={batting} size={52} />
@@ -39,6 +40,7 @@ export function CricketLiveHeader({ data, live }) {
       <div><small>Balls left</small><b>{remaining}</b></div>
       <div><small>Overs</small><b>{inning.overs ?? data.fixture.overs}</b></div>
     </div>
+    <AnimatedBar percent={Math.min(100, (inning.legal_balls / (((inning.overs ?? data.fixture.overs ?? 1) * 6) || 1)) * 100)} />
     {needed != null && <p className="st-hero-note">{needed} runs needed in {remaining} balls</p>}
   </div>
 }

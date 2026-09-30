@@ -84,30 +84,19 @@
 .st-out-stats small { color:rgba(255,255,255,.7); }
 .st-out-tag { position:absolute; left:12px; bottom:-7px; background:#fff; color:#b3261e !important; font-weight:700; font-size:10px !important; letter-spacing:.08em; padding:1px 8px; border-radius:999px; opacity:1 !important; }
 
-/* Celebrations: dark, aggressive, on their own opaque layer with a subtle tint per event */
+/* Celebrations: black and white, 3D. Always a black layer, never tinted. */
 .st-fixture-hero { position:relative; overflow:hidden; }
-.st-celebrate { position:absolute; inset:0; z-index:5; pointer-events:none; visibility:hidden; opacity:0; overflow:hidden; border-radius:inherit; background:linear-gradient(160deg,#2c2c2e 0%,#111 55%,#000 100%); }
-.st-celebrate[data-kind='four'] { background:linear-gradient(160deg,#0b2a66,#02060f); }
-.st-celebrate[data-kind='six'] { background:linear-gradient(160deg,#3a1a72,#07030f); }
-.st-celebrate[data-kind='wicket'] { background:linear-gradient(160deg,#5a0f12,#0a0202); }
-.st-celebrate[data-kind='milestone'], .st-celebrate[data-kind='goal'] { background:linear-gradient(160deg,#0c4a24,#020a05); }
-.st-celebrate[data-kind='wide'], .st-celebrate[data-kind='noball'] { background:linear-gradient(160deg,#5a3a06,#0a0601); }
-.st-celebrate[data-kind='point'] { background:linear-gradient(160deg,#0a3d5c,#02080d); }
-.st-cel-flash { position:absolute; inset:0; opacity:0; background:radial-gradient(circle,rgba(255,255,255,.9),transparent 70%); }
-.st-celebrate[data-kind='wicket'] .st-cel-flash { background:radial-gradient(circle,rgba(255,59,48,.9),transparent 70%); }
-.st-cel-stage { position:absolute; inset:0; display:grid; place-items:center; }
-.st-cel-word { position:absolute; font:800 clamp(44px,10vw,96px)/1 var(--st-font); letter-spacing:-.03em; color:#fff; text-shadow:0 4px 30px rgba(0,0,0,.5); }
-.st-celebrate[data-kind='four'] .st-cel-word, .st-celebrate[data-kind='six'] .st-cel-word, .st-celebrate[data-kind='point'] .st-cel-word { color:#409cff; }
-.st-celebrate[data-kind='wicket'] .st-cel-word { color:#ff453a; }
-.st-celebrate[data-kind='milestone'] .st-cel-word, .st-celebrate[data-kind='goal'] .st-cel-word { color:#30d158; }
-.st-celebrate[data-kind='wide'] .st-cel-word, .st-celebrate[data-kind='noball'] .st-cel-word { color:#ffb340; }
-.st-cel-sub { position:absolute; bottom:16px; left:0; right:0; text-align:center; color:rgba(255,255,255,.75); font-weight:600; letter-spacing:.08em; text-transform:uppercase; font-size:13px; }
-.st-cel-ring { position:absolute; width:120px; height:120px; border-radius:50%; border:3px solid #fff; opacity:0; }
-.st-celebrate[data-kind='wicket'] .st-cel-ring { border-color:#ff453a; }
-.st-cel-dot { position:absolute; width:8px; height:8px; border-radius:2px; opacity:0; background:hsl(calc(205deg + var(--h)*.06deg) 100% 62%); }
-.st-cel-ball { position:absolute; left:0; width:30px; height:30px; border-radius:50%; opacity:0; background:#fff; }
-.st-cel-rope { position:absolute; left:0; right:0; bottom:22%; height:3px; background:#409cff; opacity:0; transform-origin:left; }
-.st-cel-stumps { position:absolute; width:100px; bottom:16%; fill:#f5f5f7; stroke:#000; stroke-width:1.5; }
+.st-celebrate { position:absolute; inset:0; z-index:5; pointer-events:none; visibility:hidden; opacity:0; overflow:hidden; border-radius:inherit; background:radial-gradient(ellipse at 50% 38%,#1c1c1c 0%,#050505 62%,#000 100%); }
+.st-cel-floor { position:absolute; left:-40%; right:-40%; bottom:-12%; height:62%; background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px); background-size:46px 46px; transform:perspective(520px) rotateX(66deg); transform-origin:50% 100%; -webkit-mask-image:linear-gradient(to top,#000,transparent 88%); mask-image:linear-gradient(to top,#000,transparent 88%); animation:st-floor 1.4s linear infinite; }
+@keyframes st-floor { to { background-position:0 46px; } }
+.st-cel-stage { position:absolute; inset:0; display:grid; place-items:center; perspective:900px; transform-style:preserve-3d; }
+.st-cel-word { position:absolute; font:900 clamp(56px,13vw,120px)/1 var(--st-font); letter-spacing:-.04em; color:#fff; text-shadow:0 1px 0 #e6e6e6,0 2px 0 #cfcfcf,0 3px 0 #b8b8b8,0 4px 0 #a0a0a0,0 5px 0 #888,0 6px 0 #707070,0 7px 0 #585858,0 8px 0 #404040,0 20px 34px rgba(0,0,0,.85),0 0 70px rgba(255,255,255,.22); }
+.st-cel-sub { position:absolute; bottom:16px; left:0; right:0; text-align:center; color:rgba(255,255,255,.7); font-weight:600; letter-spacing:.1em; text-transform:uppercase; font-size:13px; }
+.st-cel-disc { position:absolute; width:140px; height:140px; border-radius:50%; border:2px solid #fff; opacity:0; box-shadow:0 0 24px rgba(255,255,255,.35), inset 0 0 24px rgba(255,255,255,.2); }
+.st-cel-dot { position:absolute; width:9px; height:9px; border-radius:2px; opacity:0; background:hsl(0 0% calc(58% + var(--h) * .1%)); }
+.st-cel-ball { position:absolute; width:44px; height:44px; border-radius:50%; opacity:0; background:radial-gradient(circle at 32% 28%,#fff 0%,#c4c4c4 38%,#3a3a3a 75%,#000 100%); box-shadow:0 22px 30px rgba(0,0,0,.7); }
+.st-cel-streak { position:absolute; height:3px; width:60vw; opacity:0; background:linear-gradient(90deg,transparent,#fff); }
+.st-cel-stumps { position:absolute; width:110px; bottom:16%; fill:#f5f5f5; stroke:#000; stroke-width:1.5; }
 
 @media (max-width:720px) { .st-out-card { grid-template-columns:auto 1fr; } .st-out-stats { grid-column:1/-1; text-align:left; } }
 @media (prefers-reduced-motion:reduce) { .st-cartoon *, .st-feed-item { animation:none !important; } }
@@ -220,7 +209,6 @@ html, body { max-width:100%; overflow-x:clip; }
 
 /* Score card: follows the theme (white in light, graphite in dark) */
 .st-app .st-fx-hero { position:relative; overflow:hidden; isolation:isolate; display:grid; gap:18px; padding:22px 24px; border:1px solid var(--st-line); border-radius:var(--st-r-card); background:var(--st-surface); color:var(--st-ink); box-shadow:var(--st-shadow); }
-.st-app[data-theme='dark'] .st-fx-hero { background:linear-gradient(180deg,#232326,#1c1c1e); }
 .st-hero-top { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .st-hero-team { display:flex; align-items:center; gap:14px; min-width:0; }
 .st-hero-team strong { display:block; font-size:18px; font-weight:600; }
@@ -236,3 +224,31 @@ html, body { max-width:100%; overflow-x:clip; }
 .st-hero-stats b { font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
 .st-hero-note { margin:0; font-weight:600; color:var(--st-red); }
 @media (max-width:560px) { .st-app .st-fx-hero { padding:18px 16px; gap:16px; } .st-hero-vs { margin-left:0; } }
+
+/* Score card tone: white in light, pure black in dark, with a hairline edge and soft depth */
+.st-app .st-fx-hero { background:linear-gradient(180deg,#fff,#f5f5f7); border-color:#e2e2e6; box-shadow:0 1px 0 #fff inset,0 12px 32px rgba(0,0,0,.06); }
+.st-app[data-theme='dark'] .st-fx-hero { background:radial-gradient(ellipse at 20% 0%,#1d1d1f 0%,#0a0a0b 55%,#000 100%); border-color:rgba(255,255,255,.12); box-shadow:0 0 0 1px rgba(255,255,255,.03) inset,0 18px 40px rgba(0,0,0,.5); }
+.st-app .st-fx-hero .st-hero-stats > div { background:rgba(0,0,0,.05); }
+.st-app[data-theme='dark'] .st-fx-hero .st-hero-stats > div { background:rgba(255,255,255,.07); }
+.st-app .st-fx-hero .st-abar span { background:var(--st-ink); }
+.st-hero-live { position:absolute; top:18px; right:20px; display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:.1em; color:var(--st-muted); }
+.st-hero-live::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--st-ink); animation:st-live 1.6s ease-in-out infinite; }
+@keyframes st-live { 50% { opacity:.25; transform:scale(.7); } }
+.st-hero-top { padding-right:56px; }
+
+/* Vertical rhythm above page content */
+.st-app .st-inner-page { padding-top:20px; }
+.st-app .st-fixture-eyebrow { margin:0 0 14px; padding-top:2px; }
+.st-app .st-page-banner { margin-top:4px; }
+
+/* Navigation: an obvious Back button and a trail of button-style crumbs */
+.st-crumbbar { display:flex; align-items:center; gap:10px; margin:4px 0 24px; min-width:0; }
+.st-back { flex:none; display:inline-flex; align-items:center; gap:6px; height:40px; padding:0 16px 0 12px; border:1px solid var(--st-line); border-radius:999px; background:var(--st-surface); color:var(--st-ink); font-size:14px; font-weight:600; text-decoration:none; transition:background-color .2s var(--st-ease),border-color .2s var(--st-ease); }
+.st-back:hover { background:var(--st-subtle); border-color:var(--st-muted); }
+.st-back:focus-visible, .st-crumbs a:focus-visible { outline:2px solid var(--st-blue); outline-offset:2px; }
+.st-crumbs { display:flex; align-items:center; gap:6px; flex:1; min-width:0; overflow-x:auto; padding:2px 0; }
+.st-crumbs a, .st-crumbs span { flex:none; display:inline-flex; align-items:center; height:34px; padding:0 14px; border-radius:999px; font-size:13px; text-decoration:none; white-space:nowrap; }
+.st-crumbs a { background:var(--st-subtle); color:var(--st-muted); transition:background-color .2s var(--st-ease),color .2s var(--st-ease); }
+.st-crumbs a:hover { background:var(--st-line); color:var(--st-ink); }
+.st-crumbs span { color:var(--st-ink); font-weight:600; border:1px solid var(--st-line); }
+@media (max-width:560px) { .st-crumbbar { margin-bottom:20px; } .st-hero-top { padding-right:0; padding-top:18px; } .st-hero-live { top:14px; right:14px; } }
