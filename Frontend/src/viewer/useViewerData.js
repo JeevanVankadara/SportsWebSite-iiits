@@ -63,6 +63,14 @@ export function useViewerData(key, load, live = false, enabled = true) {
     }
   }, [key, attempt, live, enabled])
 
+  // With nothing to show yet, keep retrying quietly (3s, 6s, 12s… up to 30s) so the page recovers on its own.
+  const failed = enabled && state.key === key && !state.data && Boolean(state.error)
+  useEffect(() => {
+    if (!failed) return
+    const timer = window.setTimeout(() => setAttempt(n => n + 1), Math.min(30000, 3000 * 2 ** Math.min(attempt, 4)))
+    return () => window.clearTimeout(timer)
+  }, [failed, attempt])
+
   const current = state.key === key
   return {
     data: current ? state.data : null,

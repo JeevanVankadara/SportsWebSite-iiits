@@ -93,20 +93,19 @@
 .st-out-stats small { color:rgba(255,255,255,.7); }
 .st-out-tag { position:absolute; left:12px; bottom:-7px; background:#fff; color:#b3261e !important; font-weight:700; font-size:10px !important; letter-spacing:.08em; padding:1px 8px; border-radius:999px; opacity:1 !important; }
 
-/* Celebrations: black, white and blue only */
-.st-celebrate { position:absolute; inset:0; z-index:5; pointer-events:none; visibility:hidden; opacity:0; overflow:hidden; border-radius:inherit; }
-.st-cel-flash { position:absolute; inset:0; opacity:0; background:radial-gradient(circle,rgba(255,255,255,.9),transparent 70%); }
-.st-celebrate[data-kind='wicket'] .st-cel-flash { background:radial-gradient(circle,rgba(255,59,48,.9),transparent 70%); }
-.st-cel-stage { position:absolute; inset:0; display:grid; place-items:center; }
-.st-cel-word { position:absolute; font:800 clamp(44px,10vw,96px)/1 var(--st-font); letter-spacing:-.03em; color:#fff; text-shadow:0 4px 30px rgba(0,0,0,.5); }
-.st-celebrate[data-kind='four'] .st-cel-word, .st-celebrate[data-kind='six'] .st-cel-word { color:#409cff; }
-.st-celebrate[data-kind='wicket'] .st-cel-word { color:var(--st-red); }
-.st-cel-ring { position:absolute; width:120px; height:120px; border-radius:50%; border:3px solid #fff; opacity:0; }
-.st-celebrate[data-kind='wicket'] .st-cel-ring { border-color:var(--st-red); }
-.st-cel-dot { position:absolute; width:8px; height:8px; border-radius:2px; opacity:0; background:hsl(calc(205deg + var(--h)*.06deg) 100% 62%); }
-.st-cel-ball { position:absolute; left:0; width:30px; height:30px; border-radius:50%; opacity:0; background:#fff; }
-.st-cel-rope { position:absolute; left:0; right:0; bottom:22%; height:3px; background:#409cff; opacity:0; transform-origin:left; }
-.st-cel-stumps { position:absolute; width:100px; bottom:16%; fill:#f5f5f7; stroke:#000; stroke-width:1.5; }
+/* Celebrations: the card background is replaced by an event colour while a short sport scene plays */
+.st-fixture-hero { position:relative; overflow:hidden; }
+.st-celebrate { position:absolute; inset:0; z-index:5; pointer-events:none; visibility:hidden; opacity:0; overflow:hidden; border-radius:inherit; display:grid; place-items:center; background:#000; }
+.st-celebrate[data-kind='four'] { background:linear-gradient(160deg,#0a84ff,#0a3fa8); }
+.st-celebrate[data-kind='six'] { background:linear-gradient(160deg,#bf5af2,#4b2bd9); }
+.st-celebrate[data-kind='wicket'] { background:linear-gradient(160deg,#ff453a,#7a0f0f); }
+.st-celebrate[data-kind='milestone'] { background:linear-gradient(160deg,#30d158,#0a5a2b); }
+.st-celebrate[data-kind='wide'], .st-celebrate[data-kind='noball'] { background:linear-gradient(160deg,#ffb340,#8a4b00); }
+.st-celebrate[data-kind='goal'] { background:linear-gradient(160deg,#34c759,#0b5d2a); }
+.st-celebrate[data-kind='point'] { background:linear-gradient(160deg,#5ac8fa,#0a4fc4); }
+.st-cel-scene { position:absolute; inset:0; width:100%; height:100%; }
+.st-cel-word { position:relative; z-index:2; font:800 clamp(40px,9vw,88px)/1 var(--st-font); letter-spacing:-.03em; color:#fff; text-shadow:0 6px 30px rgba(0,0,0,.35); }
+.st-cel-sub { position:absolute; bottom:14px; z-index:2; left:0; right:0; text-align:center; color:rgba(255,255,255,.85); font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:13px; }
 
 @media (max-width:720px) { .st-app .st-fx-hero { padding:20px 16px; } .st-out-card { grid-template-columns:auto 1fr; } .st-out-stats { grid-column:1/-1; text-align:left; } }
 @media (prefers-reduced-motion:reduce) { .st-cartoon *, .st-feed-item { animation:none !important; } }
@@ -117,3 +116,71 @@
 .st-app .st-fx-hero { display:grid; grid-template-columns:1fr auto; align-items:center; gap:24px; }
 .st-app .st-fx-hero .st-live-rates { text-align:right; }
 @media (max-width:560px) { .st-app .st-fx-hero { grid-template-columns:1fr; } .st-app .st-fx-hero .st-live-rates { text-align:left; } .st-vs-line { justify-content:flex-start; } }
+
+/* Claymorphic icons */
+.st-clay { display:block; flex:none; filter:drop-shadow(0 6px 8px rgba(0,0,0,.14)); }
+.st-retry-note { display:flex; align-items:center; justify-content:center; gap:8px; }
+.st-spinner { width:14px; height:14px; border-radius:50%; border:2px solid var(--st-line); border-top-color:var(--st-blue); animation:st-spin .8s linear infinite; }
+@keyframes st-spin { to { transform:rotate(360deg) } }
+
+/* No visible scrollbars anywhere; content still scrolls and swipes */
+.st-app, .st-app * { scrollbar-width:none !important; -ms-overflow-style:none !important; }
+.st-app *::-webkit-scrollbar, .st-app::-webkit-scrollbar { display:none !important; width:0 !important; height:0 !important; }
+html, body { scrollbar-width:none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display:none; }
+
+/* Hero overflow only where a celebration is drawn straight into it (non-cricket); cricket draws inside its own card */
+.st-fixture-hero:has(.st-fx-hero) { overflow:visible; }
+
+/* Mobile */
+@media (max-width:560px) {
+  .st-app .st-header-inner { gap:6px; padding:8px 10px; min-height:60px; }
+  .st-app .st-brand { min-width:0; flex:1 1 auto; }
+  .st-app .st-brand-type { min-width:0; }
+  .st-app .st-brand-type > span { display:none; }
+  .st-app .st-brand-type strong { font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+  .st-app .st-header-actions { flex:none; gap:6px; }
+  .st-app .st-theme-toggle { width:60px; height:34px; padding:3px; }
+  .st-app .st-theme-thumb { width:26px; height:26px; top:3px; left:3px; }
+  .st-app .st-theme-toggle svg { width:14px; height:14px; }
+  .st-app .st-icon-button { width:40px; height:40px; }
+  .st-app .st-container { width:calc(100% - 28px); }
+  .st-app .st-fixture-eyebrow { flex-wrap:wrap; gap:6px 12px; font-size:12px; }
+  .st-app .st-fx-hero { border-radius:20px; padding:20px 18px; gap:14px; }
+  .st-app .st-live-team { gap:12px; }
+  .st-app .st-live-team strong { font-size:34px; }
+  .st-app .st-live-rates p { font-size:14px; }
+  .st-app .st-active-players { gap:8px; }
+  .st-app .st-detail-panel { padding:18px 16px; border-radius:20px; }
+  .st-app .st-seg button { padding:7px 14px; }
+  .st-app .st-filter-bar, .st-app .st-content-tabs { max-width:100%; }
+  .st-app .st-message { padding:32px 18px; }
+  .st-cel-word { font-size:44px; }
+}
+@media (max-width:560px) {
+  .st-app .st-header-actions { gap:4px; }
+  .st-app .st-theme-toggle { width:56px; height:32px; }
+  .st-app .st-theme-thumb { width:24px; height:24px; }
+  .st-app .st-icon-button { width:36px; height:36px; }
+  .st-app .st-institute-logo { width:32px; height:36px; }
+  .st-app .st-brand { gap:6px; }
+  .st-app .st-brand-type strong { font-size:14px; }
+}
+.st-celebrate { place-items:start center; }
+.st-cel-word { margin-top:9%; }
+
+/* Preview-only animation triggers */
+.st-demo-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0 4px; }
+.st-demo-actions span { font-size:12px; color:var(--st-muted); margin-right:4px; }
+.st-demo-actions button { border:1px solid var(--st-line); background:var(--st-surface); color:var(--st-ink); border-radius:999px; padding:6px 14px; font:inherit; font-size:13px; font-weight:500; cursor:pointer; transition:background-color .2s ease,border-color .2s ease; }
+.st-demo-actions button:hover { background:var(--st-subtle); border-color:var(--st-muted); }
+
+/* Player cards on phones: avatar + details on one row, status under the name */
+@media (max-width:560px) {
+  .st-app .st-player-card { display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:'avatar main chev' 'avatar state chev'; align-items:center; gap:6px 14px; padding:16px; }
+  .st-app .st-player-card > .st-portrait { grid-area:avatar; width:56px; height:56px; }
+  .st-app .st-player-card > .st-player-main { grid-area:main; min-width:0; }
+  .st-app .st-player-card > .st-player-state { grid-area:state; justify-self:start; }
+  .st-app .st-player-card > svg { grid-area:chev; }
+  .st-app .st-player-main strong { display:block; white-space:normal; }
+}

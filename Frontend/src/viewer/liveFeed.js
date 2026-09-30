@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { deliveryValue, overNumber } from './cricketLiveData.js'
+import { houseName } from './data.js'
 
 const idOf = item => String(item?._id ?? item ?? '')
 export const liveInning = data => data?.detail?.innings?.find(row => row.status === 'live')
@@ -153,13 +154,41 @@ export function advancePreview(data) {
   return next
 }
 
-export function usePreviewTicker(base, enabled, intervalMs = 4200) {
+// Preview mode only: the demo football match scores now and then so the goal animation can be seen.
+export function advancePreviewFootball(data) {
+  const f = data.fixture
+  if (f.status !== 'live') return data
+  const next = structuredClone(data)
+  const team = Math.random() < .5 ? 'team1' : 'team2'
+  next.fixture[`${team}_score`] = (next.fixture[`${team}_score`] ?? 0) + 1
+  return next
+}
+
+// Goals (football) and match wins (badminton) become a celebration event when the live score goes up.
+export function useScoreEvent(data, sport) {
+  const [state, setState] = useState({ seen: null, key: null, event: null })
+  if (data !== state.seen) {
+    const f = data?.fixture
+    let key = null
+    if (f?.status === 'live' && sport === 'football') key = [f.team1_score ?? 0, f.team2_score ?? 0]
+    if (f?.status === 'live' && sport === 'badminton') key = [f.team1_matches_won ?? 0, f.team2_matches_won ?? 0]
+    let event = state.event
+    if (key && state.key && (key[0] > state.key[0] || key[1] > state.key[1])) {
+      const team = key[0] > state.key[0] ? 'team1' : 'team2'
+      event = { uid: ++serial, kind: sport === 'football' ? 'goal' : 'point', word: sport === 'football' ? 'GOAL!' : 'SMASH!', team: houseName(data.tournament, f[team]) }
+    }
+    setState({ seen: data, key: key ?? state.key, event })
+  }
+  return state.event
+}
+
+export function usePreviewTicker(base, enabled, advance = advancePreview, intervalMs = 4200) {
   const [state, setState] = useState({ base, data: base })
   const current = state.base === base ? state.data : base
   useEffect(() => {
     if (!enabled || !base) return
-    const timer = window.setInterval(() => setState(prev => ({ base, data: advancePreview(prev.base === base ? prev.data : base) })), intervalMs)
+    const timer = window.setInterval(() => setState(prev => ({ base, data: advance(prev.base === base ? prev.data : base) })), intervalMs)
     return () => window.clearInterval(timer)
-  }, [base, enabled, intervalMs])
+  }, [base, enabled, advance, intervalMs])
   return enabled ? current : base
 }

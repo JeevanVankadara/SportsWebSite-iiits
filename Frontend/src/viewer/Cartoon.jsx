@@ -68,16 +68,23 @@ function teamKey(name = '') {
   return TEAM_PALETTES[first] ? first : null
 }
 
-// Default crests: Blue and Red houses get two clearly different logos; any other name gets a stable generated crest.
+const FALLBACK = [['#c9a3ee', '#8e4ec6', '#f0dcff'], ['#7cc4ff', '#0a84ff', '#d6eeff'], ['#ffb27a', '#ef6c00', '#ffe1c8'], ['#ff9cc4', '#e11d74', '#ffd6e8']]
+
+// Claymorphic crests: Blue and Red houses get two clearly different logos; any other name gets a stable generated crest.
 export function TeamLogo({ name = '', size = 44, className = '' }) {
   const uid = useId().replace(/:/g, '')
   const key = teamKey(name)
   const h = hash(name)
-  const [shape, emblem] = key ? TEAM_PALETTES[key].slice(3) : [h % SHAPES.length, (h >> 3) % EMBLEMS.length]
+  const [a, b, c, shape, emblem] = key ? TEAM_PALETTES[key] : [...FALLBACK[h % FALLBACK.length], h % SHAPES.length, (h >> 3) % EMBLEMS.length]
   const stroked = emblem === 3
   return <svg className={`st-team-logo ${className}`} width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={`${name} logo`}>
-    <defs><linearGradient id={`t${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#48484a" /><stop offset="1" stopColor="#1c1c1e" /></linearGradient></defs>
-    <path d={SHAPES[shape]} fill={`url(#t${uid})`} stroke="#8e8e93" strokeOpacity=".55" strokeWidth="1.5" strokeLinejoin="round" />
-    <path d={EMBLEMS[emblem]} fill={stroked ? 'none' : '#fff'} stroke="#fff" strokeWidth={stroked ? 4 : 0} strokeLinecap="round" strokeLinejoin="round" />
+    <defs>
+      <linearGradient id={`t${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c} /><stop offset=".35" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient>
+      <filter id={`s${uid}`} x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2.2" floodColor={b} floodOpacity=".45" /></filter>
+    </defs>
+    <path d={SHAPES[shape]} fill={`url(#t${uid})`} filter={`url(#s${uid})`} />
+    <path d={SHAPES[shape]} fill="none" stroke="#fff" strokeOpacity=".55" strokeWidth="1.6" transform="translate(32 32) scale(.86) translate(-32 -32)" />
+    <ellipse cx="22" cy="17" rx="5" ry="9" fill="#fff" opacity=".45" transform="rotate(35 22 17)" />
+    <path d={EMBLEMS[emblem]} fill={stroked ? 'none' : '#fff'} stroke="#fff" strokeWidth={stroked ? 4 : 0} strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 1px 1px ${b})` }} />
   </svg>
 }

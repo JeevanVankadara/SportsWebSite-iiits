@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { Activity, ArrowUpRight, Clock3 } from 'lucide-react'
 import PlayerAvatar from './PlayerAvatar.jsx'
 import { TeamLogo } from './Cartoon.jsx'
-import { AnimatedBar, BallCelebration, CountUp, SegToggle } from './Fx.jsx'
+import { AnimatedBar, SportCelebration, CountUp, SegToggle } from './Fx.jsx'
 import { liveInning, shortName, winProbability } from './liveFeed.js'
 import { idOf, houseName, formatDate } from './data.js'
 import { inningsTitle, oversText, runRate, strikeRate } from '../sports/cricket/format.js'
@@ -24,7 +24,7 @@ export function CricketLiveHeader({ data, live }) {
   const remaining = Math.max(0, (inning.overs ?? data.fixture.overs ?? 0) * 6 - inning.legal_balls)
   const needed = inning.target != null ? Math.max(0, inning.target - inning.runs) : null
   return <div className="st-live-score-hero st-fx-hero" data-event={event?.kind}>
-    <BallCelebration event={event} />
+    <SportCelebration event={event} />
     <div className="st-live-team">
       <TeamLogo name={batting} size={56} />
       <div>

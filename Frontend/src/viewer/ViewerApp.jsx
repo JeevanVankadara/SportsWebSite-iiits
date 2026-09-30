@@ -18,8 +18,6 @@ import {
   Clock3,
   Menu,
   Search,
-  Trophy,
-  Users,
   X,
 } from 'lucide-react'
 import { COORDINATOR_PATH } from '../config.js'
@@ -51,7 +49,9 @@ import ThemeToggle from './ThemeToggle.jsx'
 import { useViewerMotion } from './motion.js'
 import { CricketLiveHeader } from './CricketLive.jsx'
 import { TeamLogo } from './Cartoon.jsx'
-import { useLiveFeed, usePreviewTicker } from './liveFeed.js'
+import ClayIcon from './Clay.jsx'
+import { advancePreview, advancePreviewFootball, useLiveFeed, usePreviewTicker, useScoreEvent } from './liveFeed.js'
+import { SportCelebration } from './Fx.jsx'
 import './viewer.css'
 import './live.css'
 import '@fontsource-variable/inter'
@@ -302,7 +302,8 @@ function DataState({
         <CircleHelp size={28} />
         <h3>Couldn’t load the scores.</h3>
         <p>{error}</p>
-        <button onClick={onRetry}>Try again</button>
+        <p className="st-retry-note"><span className="st-spinner" aria-hidden="true" /> Trying again automatically…</p>
+        <button onClick={onRetry}>Try now</button>
         <Link to="/?preview=1">Explore design preview</Link>
       </div>
     )
@@ -394,39 +395,7 @@ function HouseBadge({ name }) {
 }
 
 function SportIcon({ sport }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {sport === 'cricket' ? (
-        <>
-          <path d="m5 15 9-10 4 4-10 9Z" />
-          <path d="m3 21 4-5" />
-          <circle cx="19" cy="18" r="3" />
-          <path d="m17 16 4 4" />
-        </>
-      ) : sport === 'football' ? (
-        <>
-          <circle cx="12" cy="12" r="9" />
-          <path d="m12 7 5 4-2 6H9l-2-6Z" />
-          <path d="M12 7V3M17 11l4-2M15 17l2 3M9 17l-2 3M7 11 3 9" />
-        </>
-      ) : (
-        <>
-          <ellipse cx="15" cy="8" rx="5" ry="6" transform="rotate(35 15 8)" />
-          <path d="m11 13-6 8M12 4l6 8M10 8l7 4M15 3l-3 9M18 5l-4 8" />
-        </>
-      )}
-    </svg>
-  )
+  return <ClayIcon kind={sport} size={28} />
 }
 
 function MatchCard({ item, tournament, variant = '' }) {
@@ -779,7 +748,7 @@ function HomeRoster({ overview }) {
         </DataState>
       ) : (
         <Link to={withPreview('/players')} className="st-roster-empty">
-          <Users size={20} />
+          <ClayIcon kind="users" size={28} />
           Open player directory
           <ChevronRight size={16} />
         </Link>
@@ -798,7 +767,7 @@ function TournamentCard({ tournament }) {
       className="st-tournament-card"
     >
       <div className="st-tournament-icon">
-        <Trophy size={22} />
+        <ClayIcon kind="trophy" size={44} />
       </div>
       <div className="st-tournament-info">
         <strong>{tournament.tournament_name}</strong>
@@ -1433,8 +1402,12 @@ function FixturePage() {
         : loadFixture(tournamentId, sport, fixtureId),
     !preview,
   )
-  const ticked = usePreviewTicker(baseData, preview && sport === 'cricket')
-  const liveFeed = useLiveFeed(ticked)
+  const ticked = usePreviewTicker(baseData, preview && (sport === 'cricket' || sport === 'football'), sport === 'football' ? advancePreviewFootball : advancePreview, sport === 'football' ? 7000 : 4200)
+  const scoreEvent0 = useScoreEvent(ticked, sport)
+  const liveFeed0 = useLiveFeed(ticked)
+  const [demo, setDemo] = useState(null)
+  const scoreEvent = demo && demo.at >= (scoreEvent0?.at ?? 0) ? demo : scoreEvent0
+  const liveFeed = demo && demo.at >= (liveFeed0.event?.at ?? 0) ? { ...liveFeed0, event: demo } : liveFeed0
   const data = ticked && { ...ticked, live: liveFeed }
   const f = data?.fixture
   const first = data && houseName(data.tournament, f.team1)
@@ -1462,6 +1435,7 @@ function FixturePage() {
         {f && (
           <>
             <div className="st-fixture-hero">
+              {sport !== 'cricket' && <SportCelebration event={scoreEvent} />}
               <h1 className="st-sr-only">
                 {first} vs {second}
               </h1>
@@ -1506,6 +1480,14 @@ function FixturePage() {
                 )}
               </div>
             </div>
+            {preview && (
+              <div className="st-demo-actions" aria-label="Preview animations">
+                <span>Preview animation</span>
+                {(sport === 'cricket' ? [['four', 'FOUR!', 'Four'], ['six', 'SIX!', 'Six'], ['wicket', 'OUT!', 'Out'], ['milestone', 'FIFTY!', 'Fifty'], ['wide', 'WIDE', 'Wide']] : sport === 'football' ? [['goal', 'GOAL!', 'Goal']] : [['point', 'SMASH!', 'Smash']]).map(([kind, word, label]) => (
+                  <button key={kind} type="button" onClick={() => setDemo({ kind, word, uid: `demo-${Date.now()}`, at: Date.now() })}>{label}</button>
+                ))}
+              </div>
+            )}
             {f.result_type === 'abandoned' && (
               <div className="st-abandoned">
                 Abandoned:{' '}
