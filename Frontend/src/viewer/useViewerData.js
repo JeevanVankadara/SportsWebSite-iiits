@@ -13,7 +13,7 @@ export function useViewerData(key, load, live = false, enabled = true) {
     let loaded = false
     let timer
     const refresh = async () => {
-      // The first load always runs (the data is static); only repeat refreshes wait for a visible tab.
+      // The first load always runs; repeat refreshes wait for a visible tab.
       if (!active || pending || (loaded && document.visibilityState === 'hidden')) return
       window.clearTimeout(timer)
       if (navigator.onLine === false) {

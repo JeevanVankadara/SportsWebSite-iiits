@@ -62,6 +62,14 @@ try {
         team2: 'red',
         status: 'scheduled',
       },
+      {
+        _id: 'k1',
+        sport: 'kabaddi',
+        tournamentId: 't1',
+        team1: 'blue',
+        team2: 'red',
+        status: 'completed',
+      },
     ],
   }
   const payloads = {
@@ -103,6 +111,16 @@ try {
         },
       ],
     },
+    '/api/kabaddi/fixtures/k1': {
+      fixture: {
+        status: 'completed',
+        result: 'team1',
+        team1_lineup: { starters: [player], bench: [] },
+        team2_lineup: { starters: [], bench: [] },
+        events: [],
+      },
+      state: { players: { p1: { raid_points: 4, tackle_points: 2 } } },
+    },
     '/api/tournaments/t1': { tournament },
     '/api/cricket/tournaments/t1/fixtures': { fixtures: [] },
   }
@@ -134,7 +152,11 @@ try {
     )
     assert.equal(players[0].stats.badminton.wins, 1)
     assert.equal(players[0].stats.badminton.points, 21)
-    assert.deepEqual(players[0].sports, ['cricket', 'football', 'badminton'])
+    assert.equal(players[0].stats.kabaddi.played, 1)
+    assert.equal(players[0].stats.kabaddi.won, 1)
+    assert.equal(players[0].stats.kabaddi.raidPoints, 4)
+    assert.equal(players[0].stats.kabaddi.tacklePoints, 2)
+    assert.deepEqual(players[0].sports, ['cricket', 'football', 'badminton', 'kabaddi'])
     for (const key of ['email', 'username', 'roll_number'])
       assert.equal(key in players[0], false)
   })
@@ -186,6 +208,12 @@ try {
       ),
       'Blue House won in the super over',
     )
+    const kabaddiResult = {
+      sport: 'kabaddi', status: 'completed', team1: 'blue', team2: 'red',
+      team1_score: 34, team2_score: 29, result: 'team1', result_type: 'normal',
+    }
+    assert.equal(score(kabaddiResult, 'team1'), '34')
+    assert.match(resultLine(kabaddiResult, tournament), /Blue House won by 5 points/)
     assert.throws(() => previewFixture('cricket', 'missing'), /does not exist/)
     assert.equal(previewOverview.fixtures.length, 5)
   })

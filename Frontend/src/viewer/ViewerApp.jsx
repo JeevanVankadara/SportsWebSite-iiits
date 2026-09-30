@@ -60,10 +60,14 @@ import './viewer.css'
 import './live.css'
 import '@fontsource-variable/inter'
 
-// The viewer shows static sample data only; it never calls the backend APIs.
-const withPreview = (path) => path
+// Demo data is available only when explicitly requested with ?preview=1.
+const withPreview = (path) => {
+  if (new URLSearchParams(window.location.search).get('preview') !== '1') return path
+  return `${path}${path.includes('?') ? '&' : '?'}preview=1`
+}
 function usePreview() {
-  return true
+  const { search } = useLocation()
+  return new URLSearchParams(search).get('preview') === '1'
 }
 
 function LiveBadge({ compact = false }) {
@@ -84,6 +88,7 @@ function StatusBadge({ status }) {
 }
 
 function Shell({ children }) {
+  const preview = usePreview()
   const { theme, changeTheme } = useAppearance()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -166,6 +171,14 @@ function Shell({ children }) {
           </div>
         </div>
       </header>
+      {preview && (
+        <div className="st-preview-banner">
+          <span>Design preview · sample scores and players</span>
+          <Link to="/">
+            View published scores <ArrowRight size={13} />
+          </Link>
+        </div>
+      )}
       {searchOpen && (
         <SearchDialog
           onClose={() => setSearchOpen(false)}
@@ -825,6 +838,7 @@ function TournamentPage() {
   const preview = usePreview()
   const { data, error, retry } = useViewerData(`overview-${preview}`, () =>
     preview ? Promise.resolve(previewOverview) : loadOverview(),
+    !preview,
   )
   const tournament = data?.tournaments.find((row) => idOf(row) === tournamentId)
   const fixtures =
@@ -953,6 +967,7 @@ function SportPage() {
         onChange={(name) =>
           setParams({
             ...(name === 'table' ? { tab: 'table' } : {}),
+            ...(preview ? { preview: '1' } : {}),
           })
         }
       />
@@ -1468,7 +1483,7 @@ function FixturePage() {
                 ['summary', f.status === 'live' ? 'Live' : 'Match info'],
                 [
                   'scorecard',
-                  sport === 'football'
+                  sport === 'football' || sport === 'kabaddi'
                     ? 'Timeline'
                     : sport === 'badminton'
                       ? 'Matches'
@@ -1528,6 +1543,13 @@ function PlayerStatistics({ sport, stats }) {
             ['Yellow cards', 'yellowCards'],
             ['Red cards', 'redCards'],
           ]
+        : sport === 'kabaddi'
+          ? [
+              ['Played', 'played'],
+              ['Won', 'won'],
+              ['Raid points', 'raidPoints'],
+              ['Tackle points', 'tacklePoints'],
+            ]
         : [
             ['Matches', 'matches'],
             ['Wins', 'wins'],

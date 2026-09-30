@@ -3,8 +3,9 @@ import {
   calculateCurrentSeconds,
   PERIOD_LABELS,
 } from '../sports/football/format.js'
+import { fixtureResultText as kabaddiResultText } from '../sports/kabaddi/format.js'
 
-export const sports = ['cricket', 'football', 'badminton']
+export const sports = ['cricket', 'football', 'badminton', 'kabaddi']
 export const sportName = (sport) =>
   sport.charAt(0).toUpperCase() + sport.slice(1)
 export const idOf = (item) => String(item?._id ?? item ?? '')
@@ -24,7 +25,7 @@ export function firstSportPath(tournaments, sport) {
 export function score(item, team) {
   const f = item.fixture ?? item
   if (f.status === 'scheduled') return '—'
-  if (item.sport === 'football') return String(f[`${team}_score`] ?? 0)
+  if (item.sport === 'football' || item.sport === 'kabaddi') return String(f[`${team}_score`] ?? 0)
   if (item.sport === 'badminton') return String(f[`${team}_matches_won`] ?? 0)
   const inning = f.innings?.find(
     (row) => row.super_over === 0 && row.batting_team === team,
@@ -40,6 +41,7 @@ export function resultLine(item, tournament) {
   const second = houseName(tournament, f.team2)
   if (f.status === 'scheduled')
     return f.scheduled_at ? formatDate(f.scheduled_at) : 'Time to be announced'
+  if (item.sport === 'kabaddi') return kabaddiResultText(f, first, second)
   if (f.status === 'live') {
     if (item.sport === 'football')
       return `${PERIOD_LABELS[f.clock?.period] ?? 'Live'} · ${Math.floor(calculateCurrentSeconds(f.clock) / 60)}′`
@@ -496,7 +498,7 @@ export async function loadPlayers(overview) {
           tally(row.player, 'cricket', 'conceded', row.runs)
         }
       }
-    } else if (item.sport === 'football') {
+    } else if (item.sport === 'football' || item.sport === 'kabaddi') {
       for (const team of ['team1', 'team2']) {
         for (const player of [
           ...(fixture[`${team}_lineup`]?.starters ?? []),
@@ -504,7 +506,27 @@ export async function loadPlayers(overview) {
         ])
           add(player, item, team)
       }
-      for (const event of fixture.events ?? []) {
+      if (item.sport === 'kabaddi') {
+        if (fixture.status === 'completed') {
+          for (const team of ['team1', 'team2']) {
+            const entered = new Set((fixture.events ?? [])
+              .filter((event) => event.type === 'substitution' && event.team === team)
+              .map((event) => idOf(event.player_in)))
+            const participants = [
+              ...(fixture[`${team}_lineup`]?.starters ?? []),
+              ...(fixture[`${team}_lineup`]?.bench ?? []).filter((player) => entered.has(idOf(player))),
+            ]
+            for (const player of participants) {
+              tally(player, 'kabaddi', 'played', 1)
+              if (fixture.result === team) tally(player, 'kabaddi', 'won', 1)
+            }
+          }
+        }
+        for (const [id, stats] of Object.entries(detail.state?.players ?? {})) {
+          tally(id, 'kabaddi', 'raidPoints', stats.raid_points)
+          tally(id, 'kabaddi', 'tacklePoints', stats.tackle_points)
+        }
+      } else for (const event of fixture.events ?? []) {
         if (event.type === 'goal' && event.goal_type !== 'own_goal') {
           tally(event.player, 'football', 'goals', 1)
           tally(event.assist_player, 'football', 'assists', 1)

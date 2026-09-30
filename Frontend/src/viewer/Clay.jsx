@@ -71,6 +71,15 @@ export default function ClayIcon({ kind = 'trophy', size = 40, label }) {
     </g>
   </Frame>
 
+  if (kind === 'kabaddi') return <Frame size={size} label={label}>
+    <defs>{grad('blue', 'a')}{grad('white', 'b')}</defs>
+    {shadow}
+    <rect x="7" y="14" width="50" height="37" rx="5" fill={fill('a')} />
+    <path d="M32 14v37M7 32.5h50M18 14v37M46 14v37" fill="none" stroke="#fff" strokeWidth="2" strokeOpacity=".85" />
+    <circle cx="32" cy="32.5" r="6" fill={fill('b')} stroke="#1853aa" strokeWidth="2" />
+    {gloss(20, 21, 9, 3)}
+  </Frame>
+
   if (kind === 'users') return <Frame size={size} label={label}>
     <defs>{grad('blue', 'a')}{grad('purple', 'b')}{grad('wood', 'c')}</defs>
     {shadow}

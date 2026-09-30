@@ -7,7 +7,7 @@ Badminton is the finished example; section 8 is a step-by-step checklist for add
 **Before writing backend code:** section 5. **Before writing frontend code:** section 7.
 **Adding a sport:** sections 6 and 8.
 
-Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md) and [docs/cricket-coordinator/README.md](cricket-coordinator/README.md) and [docs/football-coordinator/README.md](football-coordinator/README.md): what a referee can do in each sport, screen by screen. [docs/student-site/README.md](student-site/README.md): how the public live score pages should look, sport by sport (not built yet).
+Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md) and [docs/cricket-coordinator/README.md](cricket-coordinator/README.md) and [docs/football-coordinator/README.md](football-coordinator/README.md): what a referee can do in each sport, screen by screen. [Frontend/src/viewer/README.md](../Frontend/src/viewer/README.md): the public viewer and its API data flow.
 
 ---
 
@@ -20,7 +20,7 @@ It has three areas, each with its own sign-in and its own code folder:
 |---|---|---|---|
 | **Admin** | Sports admin | Secret path, `/control-room` by default | Built: tournaments, houses, sports, badminton, cricket and football fixtures, points tables, result corrections |
 | **Co-ordinator** | Referees (players picked by the admin for a fixture) | `/coordinator` | Built for badminton (match order, slips, live scoring) cricket (squads, toss, ball-by-ball scoring, super over) and football (match settings, lineups, match clock, goals, cards and substitutions) |
-| **Users** | Students | `/` | Placeholder page; live scores come later |
+| **Users** | Students | `/` | Public tournaments, fixtures, scores, standings and player directory for all four sports |
 
 Players register once at `/register` (name, college email, roll number, username, password). The same account is used when a player is made a referee.
 
@@ -85,7 +85,7 @@ npm --prefix Frontend run dev
 - Always start the backend with **`npm run dev`** (`node --watch`). Plain `node server.js` does not reload on changes, and you will be testing old code without noticing.
 - Open http://localhost:5173. Admin: http://localhost:5173/control-room. Co-ordinator: http://localhost:5173/coordinator.
 - To try it on a phone on the same Wi-Fi: `npm --prefix Frontend run dev -- --host` and open the Network URL it prints. This works because of the Vite proxy (keep `VITE_API_URL` empty).
-- On startup the backend adds the predefined sports (Cricket, Badminton, Football) if missing, and turns old "upcoming" tournaments into "live" ones.
+- On startup the backend adds the predefined sports (Cricket, Badminton, Football, Kabaddi) if missing, and turns old "upcoming" tournaments into "live" ones.
 
 ### 3.3 Trying the whole badminton flow
 
@@ -196,7 +196,7 @@ HTTP request
 | `admins` | `models/Admin.js` | `username`, `password_hash` | Created only by `seed:admin` |
 | `players` | `models/Player.js` | `name`, `email`, `roll_number`, `username`, `password_hash`, `sports.<sport>` | Unique email, roll number, username. `sports.badminton = { played, won }`, `sports.cricket = { played, won, runs, wickets }`, `sports.football = { played, won, goals, yellow_cards, red_cards }` |
 | `tournaments` | `models/Tournament.js` | `tournament_name`, `games[]` → Game, `houses[] { _id, house_name }`, `status` (`live` / `completed`), `start_date`, `end_date` | Houses are **embedded**: they belong to one tournament. Max 30, names unique within the tournament |
-| `games` | `models/Game.js` | `game_name`, `rules` → Rules | Only `PREDEFINED_GAMES` (Cricket, Badminton, Football) are offered |
+| `games` | `models/Game.js` | `game_name`, `rules` → Rules | Only `PREDEFINED_GAMES` (Cricket, Badminton, Football, Kabaddi) are offered |
 | `rules` | `models/Rules.js` | `set_of_rules[]` | Kept for later sport details |
 
 Passwords are hashed with bcrypt (cost 12) and never returned (`select: false` + `toJSON` removes them).

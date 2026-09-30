@@ -17,6 +17,14 @@ import {
   rosterState,
   sortEvents,
 } from '../sports/football/format.js'
+import {
+  describeEvent as describeKabaddiEvent,
+  EVENT_LABELS as KABADDI_EVENT_LABELS,
+  formatClock as formatKabaddiClock,
+  lineupPlayers as kabaddiLineupPlayers,
+  PERIOD_LABELS as KABADDI_PERIOD_LABELS,
+  remainingSeconds as kabaddiRemainingSeconds,
+} from '../sports/kabaddi/format.js'
 import { houseName, idOf, resultLine, sportName, formatDate } from './data.js'
 
 function playerIndex(fixture) {
@@ -367,6 +375,37 @@ function FootballTimeline({ data }) {
   )
 }
 
+function KabaddiTimeline({ data }) {
+  const { fixture, tournament, detail } = data
+  const players = kabaddiLineupPlayers(fixture)
+  const timeline = new Map((detail.state?.timeline ?? []).map((entry) => [idOf(entry.event_id), entry]))
+  const events = [...(fixture.events ?? [])].reverse()
+  return (
+    <div className="st-detail-stack">
+      <section className="st-detail-panel st-football-clock">
+        <Clock3 size={20} />
+        <strong>{KABADDI_PERIOD_LABELS[fixture.clock?.period] ?? 'Pre-match'} · {formatKabaddiClock(kabaddiRemainingSeconds(fixture))}</strong>
+        <span>{fixture.clock?.is_running ? 'Clock running' : 'Clock paused'}</span>
+      </section>
+      {events.map((event, index) => {
+        const entry = timeline.get(idOf(event))
+        return (
+          <section className="st-detail-panel st-event-row" key={idOf(event) || index}>
+            <strong>{event.half === 'first_half' ? '1st' : event.half === 'second_half' ? '2nd' : 'FT'}</strong>
+            <div>
+              <b>{KABADDI_EVENT_LABELS[event.type] ?? event.type}</b>
+              <p>{describeKabaddiEvent(event, players)}</p>
+              {entry?.all_out && <p>All out · {houseName(tournament, fixture[entry.all_out])}</p>}
+            </div>
+            <span>{entry ? `${entry.score_after.team1}–${entry.score_after.team2}` : houseName(tournament, fixture[event.team])}</span>
+          </section>
+        )
+      })}
+      {!events.length && <div className="st-message st-message-small">No match events yet.</div>}
+    </div>
+  )
+}
+
 function Squads({ data }) {
   const { fixture: f, detail } = data
   return (
@@ -380,6 +419,11 @@ function Squads({ data }) {
               ]
             : f.sport === 'football'
               ? rosterState(f, team).all
+              : f.sport === 'kabaddi'
+                ? [
+                    ...(f[`${team}_lineup`]?.starters ?? []),
+                    ...(f[`${team}_lineup`]?.bench ?? []),
+                  ]
               : [
                   ...new Map(
                     (detail.matches ?? [])
@@ -390,6 +434,8 @@ function Squads({ data }) {
         const onPitch =
           f.sport === 'football'
             ? new Set(rosterState(f, team).onPitch.map(idOf))
+            : f.sport === 'kabaddi'
+              ? new Set(detail.state?.sides?.[team]?.on_court ?? [])
             : null
         return (
           <section className="st-detail-panel" key={team}>
@@ -401,8 +447,8 @@ function Squads({ data }) {
                   {onPitch && (
                     <span>
                       {onPitch.has(idOf(player))
-                        ? 'On pitch'
-                        : 'Bench / off pitch'}
+                        ? f.sport === 'kabaddi' ? 'On court' : 'On pitch'
+                        : f.sport === 'kabaddi' ? 'Bench / out' : 'Bench / off pitch'}
                     </span>
                   )}
                 </div>
@@ -423,11 +469,13 @@ export function FixtureContent({ tab, data }) {
   if (tab === 'scorecard') {
     if (f.sport === 'cricket') return <CricketScorecard data={data} />
     if (f.sport === 'badminton') return <BadmintonMatches data={data} />
+    if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
     return <FootballTimeline data={data} />
   }
   if (f.status === 'live' || f.status === 'completed') {
     if (f.sport === 'cricket') return f.status === 'live' ? <CricketLive data={data} live={data.live} /> : <CricketScorecard data={data} />
     if (f.sport === 'badminton') return <BadmintonMatches data={data} />
+    if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
     return <FootballTimeline data={data} />
   }
   return (
@@ -481,6 +529,15 @@ export function PointsTable({ data, sport }) {
           ['NR', 'no_result', 'No result'],
           ['NRR', 'nrr', 'Net run rate'],
         ]
+      : sport === 'kabaddi'
+        ? [
+            ...base,
+            ['D', 'drawn', 'Drawn'],
+            ['L', 'lost', 'Lost'],
+            ['PF', 'points_for', 'Points for'],
+            ['PA', 'points_against', 'Points against'],
+            ['PD', 'point_diff', 'Points difference'],
+          ]
       : [
           ...base,
           ['D', 'drawn', 'Drawn'],

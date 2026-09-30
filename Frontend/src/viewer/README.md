@@ -1,6 +1,6 @@
 # IIITS Sports viewer
 
-Public, frontend-only viewer for the existing IIITS Sports APIs. The viewer is lazy-loaded from `src/App.jsx`; admin, co-ordinator and registration routes remain available.
+Public viewer for the existing IIITS Sports APIs. The viewer is lazy-loaded from `src/App.jsx`; admin, co-ordinator and registration routes remain available.
 
 ## Run
 
@@ -32,7 +32,7 @@ Open `/?preview=1` for the clearly labeled design preview. Preview data is illus
 | `/players/:playerId` | Public participation, status, sport totals and fixture history |
 | `/search?q=...` | Match and player search by name, house or sport |
 
-Cricket includes current batters/bowler, batting and bowling tables, extras, fall of wickets, and over summaries. Football includes clock, timeline and squads. Badminton includes singles/doubles players and set scores. Standings retain each sport's own columns.
+Cricket includes current batters/bowler, batting and bowling tables, extras, fall of wickets, and over summaries. Football includes clock, timeline and squads. Badminton includes singles/doubles players and set scores. Kabaddi includes scores, match clock, event timeline, squads and points table. Standings retain each sport's own columns.
 
 ## Data and refresh
 
