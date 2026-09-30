@@ -5,6 +5,7 @@ import { TrophyIcon } from '../components/icons.jsx'
 import { Breadcrumbs, EmptyState, LoadError } from '../components/ui.jsx'
 import BadmintonRoutes from '../sports/badminton/BadmintonRoutes.jsx'
 import FootballRoutes from '../sports/football/FootballRoutes.jsx'
+import CricketRoutes from '../sports/cricket/CricketRoutes.jsx'
 import { useTournament } from '../useTournament.js'
 
 // Each sport has its own section under src/admin/sports/. Sports without one show a placeholder.
@@ -21,6 +22,8 @@ export default function SportPage() {
   }
   if (sport?.game_name.toLowerCase() === 'football') {
     return <FootballRoutes tournament={tournament} sport={sport} />
+  if (sport?.game_name.toLowerCase() === 'cricket') {
+    return <CricketRoutes tournament={tournament} sport={sport} />
   }
 
   const backButton = (

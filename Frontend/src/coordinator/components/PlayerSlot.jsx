@@ -36,15 +36,15 @@ export default function PlayerSlot({ player, onChange, label }) {
           ×
         </button>
       </span>
-    );
+    )
   }
 
-  const upToDate = search !== '' && results.search === search;
-  const options = upToDate ? results.players : [];
+  const upToDate = search !== '' && results.search === search
+  const options = upToDate ? results.players.filter((option) => !exclude?.has(option._id)) : []
 
   function pick(chosen) {
-    onChange(chosen);
-    setQuery('');
+    onChange(chosen)
+    setQuery('')
   }
 
   return (

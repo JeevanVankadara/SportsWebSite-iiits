@@ -1,0 +1,102 @@
+/* Cricket admin screens: scorecards. Shared sport styles (tabs, fixture list, points table) live in admin.css. */
+
+.cr-row-score,
+.cr-board-team small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-cards {
+  display: grid;
+  gap: 14px;
+}
+
+.cr-card {
+  display: grid;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+
+.cr-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cr-card-title {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cr-card-team {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cr-card-score {
+  display: grid;
+  justify-items: end;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-card-score small,
+.cr-card-note {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cr-card-line {
+  color: var(--color-text-soft);
+  font-size: 0.8125rem;
+}
+
+.cr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-table th,
+.cr-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cr-table thead th {
+  background: var(--color-subtle);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cr-table .cr-name {
+  min-width: 140px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+}
+
+.cr-name small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.cr-strong {
+  font-weight: 700;
+}

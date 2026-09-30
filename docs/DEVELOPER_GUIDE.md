@@ -7,7 +7,7 @@ Badminton is the finished example; section 8 is a step-by-step checklist for add
 **Before writing backend code:** section 5. **Before writing frontend code:** section 7.
 **Adding a sport:** sections 6 and 8.
 
-Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md): what a badminton referee can do, screen by screen.
+Related: [docs/badminton-coordinator/README.md](badminton-coordinator/README.md) and [docs/cricket-coordinator/README.md](cricket-coordinator/README.md): what a referee can do in each sport, screen by screen.
 
 ---
 
@@ -18,8 +18,8 @@ It has three areas, each with its own sign-in and its own code folder:
 
 | Area | Who | URL | Status |
 |---|---|---|---|
-| **Admin** | Sports admin | Secret path, `/control-room` by default | Built: tournaments, houses, sports, badminton fixtures, points table, result corrections |
-| **Co-ordinator** | Referees (players picked by the admin for a fixture) | `/coordinator` | Built for badminton: match order, slips, live scoring |
+| **Admin** | Sports admin | Secret path, `/control-room` by default | Built: tournaments, houses, sports, badminton and cricket fixtures, points tables, result corrections |
+| **Co-ordinator** | Referees (players picked by the admin for a fixture) | `/coordinator` | Built for badminton (match order, slips, live scoring) and cricket (squads, toss, ball-by-ball scoring, super over) |
 | **Users** | Students | `/` | Placeholder page; live scores come later |
 
 Players register once at `/register` (name, college email, roll number, username, password). The same account is used when a player is made a referee.

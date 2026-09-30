@@ -13,6 +13,7 @@ import SignInPage from './pages/SignInPage.jsx'
 import { CoNotFound } from './components/ui.jsx'
 import BadmintonFixturePage from './sports/badminton/BadmintonFixturePage.jsx'
 import FootballFixturePage from './sports/football/FootballFixturePage.jsx'
+import CricketFixturePage from './sports/cricket/CricketFixturePage.jsx'
 
 // Co-ordinator (referee) area. Each sport keeps its screens in its own folder under sports/.
 export default function CoordinatorApp() {
@@ -33,6 +34,7 @@ export default function CoordinatorApp() {
             <Route path="games" element={<GamesPage />} />
             <Route path="badminton/:fixtureId" element={<BadmintonFixturePage />} />
             <Route path="football/:fixtureId" element={<FootballFixturePage />} />
+            <Route path="cricket/:fixtureId" element={<CricketFixturePage />} />
           </Route>
           <Route path="*" element={<CoNotFound />} />
         </Routes>

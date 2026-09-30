@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { badmintonApi } from '../../../api/endpoints.js'
+import { cricketApi } from '../../../api/endpoints.js'
 import Alert from '../../../components/Alert.jsx'
 import PageLoader from '../../../components/PageLoader.jsx'
 import { adminPath } from '../../../config.js'
-import { Breadcrumbs, EmptyState, LoadError, PageHeader } from '../../components/ui.jsx'
 import { useResource } from '../../../hooks/useResource.js'
 import { toDateTimeInput } from '../../../utils/dates.js'
-import { useBadminton } from './badmintonContext.js'
 import RefereePicker from '../../components/RefereePicker.jsx'
+import { Breadcrumbs, EmptyState, LoadError, PageHeader } from '../../components/ui.jsx'
+import { useCricket } from './cricketContext.js'
 
 // The admin declares a fixture: the two houses, when it is played and who referees it.
-// The referee sets the match order, sets and points at the start of the fixture.
+// The referee sets the overs, powerplay, squads and toss at the ground.
 export default function FixtureFormPage() {
   const { fixtureId } = useParams()
   return <FixtureFormLoader key={fixtureId ?? 'new'} fixtureId={fixtureId} />
@@ -19,14 +19,14 @@ export default function FixtureFormPage() {
 
 function FixtureFormLoader({ fixtureId }) {
   const { data, error, retry } = useResource(fixtureId ?? 'new', () =>
-    fixtureId ? badmintonApi.fixture(fixtureId) : Promise.resolve({ fixture: null }),
+    fixtureId ? cricketApi.fixture(fixtureId) : Promise.resolve({ fixture: null }),
   )
   if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
   return <FixtureForm fixture={data.fixture} />
 }
 
 function FixtureForm({ fixture }) {
-  const { tournament, basePath, breadcrumbs, houseName } = useBadminton()
+  const { tournament, basePath, breadcrumbs, houseName } = useCricket()
   const navigate = useNavigate()
   const isEditing = Boolean(fixture)
 
@@ -37,7 +37,6 @@ function FixtureForm({ fixture }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Mirrors the server: the houses are fixed once play starts.
   const teamsLocked = isEditing && fixture.status !== 'scheduled'
   const cancelPath = isEditing ? `${basePath}/fixtures/${fixture._id}` : basePath
 
@@ -58,8 +57,8 @@ function FixtureForm({ fixture }) {
 
     try {
       const { fixture: saved } = isEditing
-        ? await badmintonApi.updateFixture(fixture._id, data)
-        : await badmintonApi.createFixture(tournament._id, data)
+        ? await cricketApi.updateFixture(fixture._id, data)
+        : await cricketApi.createFixture(tournament._id, data)
       navigate(`${basePath}/fixtures/${saved._id}`)
     } catch (err) {
       setError(err.message)
@@ -89,7 +88,7 @@ function FixtureForm({ fixture }) {
       <Breadcrumbs items={breadcrumbs({ label: isEditing ? 'Edit fixture' : 'Add fixture' })} />
       <PageHeader
         title={isEditing ? `Edit ${houseName(fixture.team1)} vs ${houseName(fixture.team2)}` : 'Add fixture'}
-        description="Pick the two houses, when they play and the referees. The referee sets the match order at the start."
+        description="Pick the two houses, when they play and the referees. The referee sets the overs, squads and toss."
       />
 
       <form className="panel form-stack" onSubmit={handleSubmit}>
@@ -133,7 +132,7 @@ function FixtureForm({ fixture }) {
 }
 
 function HouseSelect({ label, value, other, onChange, disabled }) {
-  const { tournament } = useBadminton()
+  const { tournament } = useCricket()
   return (
     <label className="field">
       <span className="field-label">{label}</span>
