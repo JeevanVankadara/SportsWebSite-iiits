@@ -16,8 +16,10 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
-  Menu,
+  House,
   Search,
+  Trophy,
+  Users,
   X,
 } from 'lucide-react'
 import { COORDINATOR_PATH } from '../config.js'
@@ -83,18 +85,38 @@ function StatusBadge({ status }) {
 }
 
 function Shell({ children }) {
-  const [theme, setTheme] = useState(() => {
+  // The theme follows the device (and its live changes) until the user picks the other one; picking the device's own theme clears the override.
+  const [stored, setStored] = useState(() => {
     try {
-      const saved = localStorage.getItem('iiits-viewer-theme')
-      if (saved === 'dark' || saved === 'light') return saved
+      const saved = localStorage.getItem('iiits-viewer-theme-choice')
+      return saved === 'dark' || saved === 'light' ? saved : null
     } catch {
-      /* The theme still works when storage is unavailable. */
+      return null
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
   })
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [system, setSystem] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-color-scheme: dark)')
+    const change = (event) => setSystem(event.matches ? 'dark' : 'light')
+    query.addEventListener('change', change)
+    return () => query.removeEventListener('change', change)
+  }, [])
+  const theme = stored ?? system
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.backgroundColor = theme === 'dark' ? '#000' : '#f5f5f7'
+    root.style.colorScheme = theme
+    return () => { root.style.backgroundColor = ''; root.style.colorScheme = '' }
+  }, [theme])
+  const changeTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    const override = next === system ? null : next
+    setStored(override)
+    try {
+      if (override) localStorage.setItem('iiits-viewer-theme-choice', override)
+      else localStorage.removeItem('iiits-viewer-theme-choice')
+    } catch { /* Session appearance */ }
+  }
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchButton = useRef(null)
@@ -105,7 +127,6 @@ function Shell({ children }) {
   const submit = (event) => {
     event.preventDefault()
     setSearchOpen(false)
-    setMenuOpen(false)
     navigate(withPreview(`/search?q=${encodeURIComponent(query.trim())}`))
   }
   return (
@@ -135,41 +156,33 @@ function Shell({ children }) {
           </Link>
           <nav
             id="viewer-navigation"
-            className={`st-nav ${menuOpen ? 'st-nav-open' : ''}`}
+            className="st-nav"
             aria-label="Main navigation"
           >
             <NavLink
               end
               to={withPreview('/')}
-              onClick={() => setMenuOpen(false)}
             >
               Home
             </NavLink>
             <NavLink
               to={withPreview('/fixtures')}
-              onClick={() => setMenuOpen(false)}
             >
               Fixtures
             </NavLink>
             <NavLink
               to={withPreview('/tournaments')}
-              onClick={() => setMenuOpen(false)}
             >
               Tournaments
             </NavLink>
             <NavLink
               to={withPreview('/players')}
-              onClick={() => setMenuOpen(false)}
             >
               Players
             </NavLink>
           </nav>
           <div className="st-header-actions">
-            <ThemeToggle theme={theme} onChange={() => {
-              const next = theme === 'dark' ? 'light' : 'dark'
-              setTheme(next)
-              try { localStorage.setItem('iiits-viewer-theme', next) } catch { /* Session appearance */ }
-            }} />
+            <ThemeToggle theme={theme} onChange={changeTheme} />
             <button
               ref={searchButton}
               className="st-icon-button st-search-button"
@@ -182,15 +195,6 @@ function Shell({ children }) {
             <Link className="st-register" to="/register">
               Register <ArrowRight size={15} />
             </Link>
-            <button
-              className="st-icon-button st-menu-button"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-expanded={menuOpen}
-              aria-controls="viewer-navigation"
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
           </div>
         </div>
       </header>
@@ -231,6 +235,14 @@ function Shell({ children }) {
         </div>
       )}
       {children}
+      <nav className="st-tabbar" aria-label="Primary">
+        {[['/', 'Home', House, true], ['/fixtures', 'Fixtures', CalendarDays], ['/tournaments', 'Tournaments', Trophy], ['/players', 'Players', Users]].map(([to, label, Icon, end]) => (
+          <NavLink key={to} to={withPreview(to)} end={end}>
+            <Icon size={22} aria-hidden="true" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
       <footer className="st-footer">
         <div className="st-container st-footer-inner">
           <div>

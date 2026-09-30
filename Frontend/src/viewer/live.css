@@ -184,3 +184,40 @@ html::-webkit-scrollbar, body::-webkit-scrollbar { display:none; }
   .st-app .st-player-card > svg { grid-area:chev; }
   .st-app .st-player-main strong { display:block; white-space:normal; }
 }
+
+/* Device-following themes: native form controls and overscroll match the active theme */
+.st-app { color-scheme:light; }
+.st-app[data-theme='dark'] { color-scheme:dark; }
+
+/* Nothing may push the page sideways */
+html, body { max-width:100%; overflow-x:clip; }
+.st-app { overflow-x:clip; }
+.st-app main, .st-app .st-container, .st-app .st-main-content { min-width:0; max-width:100%; }
+
+/* One set of edges: 20px for cards and panels, 14px for things inside them, pills for chips and controls */
+.st-app { --st-r-card:20px; --st-r-inner:14px; }
+.st-app .st-match-card, .st-app .st-home-panel, .st-app .st-fixture-hero, .st-app .st-detail-panel, .st-app .st-message, .st-app .st-player-card, .st-app .st-sport-tile, .st-app .st-badminton-match, .st-app .st-profile-stats, .st-app .st-skeleton-card, .st-app .st-search-dialog, .st-app .st-fx-hero, .st-app .st-celebrate { border-radius:var(--st-r-card); }
+.st-app .st-tournament-card, .st-app .st-quick-sports a, .st-app .st-houses > span, .st-app .st-table-scroll, .st-app .st-abandoned, .st-app .st-tournament-icon, .st-app .st-schedule-icon, .st-app .st-feed-item, .st-app .st-out-card { border-radius:var(--st-r-inner); }
+.st-app .st-match-card, .st-app .st-home-panel, .st-app .st-detail-panel, .st-app .st-message, .st-app .st-player-card, .st-app .st-tournament-card, .st-app .st-sport-tile { border:1px solid var(--st-line); }
+.st-app .st-tournament-card { background:var(--st-subtle); }
+
+/* Mobile navigation: a floating bottom tab bar replaces the hamburger menu */
+.st-tabbar { display:none; }
+@media (max-width:800px) {
+  .st-app { padding-bottom:calc(92px + env(safe-area-inset-bottom)); }
+  .st-app .st-nav, .st-app .st-menu-button { display:none; }
+  .st-app > .st-tabbar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; position:fixed; left:12px; right:12px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:250; padding:6px; border:1px solid var(--st-line); border-radius:26px; background:var(--st-glass); -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); box-shadow:0 10px 30px rgba(0,0,0,.2); }
+  .st-tabbar a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:54px; min-width:0; padding:6px 2px; border-radius:20px; color:var(--st-muted); font-size:10.5px; font-weight:600; letter-spacing:.01em; text-decoration:none; -webkit-tap-highlight-color:transparent; transition:color .2s var(--st-ease),background-color .2s var(--st-ease); }
+  .st-tabbar a span { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .st-tabbar a.active { color:var(--st-blue); background:color-mix(in srgb,var(--st-blue) 14%,transparent); }
+  .st-tabbar a:active { background:var(--st-subtle); }
+  .st-tabbar a:focus-visible { outline:2px solid var(--st-blue); outline-offset:-2px; }
+  .st-app .st-header-actions { margin-left:auto; }
+}
+
+/* Register stays visible in the mobile header as the single blue action */
+@media (max-width:800px) {
+  .st-app .st-register { display:inline-flex; height:36px; padding:0 14px; font-size:13px; }
+  .st-app .st-register svg { display:none; }
+}
+@media (max-width:560px) { .st-app .st-player-card > .st-player-state { margin:0; } }
