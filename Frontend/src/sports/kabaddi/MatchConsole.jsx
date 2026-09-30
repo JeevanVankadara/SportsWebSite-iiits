@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   configOf,
   describeEvent,
@@ -12,26 +12,57 @@ import {
 } from './format.js'
 import './kabaddi.css'
 
-// The live scoring screen, shared by the admin and the referee. The server replays the events and sends
-// the match state (who is on court, who is out, whose raid is next), so this only shows it and sends actions.
+// How many of the most recent actions the referee may undo before a new action is recorded.
+const UNDO_STEPS = 2
+
+// The live scoring screen. The server replays the events and sends the match state (who is on court,
+// who is out, whose raid is next), so this only shows it and sends actions.
 //
-// api: { firstRaid, clock, finish, addEvent, undo, deleteEvent? } bound to the admin or co-ordinator endpoints.
-// isAdmin: adds score corrections and deleting any event, also after the match is over.
-export default function MatchConsole({ detail, names, api, busy, run, isAdmin = false }) {
+// The referee runs the whole match here. The admin passes readOnly to watch the score, court and log
+// without changing anything (they manage the fixture and the final decision elsewhere).
+export default function MatchConsole({ detail, names, api, busy, run, readOnly = false }) {
   const { fixture, state } = detail
   const period = fixture.clock?.period ?? 'not_started'
   const playing = period === 'first_half' || period === 'second_half'
   const started = period !== 'not_started'
   const over = fixture.status === 'completed'
   const players = lineupPlayers(fixture)
-  const shared = { fixture, state, names, players, api, busy, run, isAdmin }
+
+  // Bounded undo: the referee can reverse at most the last two actions. Recording a new action
+  // (the event count goes up) refills the budget; each undo spends one.
+  const eventCount = fixture.events.length
+  const prevCount = useRef(eventCount)
+  const [undosLeft, setUndosLeft] = useState(UNDO_STEPS)
+  useEffect(() => {
+    if (eventCount > prevCount.current) setUndosLeft(UNDO_STEPS)
+    prevCount.current = eventCount
+  }, [eventCount])
+
+  async function handleUndo() {
+    const ok = await run(() => api.undo(fixture._id))
+    if (ok) setUndosLeft((left) => Math.max(0, left - 1))
+  }
+
+  const shared = { fixture, state, names, players, api, busy, run }
+
+  if (readOnly) {
+    return (
+      <div className="kb">
+        <Scoreboard {...shared} />
+        {started && <Court {...shared} />}
+        {started && <EventLog {...shared} />}
+      </div>
+    )
+  }
 
   return (
     <div className="kb">
       <Scoreboard {...shared} />
       {!over && <ClockBar {...shared} />}
       {playing && !over && <RaidPad key={`${period}-${state.timeline.length}`} {...shared} />}
-      {started && (!over || isAdmin) && <OtherActions key={state.timeline.length} {...shared} />}
+      {started && !over && (
+        <OtherActions key={state.timeline.length} {...shared} undosLeft={undosLeft} onUndo={handleUndo} />
+      )}
       {started && <Court {...shared} />}
       {started && <EventLog {...shared} />}
     </div>
@@ -276,8 +307,11 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
 
           {mode === 'scored' ? (
             <>
-              <p className="kb-hint">Tap every defender the raider touched. Leave empty for an empty raid.</p>
-              <PlayerChips ids={defenders} players={players} selected={touched} onPick={toggleTouched} />
+              <p className="kb-hint">
+                Tap defenders in the order the raider touched them — that is the order they go out. Leave empty for
+                an empty raid.
+              </p>
+              <PlayerChips ids={defenders} players={players} selected={touched} onPick={toggleTouched} showOrder />
               {config.bonus_enabled && (
                 <label className="kb-check">
                   <input type="checkbox" checked={bonus} onChange={(event) => setBonus(event.target.checked)} />
@@ -304,28 +338,36 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
   )
 }
 
-function PlayerChips({ ids, players, selected = [], onPick, empty = 'No players' }) {
+// When showOrder is set, each selected chip shows its 1-based position in `selected` — the order the
+// raider touched them, which is the order they go out (and so the order they are revived).
+function PlayerChips({ ids, players, selected = [], onPick, empty = 'No players', showOrder = false }) {
   if (ids.length === 0) return <p className="kb-hint">{empty}</p>
   return (
     <div className="kb-chips">
-      {ids.map((id) => (
-        <button
-          key={id}
-          type="button"
-          className="kb-chip"
-          aria-pressed={selected.includes(id)}
-          onClick={onPick ? () => onPick(id) : undefined}
-          disabled={!onPick}
-        >
-          {players.get(id)?.name ?? 'Unknown'}
-        </button>
-      ))}
+      {ids.map((id) => {
+        const picked = selected.includes(id)
+        const order = showOrder && picked ? selected.indexOf(id) + 1 : null
+        return (
+          <button
+            key={id}
+            type="button"
+            className="kb-chip"
+            aria-pressed={picked}
+            aria-label={order != null ? `${players.get(id)?.name ?? 'Unknown'}, touched ${order}` : undefined}
+            onClick={onPick ? () => onPick(id) : undefined}
+            disabled={!onPick}
+          >
+            {order != null && <span className="kb-chip-order">{order}</span>}
+            {players.get(id)?.name ?? 'Unknown'}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
-// Technical points, substitutions, the admin's corrections, and undoing the latest event.
-function OtherActions({ fixture, state, names, players, api, busy, run, isAdmin }) {
+// Technical points, substitutions, score corrections, and undoing the last one or two actions.
+function OtherActions({ fixture, state, names, players, busy, run, api, undosLeft, onUndo }) {
   const [open, setOpen] = useState(null)
   const [team, setTeam] = useState('team1')
   const [points, setPoints] = useState('1')
@@ -334,6 +376,7 @@ function OtherActions({ fixture, state, names, players, api, busy, run, isAdmin 
   const [playerIn, setPlayerIn] = useState('')
   const over = fixture.status === 'completed'
   const lastEvent = fixture.events.at(-1)
+  const canUndo = Boolean(lastEvent) && undosLeft > 0
 
   function toggle(name) {
     setOpen((current) => (current === name ? null : name))
@@ -353,15 +396,16 @@ function OtherActions({ fixture, state, names, players, api, busy, run, isAdmin 
   }
 
   function undo() {
+    if (!canUndo) return
     const what = `${EVENT_LABELS[lastEvent.type]}: ${describeEvent(lastEvent, players)}`
-    if (window.confirm(`Undo the latest event?\n\n${what}`)) run(() => api.undo(fixture._id))
+    if (window.confirm(`Undo the latest action?\n\n${what}`)) onUndo()
   }
 
   const side = state.sides[team]
   const buttons = [
     { key: 'technical', label: 'Technical point' },
     !over && { key: 'substitution', label: 'Substitution' },
-    isAdmin && { key: 'correction', label: 'Correct score' },
+    { key: 'correction', label: 'Correct score' },
   ].filter(Boolean)
 
   return (
@@ -378,10 +422,19 @@ function OtherActions({ fixture, state, names, players, api, busy, run, isAdmin 
             {item.label}
           </button>
         ))}
-        <button type="button" className="kb-btn kb-btn-danger" disabled={busy || !lastEvent} onClick={undo}>
-          Undo last
+        <button
+          type="button"
+          className="kb-btn kb-btn-danger"
+          disabled={busy || !canUndo}
+          onClick={undo}
+          title={lastEvent && undosLeft === 0 ? 'Undo limit reached — use Correct score to fix the score' : undefined}
+        >
+          Undo{lastEvent ? ` (${undosLeft} left)` : ''}
         </button>
       </div>
+      {lastEvent && undosLeft === 0 && (
+        <p className="kb-hint">Undo limit reached. Use Correct score to fix the scoreline if needed.</p>
+      )}
 
       {open && (
         <form className="kb-form" onSubmit={submit}>
@@ -486,13 +539,10 @@ function Court({ state, names, players }) {
   )
 }
 
-function EventLog({ fixture, state, names, players, api, busy, run, isAdmin }) {
+// The full running log of the match: every raid, tackle, technical point, correction and substitution,
+// with the score after each one. Shown to both the referee and the admin; nobody edits it here.
+function EventLog({ fixture, state, names, players }) {
   const rows = fixture.events.map((event, index) => ({ event, entry: state.timeline[index], number: index + 1 })).reverse()
-
-  function remove(event) {
-    if (!window.confirm('Delete this event? Everything after it is recalculated without it.')) return
-    run(() => api.deleteEvent(fixture._id, event._id))
-  }
 
   return (
     <section className="kb-panel">
@@ -525,17 +575,6 @@ function EventLog({ fixture, state, names, players, api, busy, run, isAdmin }) {
                 <span className="kb-log-score">
                   {entry?.score_after.team1}–{entry?.score_after.team2}
                 </span>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="kb-icon-btn"
-                    disabled={busy}
-                    onClick={() => remove(event)}
-                    aria-label={`Delete event ${number}`}
-                  >
-                    ×
-                  </button>
-                )}
               </li>
             )
           })}

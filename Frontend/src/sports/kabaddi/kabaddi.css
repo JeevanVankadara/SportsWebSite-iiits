@@ -245,6 +245,23 @@
   color: #fff;
 }
 
+/* Touch-order badge shown on a selected defender: the order they were touched = the order they go out. */
+.kb-chip-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--kb-accent);
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .kb-chip-static {
   padding-right: 4px;
   cursor: default;

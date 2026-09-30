@@ -1,33 +1,24 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { kabaddiApi, playersApi } from '../../../api/endpoints.js'
+import { Link, useNavigate, useParams } from 'react-router'
+import { kabaddiApi } from '../../../api/endpoints.js'
 import PageLoader from '../../../components/PageLoader.jsx'
 import Toast from '../../../components/Toast.jsx'
 import { useResource } from '../../../hooks/useResource.js'
 import { configOf, fixtureResultText } from '../../../sports/kabaddi/format.js'
-import LineupEditor from '../../../sports/kabaddi/LineupEditor.jsx'
 import MatchConsole from '../../../sports/kabaddi/MatchConsole.jsx'
-import RulesForm from '../../../sports/kabaddi/RulesForm.jsx'
 import { formatDateTime } from '../../../utils/dates.js'
 import { Breadcrumbs, LoadError, StatusBadge } from '../../components/ui.jsx'
 import { useKabaddi } from './kabaddiContext.js'
 import FixtureDecision from './FixtureDecision.jsx'
 
-const TABS = [
-  { key: 'match', label: 'Match' },
-  { key: 'lineups', label: 'Lineups' },
-  { key: 'rules', label: 'Rules' },
-]
-
-// One kabaddi fixture for the admin. The admin can run the whole match like a referee (rules, lineups,
-// clock, raids), and can also correct the score and delete any event, even after the match is over.
+// One kabaddi fixture for the admin. Like every other sport, the admin only creates, edits and deletes
+// the fixture and sets the final decision. The match itself (rules, lineups, clock and scoring) is run
+// by the assigned referee from the co-ordinator area, so this page is a read-only view of it.
 export default function FixturePage() {
   const { fixtureId } = useParams()
   const { basePath, breadcrumbs, houseName } = useKabaddi()
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
   const { data, setData, error, retry } = useResource(fixtureId, () => kabaddiApi.fixture(fixtureId))
-  const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState('')
 
   if (!data) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
@@ -35,24 +26,6 @@ export default function FixturePage() {
   const { fixture } = data
   const names = { team1: houseName(fixture.team1), team2: houseName(fixture.team2) }
   const config = configOf(fixture)
-  const defaultTab = fixture.lineup_locked_at ? 'match' : 'lineups'
-  const tab = TABS.some((item) => item.key === searchParams.get('tab')) ? searchParams.get('tab') : defaultTab
-
-  // Runs one action; the server answers with the whole fixture, which replaces what is shown.
-  // Resolves to true when it worked.
-  async function run(action) {
-    setBusy(true)
-    try {
-      setData(await action())
-      return true
-    } catch (err) {
-      setToast(err.message)
-      if (err.status === 409) kabaddiApi.fixture(fixtureId).then(setData, () => {})
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function deleteFixture() {
     if (!window.confirm(`Delete ${names.team1} vs ${names.team2} with all its events? This cannot be undone.`)) return
@@ -63,8 +36,6 @@ export default function FixturePage() {
       setToast(err.message)
     }
   }
-
-  const panel = { fixture, names, api: kabaddiApi, busy, run }
 
   return (
     <>
@@ -100,34 +71,18 @@ export default function FixturePage() {
         </div>
       </section>
 
-      <div className="tabs" role="tablist" aria-label="Fixture sections">
-        {TABS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            role="tab"
-            className="tab"
-            aria-selected={tab === item.key}
-            onClick={() => setSearchParams(item.key === defaultTab ? {} : { tab: item.key }, { replace: true })}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      <div role="tabpanel" className="kb-admin-panel">
-        {tab === 'match' && <MatchConsole detail={data} {...panel} isAdmin />}
-        {tab === 'lineups' && (
-          <section className="panel">
-            <LineupEditor key={fixture.updated_at} {...panel} searchPlayers={playersApi.search} />
-          </section>
-        )}
-        {tab === 'rules' && (
-          <section className="panel">
-            <RulesForm key={fixture.updated_at} {...panel} />
-          </section>
-        )}
-      </div>
+      {fixture.status === 'scheduled' && !fixture.lineup_locked_at ? (
+        <section className="panel">
+          <p className="field-hint">
+            The referee sets the rules and both lineups, then scores the match live. The score, court and
+            full event log will appear here once the match starts.
+          </p>
+        </section>
+      ) : (
+        <div className="kb-admin-panel">
+          <MatchConsole detail={data} names={names} readOnly />
+        </div>
+      )}
 
       <div className="dash-section">
         <FixtureDecision

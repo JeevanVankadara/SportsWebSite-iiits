@@ -5,30 +5,14 @@ import {
   deleteFixtures,
   findKabaddiGame,
   fixtureResponse,
-  saveLineup,
-  saveMatchConfig,
-  setFirstRaid,
   setFixtureDecision as applyFixtureDecision,
 } from '../../../services/kabaddi/fixture.service.js';
-import {
-  addMatchEvent,
-  controlClock,
-  deleteMatchEvent,
-  finishMatch,
-  undoLastEvent,
-} from '../../../services/kabaddi/scoring.service.js';
-import {
-  parseClockAction,
-  parseFirstRaid,
-  parseLineup,
-  parseMatchConfig,
-  parseMatchEvent,
-  validateFixtureDecision,
-} from '../../../services/kabaddi/validators.js';
+import { validateFixtureDecision } from '../../../services/kabaddi/validators.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { ensureAllExist, findByIdOr404, isObjectId, optionalDate, optionalIdList } from '../../../utils/validation.js';
 
-// The admin can do everything a referee can, at any time, plus corrections and deleting any event.
+// Like every other sport, the admin only creates, edits and deletes the fixture and sets the final
+// decision. The match itself (rules, lineups, clock and scoring) is run by the assigned referee.
 
 const TEAM_LABELS = { team1: 'Team 1', team2: 'Team 2' };
 
@@ -92,57 +76,5 @@ export async function deleteFixture(req, res) {
 export async function setFixtureDecision(req, res) {
   const fixture = await loadFixture(req);
   await applyFixtureDecision(fixture, validateFixtureDecision(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function saveConfig(req, res) {
-  const fixture = await loadFixture(req);
-  await saveMatchConfig(fixture, parseMatchConfig(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function saveTeamLineup(req, res) {
-  const fixture = await loadFixture(req);
-  const { team } = req.params;
-  if (team !== 'team1' && team !== 'team2') throw new HttpError(400, 'Team must be team1 or team2');
-
-  const lineup = parseLineup(req.body ?? {}, fixture.config.players_on_court, fixture.config.max_substitutes);
-  await saveLineup(fixture, team, lineup);
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function saveFirstRaid(req, res) {
-  const fixture = await loadFixture(req);
-  await setFirstRaid(fixture, parseFirstRaid(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function clockControl(req, res) {
-  const fixture = await loadFixture(req);
-  await controlClock(fixture, parseClockAction(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function endMatch(req, res) {
-  const fixture = await loadFixture(req);
-  await finishMatch(fixture);
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function createEvent(req, res) {
-  const fixture = await loadFixture(req);
-  await addMatchEvent(fixture, parseMatchEvent(req.body ?? {}, { allowCorrection: true }), { admin: true });
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function undoEvent(req, res) {
-  const fixture = await loadFixture(req);
-  await undoLastEvent(fixture);
-  res.json(await fixtureResponse(fixture._id));
-}
-
-export async function removeEvent(req, res) {
-  const fixture = await loadFixture(req);
-  await deleteMatchEvent(fixture, req.params.eventId);
   res.json(await fixtureResponse(fixture._id));
 }
