@@ -5,10 +5,11 @@ import { BadmintonMatch } from '../../models/sports/badminton/BadmintonMatch.js'
 import { BadmintonSet } from '../../models/sports/badminton/BadmintonSet.js';
 import { POINT_CAPS } from '../../models/sports/badminton/constants.js';
 import { HttpError } from '../../utils/httpError.js';
+import { deleteGuestsOf } from '../guestPlayer.service.js';
 import { refreshPlayerStats } from './playerStats.service.js';
 import { fixtureOutcome, playersPerSide } from './rules.js';
 
-const PLAYER_FIELDS = 'name username roll_number';
+const PLAYER_FIELDS = 'name username roll_number is_guest';
 
 export function findBadmintonGame() {
   return Game.findOne({ game_name: 'Badminton' }).collation(caseInsensitive);
@@ -192,6 +193,7 @@ export async function deleteFixtures(filter) {
   await BadmintonMatch.deleteMany({ fixture: { $in: fixtureIds } });
   await BadmintonFixture.deleteMany({ _id: { $in: fixtureIds } });
   await refreshPlayerStats(players);
+  await deleteGuestsOf(fixtureIds);
 }
 
 // Stops a tournament edit that would leave badminton fixtures pointing at a removed house or sport.

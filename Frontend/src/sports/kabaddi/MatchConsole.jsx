@@ -3,6 +3,7 @@ import {
   configOf,
   describeEvent,
   EVENT_LABELS,
+  eventBadge,
   formatClock,
   lineupPlayers,
   otherTeam,
@@ -217,13 +218,20 @@ function ClockBar({ fixture, names, api, busy, run }) {
   )
 }
 
-// One raid: pick the raider, then either the defenders touched (and bonus) or the defender who tackled.
+const RAID_EVENTS = ['raid', 'tackle', 'line_out']
+
+// One raid: pick the raider, then what happened. The raider came back (with the defenders who went
+// out, touched or stepped out, in the order they went out, and the bonus), was tackled, or stepped
+// out of bounds.
 function RaidPad({ fixture, state, names, players, api, busy, run }) {
   const config = configOf(fixture)
   const [raidingTeam, setRaidingTeam] = useState(state.next_raid?.team ?? fixture.first_raid ?? 'team1')
   const [raider, setRaider] = useState(null)
   const [mode, setMode] = useState('scored')
-  const [touched, setTouched] = useState([])
+  // Defenders who went out, in order: [{ id, line }] where line means they stepped out.
+  const [outs, setOuts] = useState([])
+  // How the next defender tapped went out: touched by the raider, or stepped out of bounds.
+  const [mark, setMark] = useState('touch')
   const [bonus, setBonus] = useState(false)
   const [tackler, setTackler] = useState(null)
 
@@ -231,49 +239,73 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
   const attackers = state.sides[raidingTeam].on_court
   const defenders = state.sides[defendingTeam].on_court
   const doOrDie = config.do_or_die_enabled && state.sides[raidingTeam].empty_raids >= config.do_or_die_after_empty_raids
-  const raidNumber = fixture.events.filter((event) => event.type === 'raid' || event.type === 'tackle').length + 1
+  const raidNumber = fixture.events.filter((event) => RAID_EVENTS.includes(event.type)).length + 1
 
   function switchTeam(team) {
     setRaidingTeam(team)
     setRaider(null)
-    setTouched([])
+    setOuts([])
+    setMark('touch')
     setBonus(false)
     setTackler(null)
   }
 
+  // Line outs give the raiding house a point each but are not the raider's points, so they do not
+  // count towards a super raid. Mirrors the server (services/kabaddi/rules.js).
+  const lineOuts = outs.filter((out) => out.line).length
+  const raidPoints = outs.length - lineOuts + (bonus ? 1 : 0)
+  const housePoints = raidPoints + lineOuts
+
   // What saving would do, shown before it is saved.
   let preview
   if (mode === 'scored') {
-    const points = touched.length + (bonus ? 1 : 0)
-    const allOut = touched.length > 0 && touched.length === defenders.length
-    if (points === 0) {
+    const allOut = outs.length > 0 && outs.length === defenders.length
+    if (housePoints === 0) {
       preview = doOrDie
         ? `Do-or-die failed: raider out, +1 to ${names[defendingTeam]}`
         : 'Empty raid, no points'
     } else {
-      preview = `+${points} to ${names[raidingTeam]}`
-      if (points >= config.super_raid_min_points) preview += ' · Super raid'
+      preview = `+${housePoints} to ${names[raidingTeam]}`
+      if (raidPoints >= config.super_raid_min_points) preview += ' · Super raid'
+      if (lineOuts) preview += ` · ${lineOuts} stepped out`
       if (allOut) preview += ` · All out +${config.all_out_points}`
     }
-  } else {
+  } else if (mode === 'tackled') {
     const superTackle = config.super_tackle_enabled && defenders.length <= config.super_tackle_threshold
     const points = superTackle ? config.super_tackle_points : 1
     preview = `+${points} to ${names[defendingTeam]}${superTackle ? ' · Super tackle' : ''}`
     if (attackers.length === 1) preview += ` · All out +${config.all_out_points}`
+  } else {
+    preview = `Raider out, +1 to ${names[defendingTeam]}`
+    if (attackers.length === 1) preview += ` · All out +${config.all_out_points}`
   }
 
-  const canSave = raider && (mode === 'scored' || tackler)
+  const canSave = raider && (mode !== 'tackled' || tackler)
 
   function save() {
     const body =
       mode === 'scored'
-        ? { type: 'raid', team: raidingTeam, raider, touched, bonus }
-        : { type: 'tackle', team: raidingTeam, raider, tackler }
+        ? {
+            type: 'raid',
+            team: raidingTeam,
+            raider,
+            touched: outs.map((out) => out.id),
+            stepped_out: outs.filter((out) => out.line).map((out) => out.id),
+            bonus,
+          }
+        : mode === 'tackled'
+          ? { type: 'tackle', team: raidingTeam, raider, tackler }
+          : { type: 'line_out', team: raidingTeam, raider }
     run(() => api.addEvent(fixture._id, body))
   }
 
-  const toggleTouched = (id) =>
-    setTouched((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+  // Tapping a defender adds them as the next one out (marked the current way); tapping again removes them.
+  const toggleOut = (id) =>
+    setOuts((current) =>
+      current.some((out) => out.id === id)
+        ? current.filter((out) => out.id !== id)
+        : [...current, { id, line: mark === 'line' }],
+    )
 
   return (
     <section className="kb-panel">
@@ -303,15 +335,34 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
             <button type="button" aria-pressed={mode === 'tackled'} onClick={() => setMode('tackled')}>
               Raider tackled
             </button>
+            <button type="button" aria-pressed={mode === 'stepped'} onClick={() => setMode('stepped')}>
+              Raider stepped out
+            </button>
           </div>
 
-          {mode === 'scored' ? (
+          {mode === 'scored' && (
             <>
+              <p className="kb-step">Defenders out, in order</p>
+              <div className="kb-seg" role="group" aria-label="How the next defender went out">
+                <button type="button" aria-pressed={mark === 'touch'} onClick={() => setMark('touch')}>
+                  Touched
+                </button>
+                <button type="button" aria-pressed={mark === 'line'} onClick={() => setMark('line')}>
+                  Stepped out
+                </button>
+              </div>
               <p className="kb-hint">
-                Tap defenders in the order the raider touched them — that is the order they go out. Leave empty for
-                an empty raid.
+                Tap defenders in the order they went out — that is the order they come back. Pick Touched or Stepped
+                out before each tap. Leave empty for an empty raid.
               </p>
-              <PlayerChips ids={defenders} players={players} selected={touched} onPick={toggleTouched} showOrder />
+              <PlayerChips
+                ids={defenders}
+                players={players}
+                selected={outs.map((out) => out.id)}
+                lineOuts={outs.filter((out) => out.line).map((out) => out.id)}
+                onPick={toggleOut}
+                showOrder
+              />
               {config.bonus_enabled && (
                 <label className="kb-check">
                   <input type="checkbox" checked={bonus} onChange={(event) => setBonus(event.target.checked)} />
@@ -319,11 +370,15 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
                 </label>
               )}
             </>
-          ) : (
+          )}
+          {mode === 'tackled' && (
             <>
               <p className="kb-hint">Tap the defender who made the tackle.</p>
               <PlayerChips ids={defenders} players={players} selected={tackler ? [tackler] : []} onPick={setTackler} />
             </>
+          )}
+          {mode === 'stepped' && (
+            <p className="kb-hint">The raider crossed the boundary line: the raider is out and the defenders get a point.</p>
           )}
 
           <div className="kb-save">
@@ -338,27 +393,30 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
   )
 }
 
-// When showOrder is set, each selected chip shows its 1-based position in `selected` — the order the
-// raider touched them, which is the order they go out (and so the order they are revived).
-function PlayerChips({ ids, players, selected = [], onPick, empty = 'No players', showOrder = false }) {
+// When showOrder is set, each selected chip shows its 1-based position in `selected` — the order
+// they went out, which is the order they are revived. Ids in lineOuts are marked as stepped out.
+function PlayerChips({ ids, players, selected = [], lineOuts = [], onPick, empty = 'No players', showOrder = false }) {
   if (ids.length === 0) return <p className="kb-hint">{empty}</p>
   return (
     <div className="kb-chips">
       {ids.map((id) => {
         const picked = selected.includes(id)
         const order = showOrder && picked ? selected.indexOf(id) + 1 : null
+        const line = picked && lineOuts.includes(id)
+        const name = players.get(id)?.name ?? 'Unknown'
         return (
           <button
             key={id}
             type="button"
             className="kb-chip"
             aria-pressed={picked}
-            aria-label={order != null ? `${players.get(id)?.name ?? 'Unknown'}, touched ${order}` : undefined}
+            aria-label={order != null ? `${name}, out ${order}${line ? ', stepped out' : ', touched'}` : undefined}
             onClick={onPick ? () => onPick(id) : undefined}
             disabled={!onPick}
           >
             {order != null && <span className="kb-chip-order">{order}</span>}
-            {players.get(id)?.name ?? 'Unknown'}
+            {name}
+            {line && <span className="kb-chip-line">line</span>}
           </button>
         )
       })}
@@ -553,14 +611,14 @@ function EventLog({ fixture, state, names, players }) {
         <ol className="kb-log">
           {rows.map(({ event, entry, number }) => {
             const gained = ['team1', 'team2'].filter((team) => entry?.points[team])
+            const badge = eventBadge(event, entry)
             return (
               <li key={event._id} className="kb-log-row">
                 <span className="kb-log-no">{number}</span>
-                <span className={`kb-tag kb-tag-${event.type}`}>{EVENT_LABELS[event.type]}</span>
+                <span className={`kb-tag kb-tag-${badge.tone}`}>{badge.label}</span>
                 <span className="kb-log-text">
                   <strong>{names[event.team]}</strong> {describeEvent(event, players)}
-                  {entry?.super_raid && <span className="kb-tag kb-tag-good">Super raid</span>}
-                  {entry?.super_tackle && <span className="kb-tag kb-tag-good">Super tackle</span>}
+                  {event.type === 'raid' && entry?.line_outs?.length > 0 && <span className="kb-tag kb-tag-line_out">Line out</span>}
                   {entry?.do_or_die && <span className="kb-tag kb-tag-warn">Do-or-die</span>}
                   {entry?.all_out && <span className="kb-tag kb-tag-bad">All out: {names[entry.all_out]}</span>}
                 </span>

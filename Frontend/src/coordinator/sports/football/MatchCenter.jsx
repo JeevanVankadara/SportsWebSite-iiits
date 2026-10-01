@@ -10,6 +10,7 @@ import {
   sortEvents,
 } from '../../../sports/football/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
+import { playerHandle } from '../../../sports/playerHandle.js'
 
 export default function MatchCenter({ fixture, names, busy, run }) {
   const clock = fixture.clock || {}
@@ -474,7 +475,7 @@ function TeamPicker({ label, names, value, onChange }) {
 function PlayerOptions({ players }) {
   return players.map((p) => (
     <option key={p._id} value={p._id}>
-      {p.name} (@{p.username})
+      {p.name} ({playerHandle(p)})
     </option>
   ))
 }

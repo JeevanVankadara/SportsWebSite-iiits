@@ -77,8 +77,9 @@ export default function RulesForm({ fixture, api, busy, run }) {
       </div>
 
       <p className="kb-hint">
-        Always on: 1 point per defender touched, 1 point per tackle, one out player revived per point scored (first
-        out, first back), and the all-out bonus when a whole house is out.
+        Always on: 1 point per defender touched, 1 point per tackle, 1 point to the other house when a player steps
+        out of bounds, one out player revived per point scored (first out, first back), and the all-out bonus when a
+        whole house is out.
       </p>
 
       {canEdit ? (

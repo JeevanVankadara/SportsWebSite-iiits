@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { stageField } from '../../fixtureStage.js';
 import { schemaOptions } from '../../schemaOptions.js';
 import {
   DEFAULT_CONFIG,
@@ -55,7 +56,10 @@ const eventSchema = new mongoose.Schema({
   half: { type: String, enum: [...PLAYING_PERIODS, 'completed'], required: true },
   team: { type: String, enum: TEAMS, required: true },
   raider: { type: ObjectId, ref: 'Player', default: null },
+  // Raids: every defender who went out, touched or stepped out, in the order they went out
+  // (the first one out is the first one revived). stepped_out marks the ones who crossed the line.
   touched: [{ type: ObjectId, ref: 'Player' }],
+  stepped_out: [{ type: ObjectId, ref: 'Player' }],
   bonus: { type: Boolean, default: false },
   tackler: { type: ObjectId, ref: 'Player', default: null },
   assists: [{ type: ObjectId, ref: 'Player' }],
@@ -73,6 +77,8 @@ const fixtureSchema = new mongoose.Schema(
     team2: { type: ObjectId, required: [true, 'Team 2 is required'] },
     referees: [{ type: ObjectId, ref: 'Player' }],
     scheduled_at: Date,
+    // Optional tag line, e.g. semi_final or final (models/fixtureStage.js).
+    stage: stageField,
     status: { type: String, enum: FIXTURE_STATUSES, default: 'scheduled' },
 
     config: { type: configSchema, default: () => ({}) },

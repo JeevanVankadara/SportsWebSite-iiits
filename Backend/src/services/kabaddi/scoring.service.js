@@ -86,13 +86,13 @@ function checkAgainstState(fixture, event) {
   const opponents = state.sides[otherTeam(event.team)];
   const onCourt = (side, id) => side.on_court.includes(id);
 
-  if (event.type === 'raid' || event.type === 'tackle') {
+  if (event.type === 'raid' || event.type === 'tackle' || event.type === 'line_out') {
     if (!onCourt(own, event.raider)) throw new HttpError(400, 'The raider must be on court');
   }
   if (event.type === 'raid') {
     if (event.bonus && !config.bonus_enabled) throw new HttpError(400, 'Bonus points are off for this match');
     if (event.touched.some((id) => !onCourt(opponents, id))) {
-      throw new HttpError(400, 'Touched players must be defenders on court');
+      throw new HttpError(400, 'Defenders out must be defenders on court');
     }
   }
   if (event.type === 'tackle') {
@@ -118,7 +118,7 @@ function checkAgainstState(fixture, event) {
 }
 
 /**
- * Records a raid, tackle, technical point, correction or substitution.
+ * Records a raid, tackle, line out, technical point, correction or substitution.
  * The admin can still add technical points and corrections after the match is over.
  */
 export async function addMatchEvent(fixture, event, { admin = false } = {}) {
@@ -131,7 +131,7 @@ export async function addMatchEvent(fixture, event, { admin = false } = {}) {
     ensureStarted(fixture, 'Start the match before recording anything');
     const allowedAtBreak = scoreOnly || event.type === 'substitution';
     if (!PLAYING_PERIODS.includes(period) && !allowedAtBreak) {
-      throw new HttpError(409, 'Raids and tackles can be recorded only while a half is being played');
+      throw new HttpError(409, 'Raids, tackles and line outs can be recorded only while a half is being played');
     }
   }
 

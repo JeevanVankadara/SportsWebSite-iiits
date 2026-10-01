@@ -55,7 +55,7 @@ export async function requireAdmin(req, res, next) {
 export async function requireCoordinator(req, res, next) {
   const payload = verifyToken(req, 'coordinator', 'Only co-ordinators can do this');
   const player = isObjectId(payload.sub) ? await Player.findById(payload.sub) : null;
-  if (!player) {
+  if (!player || player.is_guest) {
     throw new HttpError(401, 'Your session is no longer valid. Please sign in again.');
   }
 

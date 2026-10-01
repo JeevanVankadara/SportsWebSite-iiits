@@ -5,6 +5,7 @@ import {
   myFixtures,
   saveConfig,
   saveTeamLineup,
+  addGuest,
 } from '../../controllers/co-ordinators/football/fixture.controller.js';
 import {
   clockControl,
@@ -21,6 +22,7 @@ router.use(requireCoordinator);
 
 router.get('/fixtures', myFixtures);
 router.get('/fixtures/:id', getFixture);
+router.post('/fixtures/:id/guests', addGuest);
 router.put('/fixtures/:id/config', saveConfig);
 router.put('/fixtures/:id/slips/:team', saveTeamLineup);
 router.put('/fixtures/:id/decision', decideFixture);

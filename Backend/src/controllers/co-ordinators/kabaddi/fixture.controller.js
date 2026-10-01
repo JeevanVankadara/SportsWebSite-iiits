@@ -15,6 +15,7 @@ import {
   parseMatchEvent,
   validateFixtureDecision,
 } from '../../../services/kabaddi/validators.js';
+import { createGuest } from '../../../services/guestPlayer.service.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { isObjectId } from '../../../utils/validation.js';
 
@@ -49,7 +50,7 @@ export async function getFixture(req, res) {
 export async function saveConfig(req, res) {
   const fixture = await openFixture(req);
   await saveMatchConfig(fixture, parseMatchConfig(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function saveTeamLineup(req, res) {
@@ -59,13 +60,13 @@ export async function saveTeamLineup(req, res) {
 
   const lineup = parseLineup(req.body ?? {}, fixture.config.players_on_court, fixture.config.max_substitutes);
   await saveLineup(fixture, team, lineup);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function saveFirstRaid(req, res) {
   const fixture = await openFixture(req);
   await setFirstRaid(fixture, parseFirstRaid(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function decideFixture(req, res) {
@@ -74,29 +75,36 @@ export async function decideFixture(req, res) {
   const decision = validateFixtureDecision(req.body ?? {});
   if (decision.result_type !== 'abandoned') throw new HttpError(400, 'Choose who gets the match and add a note');
   await setFixtureDecision(fixture, decision);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function clockControl(req, res) {
   const fixture = await openFixture(req);
   await controlClock(fixture, parseClockAction(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function endMatch(req, res) {
   const fixture = await openFixture(req);
   await finishMatch(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function createEvent(req, res) {
   const fixture = await openFixture(req);
   await addMatchEvent(fixture, parseMatchEvent(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function undoEvent(req, res) {
   const fixture = await openFixture(req);
   await undoLastEvent(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
+}
+
+// POST /api/coordinator/kabaddi/fixtures/:id/guests — body: { name }
+// Adds a player who has no account, for this match only (services/guestPlayer.service.js).
+export async function addGuest(req, res) {
+  const fixture = await openFixture(req);
+  res.status(201).json({ player: await createGuest('kabaddi', fixture, req.body?.name) });
 }

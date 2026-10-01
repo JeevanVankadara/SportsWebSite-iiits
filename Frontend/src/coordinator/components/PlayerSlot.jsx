@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import { coordinatorPlayersApi } from '../../api/endpoints.js'
+import { playerHandle } from '../../sports/playerHandle.js'
+import { useAddGuest } from './guestContext.js'
 
 // One player on a slip or squad: shows the chosen player, or a search box to find one by username,
 // name or roll number. Players whose ids are in `exclude` are left out of the results.
+// Inside a GuestScope, someone without an account can be added by name, for this match only.
 export default function PlayerSlot({ player, onChange, label, exclude }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState({ search: '', players: [], error: '' })
+  const [guest, setGuest] = useState({ busy: false, error: '' })
+  const addGuest = useAddGuest()
   const search = query.trim()
 
   useEffect(() => {
@@ -31,7 +36,7 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
     return (
       <span className="co-player-chip">
         <span>
-          {player.name} <span className="co-muted">@{player.username}</span>
+          {player.name} <span className="co-muted">{playerHandle(player)}</span>
         </span>
         <button type="button" onClick={() => onChange(null)} aria-label={`Remove ${player.name}`}>
           ×
@@ -42,10 +47,26 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
 
   const upToDate = search !== '' && results.search === search
   const options = upToDate ? results.players.filter((option) => !exclude?.has(option._id)) : []
+  const canAddGuest = Boolean(addGuest) && search.length >= 2
 
   function pick(chosen) {
     onChange(chosen)
     setQuery('')
+    setGuest({ busy: false, error: '' })
+  }
+
+  async function addAsGuest() {
+    setGuest({ busy: true, error: '' })
+    try {
+      const added = await addGuest(search)
+      if (exclude?.has(added._id)) {
+        setGuest({ busy: false, error: `${added.name} is already in this match.` })
+        return
+      }
+      pick(added)
+    } catch (err) {
+      setGuest({ busy: false, error: err.message })
+    }
   }
 
   return (
@@ -54,7 +75,10 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
         className="co-input"
         type="search"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          if (guest.error) setGuest({ busy: false, error: '' })
+        }}
         onKeyDown={(event) => {
           // Enter picks the first match instead of submitting anything.
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
@@ -71,7 +95,7 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
           {!upToDate && <p className="co-results-note">Searching…</p>}
           {upToDate && results.error && <p className="co-results-note">{results.error}</p>}
           {upToDate && !results.error && options.length === 0 && <p className="co-results-note">No players found</p>}
-          {options.length > 0 && (
+          {(options.length > 0 || canAddGuest) && (
             <ul>
               {options.map((option) => (
                 <li key={option._id}>
@@ -83,8 +107,17 @@ export default function PlayerSlot({ player, onChange, label, exclude }) {
                   </button>
                 </li>
               ))}
+              {canAddGuest && (
+                <li>
+                  <button type="button" onClick={addAsGuest} disabled={guest.busy}>
+                    <span>{guest.busy ? 'Adding…' : `+ Add “${search}” for this match only`}</span>
+                    <span className="co-muted">No account needed. Not added to the player list.</span>
+                  </button>
+                </li>
+              )}
             </ul>
           )}
+          {guest.error && <p className="co-results-note" role="alert">{guest.error}</p>}
         </div>
       )}
     </div>

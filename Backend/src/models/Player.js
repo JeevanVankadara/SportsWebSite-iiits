@@ -82,6 +82,17 @@ const playerSchema = new mongoose.Schema(
       match: [USERNAME_PATTERN, 'Username must be 3 to 30 characters: letters, numbers, dots or underscores'],
     },
     password_hash: { type: String, required: true, select: false },
+    // A guest is a name a referee added for one match only, for someone who has no account.
+    // It has placeholder email/roll number/username (services/guestPlayer.service.js), cannot sign
+    // in, never appears in player search, and can be named only in the lineups of that one match.
+    is_guest: { type: Boolean, default: false },
+    guest_for: {
+      type: new mongoose.Schema(
+        { sport: { type: String, required: true }, fixture: { type: mongoose.Schema.Types.ObjectId, required: true } },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     sports: {
       badminton: { type: sportRecordSchema, default: () => ({}) },
       football: { type: footballRecordSchema, default: () => ({}) },
@@ -100,6 +111,9 @@ const playerSchema = new mongoose.Schema(
     },
   },
 );
+
+// Finding (and deleting) the guests of a fixture.
+playerSchema.index({ 'guest_for.fixture': 1 }, { sparse: true });
 
 playerSchema.statics.hashPassword = function (password) {
   return bcrypt.hash(password, 12);

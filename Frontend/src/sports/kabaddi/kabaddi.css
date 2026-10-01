@@ -263,6 +263,18 @@
   line-height: 1;
 }
 
+/* A defender who went out by stepping over the line rather than being touched. */
+.kb-chip-line {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--kb-warn-soft);
+  color: var(--kb-warn);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
 .kb-chip-static {
   padding-right: 4px;
   cursor: default;
@@ -488,6 +500,7 @@
 }
 
 .kb-tag-tackle,
+.kb-tag-super,
 .kb-tag-bad {
   background: var(--kb-bad-soft);
   color: var(--kb-bad);
@@ -495,6 +508,7 @@
 
 .kb-tag-technical,
 .kb-tag-correction,
+.kb-tag-line_out,
 .kb-tag-warn {
   background: var(--kb-warn-soft);
   color: var(--kb-warn);

@@ -8,8 +8,11 @@ import {
   setFixtureDecision as applyFixtureDecision,
 } from '../../../services/kabaddi/fixture.service.js';
 import { validateFixtureDecision } from '../../../services/kabaddi/validators.js';
+import { publishFixture } from '../../../services/liveBus.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { ensureAllExist, findByIdOr404, isObjectId, optionalDate, optionalIdList } from '../../../utils/validation.js';
+import { parseStage } from '../../../models/fixtureStage.js';
+import { ensureNoGuests } from '../../../services/guestPlayer.service.js';
 
 // Like every other sport, the admin only creates, edits and deletes the fixture and sets the final
 // decision. The match itself (rules, lineups, clock and scoring) is run by the assigned referee.
@@ -36,11 +39,15 @@ async function applyDetails(fixture, tournament, body) {
   const referees = optionalIdList(body.referees, 'Referees');
   if (referees) {
     await ensureAllExist(Player, referees, 'referees');
+    await ensureNoGuests(referees);
     fixture.referees = referees;
   }
 
   const scheduledAt = optionalDate(body.scheduled_at, 'Date and time');
   if (scheduledAt !== undefined) fixture.scheduled_at = scheduledAt;
+
+  const stage = parseStage(body.stage);
+  if (stage !== undefined) fixture.stage = stage;
 }
 
 const loadFixture = (req) => findByIdOr404(KabaddiFixture, req.params.id, 'Fixture not found');
@@ -56,7 +63,7 @@ export async function createFixture(req, res) {
   const fixture = new KabaddiFixture({ tournament: tournament._id });
   await applyDetails(fixture, tournament, body);
   await fixture.save();
-  res.status(201).json(await fixtureResponse(fixture._id));
+  res.status(201).json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function updateFixture(req, res) {
@@ -64,17 +71,18 @@ export async function updateFixture(req, res) {
   const tournament = await Tournament.findById(fixture.tournament);
   await applyDetails(fixture, tournament, req.body ?? {});
   await fixture.save();
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function deleteFixture(req, res) {
   const fixture = await loadFixture(req);
   await deleteFixtures({ _id: fixture._id });
+  publishFixture('kabaddi', fixture._id);
   res.status(204).end();
 }
 
 export async function setFixtureDecision(req, res) {
   const fixture = await loadFixture(req);
   await applyFixtureDecision(fixture, validateFixtureDecision(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }

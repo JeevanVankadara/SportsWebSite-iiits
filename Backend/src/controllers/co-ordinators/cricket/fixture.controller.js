@@ -3,6 +3,7 @@ import { applyFixtureDecision } from '../../../services/cricket/fixture.service.
 import { acceptTie, startInnings } from '../../../services/cricket/scoring.service.js';
 import { saveSetup, saveToss } from '../../../services/cricket/setup.service.js';
 import { parseOpeners, parseSetup, parseToss, validateFixtureDecision } from '../../../services/cricket/validators.js';
+import { createGuest } from '../../../services/guestPlayer.service.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { openRefereeFixture, refereeDetail, refereeFixture } from './access.js';
 
@@ -18,7 +19,7 @@ export async function listMyFixtures(req, res) {
 // GET /api/coordinator/cricket/fixtures/:id
 export async function getMyFixture(req, res) {
   const fixture = await refereeFixture(req.params.id, req.player);
-  res.json(await refereeDetail(fixture._id));
+  res.json(await refereeDetail(fixture._id, { publish: false }));
 }
 
 // PUT /api/coordinator/cricket/fixtures/:id/setup
@@ -57,4 +58,11 @@ export async function decideFixture(req, res) {
   if (decision.result_type !== 'abandoned') throw new HttpError(400, 'Choose who gets the match and add a note');
   await applyFixtureDecision(fixture, decision);
   res.json(await refereeDetail(fixture._id));
+}
+
+// POST /api/coordinator/cricket/fixtures/:id/guests — body: { name }
+// Adds a player who has no account, for this match only (services/guestPlayer.service.js).
+export async function addGuest(req, res) {
+  const fixture = await openRefereeFixture(req.params.id, req.player);
+  res.status(201).json({ player: await createGuest('cricket', fixture, req.body?.name) });
 }

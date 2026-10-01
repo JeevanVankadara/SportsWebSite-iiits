@@ -4,10 +4,11 @@ import { Player } from '../../models/Player.js';
 import { VolleyballFixture } from '../../models/sports/volleyball/VolleyballFixture.js';
 import { Tournament } from '../../models/Tournament.js';
 import { HttpError } from '../../utils/httpError.js';
-import { ensureAllExist } from '../../utils/validation.js';
+import { checkLineupPlayers, deleteGuestsOf, playerLabel } from '../guestPlayer.service.js';
+import { publishFixture } from '../liveBus.js';
 import { determineWinner, idOf, replayMatch, scoreSummary } from './rules.js';
 
-const PLAYER_FIELDS = 'name username roll_number';
+const PLAYER_FIELDS = 'name username roll_number is_guest';
 
 export function findVolleyballGame() {
   return Game.findOne({ game_name: 'Volleyball' }).collation(caseInsensitive);
@@ -25,11 +26,13 @@ export function loadFixture(fixtureId) {
 /**
  * What every volleyball screen needs: { fixture, state, tournament }.
  * state is the replayed match: who is on court and on the bench, and the substitution log.
+ * Pass { publish: true } after a change, so open live streams send the new state to viewers.
  */
-export async function fixtureResponse(fixtureId) {
+export async function fixtureResponse(fixtureId, { publish = false } = {}) {
   const fixture = await loadFixture(fixtureId);
   if (!fixture) throw new HttpError(404, 'Fixture not found');
   const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');
+  if (publish) publishFixture('volleyball', fixture._id);
   return { fixture, state: replayMatch(fixture), tournament };
 }
 
@@ -79,11 +82,10 @@ export async function saveLineup(fixture, team, { starters, bench }) {
   const otherIds = new Set([...(other?.starters ?? []), ...(other?.bench ?? [])].map(String));
   const clash = [...starters, ...bench].find((id) => otherIds.has(id));
   if (clash) {
-    const player = await Player.findById(clash, 'name username');
-    const who = player ? `${player.name} (@${player.username})` : 'A player';
+    const who = playerLabel(await Player.findById(clash, 'name username is_guest'));
     throw new HttpError(400, `${who} is already in the other house's lineup. A player can play for one house only.`);
   }
-  await ensureAllExist(Player, [...starters, ...bench], 'players');
+  await checkLineupPlayers(fixture, [...starters, ...bench]);
 
   if (fixture.status !== 'scheduled') {
     const kept = new Set([...starters, ...bench]);
@@ -170,5 +172,7 @@ export async function assertTournamentEditAllowed(tournament, { games, houses })
  * Deletes volleyball fixtures matching the filter.
  */
 export async function deleteFixtures(filter) {
+  const fixtureIds = (await VolleyballFixture.find(filter, '_id')).map((fixture) => fixture._id);
   await VolleyballFixture.deleteMany(filter);
+  await deleteGuestsOf(fixtureIds);
 }

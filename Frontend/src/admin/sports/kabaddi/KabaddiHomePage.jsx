@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router'
 import { PlusIcon } from '../../components/icons.jsx'
 import { Breadcrumbs, PageHeader } from '../../components/ui.jsx'
+import WinnersPanel from '../../components/WinnersPanel.jsx'
 import { useKabaddi } from './kabaddiContext.js'
 import FixtureList from './FixtureList.jsx'
 import StandingsTable from './StandingsTable.jsx'
@@ -11,7 +12,7 @@ const TABS = [
 ]
 
 export default function KabaddiHomePage() {
-  const { tournament, basePath, breadcrumbs } = useKabaddi()
+  const { tournament, sport, basePath, breadcrumbs } = useKabaddi()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') === 'table' ? 'table' : 'fixtures'
 
@@ -28,6 +29,8 @@ export default function KabaddiHomePage() {
           </Link>
         }
       />
+
+      <WinnersPanel tournament={tournament} sport={sport} />
 
       <div className="tabs" role="tablist" aria-label="Kabaddi sections">
         {TABS.map((item) => (

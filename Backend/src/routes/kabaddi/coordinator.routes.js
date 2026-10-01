@@ -10,6 +10,7 @@ import {
   saveFirstRaid,
   saveTeamLineup,
   undoEvent,
+  addGuest,
 } from '../../controllers/co-ordinators/kabaddi/fixture.controller.js';
 import { requireCoordinator } from '../../middleware/auth.js';
 
@@ -19,6 +20,7 @@ router.use(requireCoordinator);
 
 router.get('/fixtures', myFixtures);
 router.get('/fixtures/:id', getFixture);
+router.post('/fixtures/:id/guests', addGuest);
 router.put('/fixtures/:id/config', saveConfig);
 router.put('/fixtures/:id/slips/:team', saveTeamLineup);
 router.put('/fixtures/:id/first-raid', saveFirstRaid);

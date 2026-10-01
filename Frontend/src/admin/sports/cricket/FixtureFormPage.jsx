@@ -7,6 +7,7 @@ import { adminPath } from '../../../config.js'
 import { useResource } from '../../../hooks/useResource.js'
 import { toDateTimeInput } from '../../../utils/dates.js'
 import RefereePicker from '../../components/RefereePicker.jsx'
+import StageSelect from '../../components/StageSelect.jsx'
 import { Breadcrumbs, EmptyState, LoadError, PageHeader } from '../../components/ui.jsx'
 import { useCricket } from './cricketContext.js'
 
@@ -34,6 +35,7 @@ function FixtureForm({ fixture }) {
   const [team2, setTeam2] = useState(fixture?.team2 ?? '')
   const [scheduledAt, setScheduledAt] = useState(() => toDateTimeInput(fixture?.scheduled_at))
   const [referees, setReferees] = useState(fixture?.referees ?? [])
+  const [stage, setStage] = useState(fixture?.stage ?? '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -52,6 +54,7 @@ function FixtureForm({ fixture }) {
     const data = {
       referees: referees.map((referee) => referee._id),
       scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      stage: stage || null,
     }
     if (!teamsLocked) Object.assign(data, { team1, team2 })
 
@@ -110,6 +113,8 @@ function FixtureForm({ fixture }) {
           />
           <span className="field-hint">Only used to announce the fixture. It can be left empty or changed any time.</span>
         </label>
+
+        <StageSelect value={stage} onChange={setStage} />
 
         <div className="field">
           <span className="field-label">Referees</span>

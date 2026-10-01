@@ -4,6 +4,7 @@ import {
   deleteTournament,
   getTournament,
   listTournaments,
+  setWinners,
   updateTournament,
 } from '../controllers/tournament.controller.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -14,6 +15,7 @@ router.get('/', listTournaments);
 router.get('/:id', getTournament);
 router.post('/', requireAdmin, createTournament);
 router.patch('/:id', requireAdmin, updateTournament);
+router.put('/:id/winners', requireAdmin, setWinners);
 router.delete('/:id', requireAdmin, deleteTournament);
 
 export default router;

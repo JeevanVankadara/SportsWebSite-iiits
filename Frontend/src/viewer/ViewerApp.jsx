@@ -24,7 +24,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { COORDINATOR_PATH } from '../config.js'
+import { API_URL, COORDINATOR_PATH } from '../config.js'
 import {
   fixturePath,
   firstSportPath,
@@ -45,6 +45,9 @@ import {
   sportPath,
   sports,
 } from './data.js'
+import { stageLabel } from '../sports/stages.js'
+import { useLiveRefresh } from './useLiveRefresh.js'
+import { useLiveStream } from './useLiveStream.js'
 import { useViewerData } from './useViewerData.js'
 import { FixtureContent, PointsTable } from './SportsContent.jsx'
 import PlayerAvatar from './PlayerAvatar.jsx'
@@ -377,6 +380,12 @@ function SportIcon({ sport }) {
   return <ClayIcon kind={sport} size={28} />
 }
 
+// A fixture's tag line (Semi final, Final, ...), if the admin set one.
+function StageTag({ stage }) {
+  const label = stageLabel(stage)
+  return label ? <span className="st-stage-tag">{label}</span> : null
+}
+
 function MatchCard({ item, tournament, variant = '' }) {
   const first = houseName(tournament, item.team1)
   const second = houseName(tournament, item.team2)
@@ -395,6 +404,7 @@ function MatchCard({ item, tournament, variant = '' }) {
         <StatusBadge status={item.status} />
       </div>
       <div className="st-match-meta">
+        <StageTag stage={item.stage} />
         {item.sport === 'cricket' && item.overs ? `${item.overs} overs · ` : ''}
         {item.scheduled_at
           ? formatDate(item.scheduled_at)
@@ -435,12 +445,14 @@ function Home({ view = 'home' }) {
   const { data, error, retry, updated } = useViewerData(
     `overview-${preview}`,
     () => (preview ? Promise.resolve(previewOverview) : loadOverview()),
-    !preview,
   )
+  // Only the home page refreshes, once a minute, and only its live cards.
+  const live = useLiveRefresh(data?.fixtures ?? [], view === 'home' && !preview && Boolean(data))
+  const lastUpdate = live.refreshedAt ?? updated
   const [filter, setFilter] = useState('all')
   const rail = useRef(null)
   const tournaments = data?.tournaments ?? []
-  const fixtures = sortFixtures(data?.fixtures ?? [])
+  const fixtures = sortFixtures(live.fixtures)
   const shown = fixtures.filter(
     (item) =>
       filter === 'all' || item.status === filter || item.sport === filter,
@@ -462,9 +474,9 @@ function Home({ view = 'home' }) {
                 <span className="st-count">{fixtures.length}</span>
               </h1>
             </div>
-            {updated && !preview && (
+            {lastUpdate && !preview && (
               <span className="st-updated">
-                {`Updated ${new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit' }).format(updated)}`}
+                {`Updated ${new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit' }).format(lastUpdate)}`}
               </span>
             )}
           </div>
@@ -519,6 +531,13 @@ function Home({ view = 'home' }) {
                     />
                   ))}
                 </div>
+                {shown.some((item) => item.status === 'live') && (
+                  <p className="st-panel-note">
+                    {view === 'home'
+                      ? 'Live scores on this page refresh every minute. Open a match to follow it in real time.'
+                      : 'Live scores on this page don’t update on their own. Open a match to follow it in real time.'}
+                  </p>
+                )}
                 {view === 'home' && (
                   <div className="st-rail-footer">
                     <span>All times shown in your local time</span>
@@ -663,7 +682,6 @@ function HomeRoster({ overview }) {
       preview
         ? Promise.resolve({ players: previewPlayers })
         : loadPlayers(overview),
-    false,
     Boolean(overview),
   )
   return (
@@ -831,7 +849,6 @@ function TournamentPage() {
   const preview = usePreview()
   const { data, error, retry } = useViewerData(`overview-${preview}`, () =>
     preview ? Promise.resolve(previewOverview) : loadOverview(),
-    !preview,
   )
   const tournament = data?.tournaments.find((row) => idOf(row) === tournamentId)
   const fixtures =
@@ -918,6 +935,28 @@ function TournamentPage() {
   )
 }
 
+// The winner and runner-up the admin declared for this sport, once its matches are over.
+function WinnersBanner({ tournament, sport }) {
+  const game = tournament?.games?.find((row) => row.game_name?.toLowerCase() === sport)
+  const result = game && tournament.winners?.find((row) => idOf(row.game) === idOf(game))
+  if (!result?.winner) return null
+  return (
+    <section className="st-winners" aria-label={`${sportName(sport)} winners`}>
+      <Trophy size={28} aria-hidden="true" />
+      <div>
+        <span className="st-eyebrow">Winner</span>
+        <strong>{houseName(tournament, result.winner)}</strong>
+      </div>
+      {result.runner_up && (
+        <div>
+          <span className="st-eyebrow">Runner-up</span>
+          <strong>{houseName(tournament, result.runner_up)}</strong>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function SportPage() {
   const { tournamentId, sport } = useParams()
   const [params, setParams] = useSearchParams()
@@ -928,7 +967,6 @@ function SportPage() {
       preview
         ? Promise.resolve(previewSport(sport))
         : loadSport(tournamentId, sport),
-    !preview,
   )
   const tab = params.get('tab') === 'table' ? 'table' : 'fixtures'
   return (
@@ -950,6 +988,7 @@ function SportPage() {
         <h1>{sportName(sport)}</h1>
         <p>Fixtures, results and standings from the campus arena.</p>
       </div>
+      <WinnersBanner tournament={data?.tournament} sport={sport} />
       <ContentTabs
         id="sport-tabs"
         value={tab}
@@ -985,7 +1024,13 @@ function SportPage() {
                   <button onClick={retry}>Try again</button>
                 </div>
               ) : (
-                <PointsTable data={data.table} sport={sport} />
+                <>
+                  <PointsTable data={data.table} sport={sport} />
+                  <p className="st-panel-note">
+                    The table doesn’t update on its own. To see the latest
+                    values, refresh the page.
+                  </p>
+                </>
               )
             ) : (
               <div className="st-fixture-groups">
@@ -1365,14 +1410,27 @@ function FixturePage() {
   const { tournamentId, sport, fixtureId } = useParams()
   const [tab, setTab] = useState('summary')
   const preview = usePreview()
-  const { data: baseData, error, retry, updated } = useViewerData(
-    `${tournamentId}-${sport}-${fixtureId}-${preview}`,
-    () =>
+  const { data: baseData, error, retry, updated } = useLiveStream({
+    key: `${tournamentId}-${sport}-${fixtureId}-${preview}`,
+    load: () =>
       preview
         ? Promise.resolve(previewFixture(sport, fixtureId))
         : loadFixture(tournamentId, sport, fixtureId),
-    !preview,
-  )
+    // Live scores arrive over SSE; polling is only the fallback (and preview mode's loader).
+    streamUrl: preview
+      ? null
+      : `${API_URL}/api/${sport}/fixtures/${encodeURIComponent(fixtureId)}/stream`,
+    // Reshape each streamed frame exactly like loadFixture does, so rendering is identical.
+    map: (payload) => {
+      if (idOf(payload.fixture?.tournament) !== tournamentId)
+        throw new Error('This fixture does not belong to this tournament.')
+      return {
+        tournament: payload.tournament,
+        detail: payload,
+        fixture: { ...payload.fixture, sport, tournamentId },
+      }
+    },
+  })
   const ticked = usePreviewTicker(baseData, preview && (sport === 'cricket' || sport === 'football'), sport === 'football' ? advancePreviewFootball : advancePreview, sport === 'football' ? 7000 : 4200)
   const scoreEvent0 = useScoreEvent(ticked, sport)
   const liveFeed0 = useLiveFeed(ticked)
@@ -1414,6 +1472,7 @@ function FixturePage() {
               <div className="st-fixture-eyebrow">
                 <span>
                   {sportName(sport)} · {data.tournament.tournament_name}
+                  <StageTag stage={f.stage} />
                 </span>
                 <StatusBadge status={f.status} />
               </div>

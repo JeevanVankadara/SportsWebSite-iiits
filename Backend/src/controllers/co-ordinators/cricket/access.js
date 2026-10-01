@@ -2,6 +2,7 @@ import { CricketFixture } from '../../../models/sports/cricket/CricketFixture.js
 import { CricketInnings } from '../../../models/sports/cricket/CricketInnings.js';
 import { Tournament } from '../../../models/Tournament.js';
 import { loadFixtureDetail } from '../../../services/cricket/fixture.service.js';
+import { publishFixture } from '../../../services/liveBus.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { isObjectId } from '../../../utils/validation.js';
 
@@ -32,8 +33,11 @@ export async function openRefereeInnings(inningsId, player) {
 }
 
 // Every referee action answers with this, so the screen always shows the saved state.
-export async function refereeDetail(fixtureId) {
+// It also publishes the change to live viewers; read-only callers pass { publish: false }
+// so just opening the page does not push an update.
+export async function refereeDetail(fixtureId, { publish = true } = {}) {
   const { fixture, innings } = await loadFixtureDetail(fixtureId);
   const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');
+  if (publish) publishFixture('cricket', fixture._id);
   return { fixture, innings, tournament };
 }

@@ -3,11 +3,11 @@ import { Player } from '../../models/Player.js';
 import { caseInsensitive } from '../../models/schemaOptions.js';
 import { FootballFixture } from '../../models/sports/football/FootballFixture.js';
 import { HttpError } from '../../utils/httpError.js';
-import { ensureAllExist } from '../../utils/validation.js';
+import { checkLineupPlayers, deleteGuestsOf, playerLabel } from '../guestPlayer.service.js';
 import { refreshPlayerStats } from './playerStats.service.js';
 import { calculateScore, computeElapsedSeconds, determineWinner } from './rules.js';
 
-const PLAYER_FIELDS = 'name username roll_number';
+const PLAYER_FIELDS = 'name username roll_number is_guest';
 
 export function findFootballGame() {
   return Game.findOne({ game_name: 'Football' }).collation(caseInsensitive);
@@ -102,11 +102,10 @@ export async function saveLineup(fixture, team, { starters, bench }) {
   const otherIds = new Set([...(other?.starters ?? []), ...(other?.bench ?? [])].map(String));
   const clash = [...starters, ...bench].find((id) => otherIds.has(String(id)));
   if (clash) {
-    const player = await Player.findById(clash, 'name username');
-    const who = player ? `${player.name} (@${player.username})` : 'A player';
+    const who = playerLabel(await Player.findById(clash, 'name username is_guest'));
     throw new HttpError(400, `${who} is already in the other house's lineup. A player can play for one house only.`);
   }
-  await ensureAllExist(Player, [...starters, ...bench], 'players');
+  await checkLineupPlayers(fixture, [...starters, ...bench]);
 
   if (team === 'team1') {
     fixture.team1_lineup = { starters, bench };
@@ -208,4 +207,5 @@ export async function deleteFixtures(filter) {
 
   await FootballFixture.deleteMany(filter);
   await refreshPlayerStats(playerIds);
+  await deleteGuestsOf(fixtures.map((fixture) => fixture._id));
 }

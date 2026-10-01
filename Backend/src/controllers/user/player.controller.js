@@ -1,4 +1,5 @@
 import { MIN_PASSWORD_LENGTH, Player } from '../../models/Player.js';
+import { isReservedIdentity } from '../../services/guestPlayer.service.js';
 import { HttpError } from '../../utils/httpError.js';
 import { requireText } from '../../utils/validation.js';
 
@@ -26,6 +27,10 @@ export async function registerPlayer(req, res) {
   });
   // The password is hashed only after the other fields pass, as hashing is deliberately slow.
   await player.validate({ pathsToSkip: ['password_hash'] });
+  // These forms are kept for guest players (services/guestPlayer.service.js).
+  if (isReservedIdentity(player)) {
+    throw new HttpError(400, 'Usernames starting with "guest_", roll numbers starting with "GUEST-" and @guest.invalid emails are reserved');
+  }
 
   // Checked up front for a clear message; the unique indexes still guard against two sign-ups at once.
   const clash = await Player.findOne({

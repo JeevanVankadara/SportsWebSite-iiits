@@ -49,7 +49,14 @@ export default function KabaddiFixturePage() {
   if (fixture.status === 'completed') step = 'done'
   else if (!fixture.lineup_locked_at) step = 'setup'
   const panel = { fixture, names, api, busy, run }
-  const lineups = <LineupEditor key={fixture.updated_at} {...panel} searchPlayers={coordinatorPlayersApi.search} />
+  const lineups = (
+    <LineupEditor
+      key={fixture.updated_at}
+      {...panel}
+      searchPlayers={coordinatorPlayersApi.search}
+      addGuest={(name) => coordinatorPlayersApi.addGuest('kabaddi', fixture._id, name).then(({ player }) => player)}
+    />
+  )
   const rules = <RulesForm key={fixture.updated_at} {...panel} />
 
   return (

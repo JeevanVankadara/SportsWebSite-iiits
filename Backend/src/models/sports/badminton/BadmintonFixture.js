@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { stageField } from '../../fixtureStage.js';
 import { schemaOptions } from '../../schemaOptions.js';
 import { FIXTURE_RESULTS, FIXTURE_STATUSES, MATCH_TYPES, RESULT_TYPES } from './constants.js';
 
@@ -26,6 +27,8 @@ const fixtureSchema = new mongoose.Schema(
     referees: [{ type: ObjectId, ref: 'Player' }],
     // For announcements only: any date is accepted and it never allows or blocks anything.
     scheduled_at: Date,
+    // Optional tag line, e.g. semi_final or final (models/fixtureStage.js).
+    stage: stageField,
     status: { type: String, enum: FIXTURE_STATUSES, default: 'scheduled' },
 
     match_count: { type: Number, default: 0 },

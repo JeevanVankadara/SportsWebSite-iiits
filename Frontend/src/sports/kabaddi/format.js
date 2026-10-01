@@ -14,9 +14,18 @@ export const PERIOD_LABELS = {
 export const EVENT_LABELS = {
   raid: 'Raid',
   tackle: 'Tackle',
+  line_out: 'Line out',
   technical: 'Technical',
   correction: 'Correction',
   substitution: 'Sub',
+}
+
+// The one badge an event shows in a timeline. A super raid or super tackle replaces the plain
+// Raid/Tackle badge (in red) instead of being shown as a second badge.
+export function eventBadge(event, entry) {
+  if (entry?.super_raid) return { label: 'Super raid', tone: 'super' }
+  if (entry?.super_tackle) return { label: 'Super tackle', tone: 'super' }
+  return { label: EVENT_LABELS[event.type] ?? event.type, tone: event.type }
 }
 
 // Same defaults as the server (models/sports/kabaddi/constants.js).
@@ -84,20 +93,27 @@ export function lineupPlayers(fixture) {
   return players
 }
 
-// One line describing an event, e.g. "Ravi touched Kiran, Arun + bonus".
+// One line describing an event, e.g. "Ravi touched Kiran, Arun + bonus · Sai stepped out".
 export function describeEvent(event, players) {
   const name = (id) => players.get(id)?.name ?? 'Unknown'
   const names = (ids = []) => ids.map(name).join(', ')
 
   switch (event.type) {
     case 'raid': {
+      // touched lists every defender who went out; stepped_out marks the ones who crossed the line.
+      const stepped = new Set((event.stepped_out ?? []).map(String))
+      const touched = (event.touched ?? []).filter((id) => !stepped.has(String(id)))
+      const lineOuts = (event.touched ?? []).filter((id) => stepped.has(String(id)))
       const parts = []
-      if (event.touched?.length) parts.push(`touched ${names(event.touched)}`)
-      if (event.bonus) parts.push(event.touched?.length ? '+ bonus' : 'bonus')
-      return `${name(event.raider)} ${parts.length ? parts.join(' ') : 'empty raid'}`
+      if (touched.length) parts.push(`touched ${names(touched)}`)
+      if (event.bonus) parts.push(touched.length ? '+ bonus' : 'bonus')
+      const raid = parts.length ? parts.join(' ') : lineOuts.length ? 'came back' : 'empty raid'
+      return `${name(event.raider)} ${raid}${lineOuts.length ? ` · ${names(lineOuts)} stepped out` : ''}`
     }
     case 'tackle':
       return `${name(event.raider)} tackled by ${name(event.tackler)}${event.assists?.length ? ` (with ${names(event.assists)})` : ''}`
+    case 'line_out':
+      return `${name(event.raider)} stepped out while raiding`
     case 'substitution':
       return `${name(event.player_out)} off, ${name(event.player_in)} on`
     default:

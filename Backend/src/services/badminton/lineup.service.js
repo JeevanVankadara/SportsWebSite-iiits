@@ -1,7 +1,6 @@
-import { Player } from '../../models/Player.js';
 import { BadmintonMatch } from '../../models/sports/badminton/BadmintonMatch.js';
+import { checkLineupPlayers } from '../guestPlayer.service.js';
 import { HttpError } from '../../utils/httpError.js';
-import { ensureAllExist } from '../../utils/validation.js';
 import { refreshPlayerStats } from './playerStats.service.js';
 import { playersPerSide } from './rules.js';
 
@@ -13,7 +12,7 @@ export async function saveSlip(fixture, team, { lineup, submit }) {
   const matches = await BadmintonMatch.find({ fixture: fixture._id }).sort({ match_no: 1 });
   if (matches.length === 0) throw new HttpError(409, 'Set the match order before filling in the slips');
 
-  await ensureAllExist(Player, [...new Set(lineup.flatMap((entry) => entry.players))], 'players');
+  await checkLineupPlayers(fixture, [...new Set(lineup.flatMap((entry) => entry.players))]);
 
   const field = `${team}_players`;
   const byId = new Map(matches.map((match) => [String(match._id), match]));

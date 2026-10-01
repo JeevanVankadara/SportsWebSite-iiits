@@ -73,6 +73,47 @@ async function applyChanges(tournament, body) {
     tournament.games = games;
   }
   if (houses) tournament.houses = houses;
+  if (games || houses) dropStaleWinners(tournament);
+}
+
+// Winners must name a sport and houses the tournament still has.
+function dropStaleWinners(tournament) {
+  const gameIds = new Set(tournament.games.map((game) => String(game._id ?? game)));
+  const houseIds = new Set(tournament.houses.map((house) => String(house._id)));
+  const known = (house) => house == null || houseIds.has(String(house));
+  tournament.winners = tournament.winners.filter(
+    (row) => gameIds.has(String(row.game)) && known(row.winner) && known(row.runner_up),
+  );
+}
+
+function optionalHouse(tournament, value, label) {
+  if (value === undefined || value === null || value === '') return null;
+  const house = isObjectId(String(value)) ? tournament.houses.id(String(value)) : null;
+  if (!house) throw new HttpError(400, `${label} must be a house of this tournament`);
+  return house._id;
+}
+
+// PUT /api/tournaments/:id/winners — body: { game, winner, runner_up }
+// Sets (or, with neither house, clears) the winner and runner-up the admin declares for one sport.
+export async function setWinners(req, res) {
+  const tournament = await findByIdOr404(Tournament, req.params.id, 'Tournament not found');
+  const body = req.body ?? {};
+  const game = String(body.game ?? '');
+  if (!tournament.games.some((id) => String(id) === game)) {
+    throw new HttpError(400, 'Pick a sport of this tournament');
+  }
+  const winner = optionalHouse(tournament, body.winner, 'Winner');
+  const runnerUp = optionalHouse(tournament, body.runner_up, 'Runner-up');
+  if (runnerUp && !winner) throw new HttpError(400, 'Pick the winner before the runner-up');
+  if (winner && runnerUp && winner.equals(runnerUp)) {
+    throw new HttpError(400, 'The winner and the runner-up must be different houses');
+  }
+
+  const others = tournament.winners.filter((row) => String(row.game) !== game);
+  tournament.winners = winner ? [...others, { game, winner, runner_up: runnerUp }] : others;
+  await tournament.save();
+  await tournament.populate(WITH_GAMES);
+  res.json({ tournament });
 }
 
 // GET /api/tournaments?status=live

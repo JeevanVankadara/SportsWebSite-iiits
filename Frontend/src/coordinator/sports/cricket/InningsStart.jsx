@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { coordinatorCricketApi as api } from '../../../api/endpoints.js'
 import { nextInnings, otherTeam, SUPER_OVER_WICKETS } from '../../../sports/cricket/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
+import { playerHandle } from '../../../sports/playerHandle.js'
 
 // Before each innings: the first innings, the chase, or a super over when the scores are level.
 export default function InningsStart({ fixture, innings, names, busy, run }) {
@@ -98,7 +99,7 @@ function PlayerSelect({ label, players, value, onChange, taken }) {
         </option>
         {players.map((player) => (
           <option key={player._id} value={player._id} disabled={player._id === taken}>
-            {player.name} (@{player.username})
+            {player.name} ({playerHandle(player)})
           </option>
         ))}
       </select>

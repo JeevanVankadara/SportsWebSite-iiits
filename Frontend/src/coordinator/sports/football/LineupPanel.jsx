@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { coordinatorFootballApi as api } from '../../../api/endpoints.js'
+import { GuestScope } from '../../components/guestScope.jsx'
 import PlayerSlot from '../../components/PlayerSlot.jsx'
 import { Eyebrow } from '../../components/ui.jsx'
 
@@ -98,6 +99,7 @@ export default function LineupPanel({ fixture, names, busy, run, embedded }) {
   const named = new Set(TEAMS.flatMap((team) => [...ids(drafts[team].starters), ...ids(drafts[team].bench)]))
 
   return (
+    <GuestScope sport="football" fixtureId={fixture._id}>
     <section className="co-panel">
       <div className="co-panel-head">
         <div>
@@ -240,5 +242,6 @@ export default function LineupPanel({ fixture, names, busy, run, embedded }) {
         </div>
       </form>
     </section>
+    </GuestScope>
   )
 }

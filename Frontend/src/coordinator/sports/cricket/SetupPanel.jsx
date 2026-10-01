@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { coordinatorCricketApi as api } from '../../../api/endpoints.js'
 import { MAX_SUBSTITUTES, PLAYING_XI, TEAMS } from '../../../sports/cricket/format.js'
+import { GuestScope } from '../../components/guestScope.jsx'
 import PlayerSlot from '../../components/PlayerSlot.jsx'
 import { Eyebrow } from '../../components/ui.jsx'
 
@@ -16,14 +17,16 @@ export default function SetupPanel({ fixture, names, busy, run, collapsible }) {
     ...TEAMS.flatMap((team) => [...ids(fixture[`${team}_players`]), '|', ...ids(fixture[`${team}_substitutes`])]),
   ].join(',')
   return (
-    <SetupEditor
-      key={version}
-      fixture={fixture}
-      names={names}
-      busy={busy}
-      collapsible={collapsible}
-      onSave={(data) => run(() => api.saveSetup(fixture._id, data))}
-    />
+    <GuestScope sport="cricket" fixtureId={fixture._id}>
+      <SetupEditor
+        key={version}
+        fixture={fixture}
+        names={names}
+        busy={busy}
+        collapsible={collapsible}
+        onSave={(data) => run(() => api.saveSetup(fixture._id, data))}
+      />
+    </GuestScope>
   )
 }
 

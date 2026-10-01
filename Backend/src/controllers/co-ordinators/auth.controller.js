@@ -12,7 +12,8 @@ export async function login(req, res) {
 
   const player = await Player.findOne({ username: username.trim().toLowerCase() }).select('+password_hash');
   // Same message for an unknown username and a wrong password, so the form never reveals which usernames exist.
-  if (!player || !(await player.verifyPassword(password))) {
+  // Guest players (added for one match only) have no password and can never sign in.
+  if (!player || player.is_guest || !(await player.verifyPassword(password))) {
     throw new HttpError(401, 'Incorrect username or password');
   }
 

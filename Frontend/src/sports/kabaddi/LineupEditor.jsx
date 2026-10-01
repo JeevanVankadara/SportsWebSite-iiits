@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { configOf, TEAMS } from './format.js'
 import './kabaddi.css'
+import { playerHandle } from '../playerHandle.js'
 
 const ids = (players) => players.map((player) => player._id)
 
@@ -12,7 +13,9 @@ function savedLineup(fixture, team) {
 // Each house's starting players and substitutes. Both houses keep their own draft, so switching tabs
 // never loses what was picked; Submit saves only the house on screen.
 // searchPlayers(text) -> Promise<{ players }> uses the admin or co-ordinator player search.
-export default function LineupEditor({ fixture, names, api, busy, run, searchPlayers }) {
+// addGuest(name) -> Promise<player>, when given, lets someone without an account be added by name
+// for this match only.
+export default function LineupEditor({ fixture, names, api, busy, run, searchPlayers, addGuest }) {
   const config = configOf(fixture)
   const [activeTeam, setActiveTeam] = useState('team1')
   const [drafts, setDrafts] = useState(() => Object.fromEntries(TEAMS.map((team) => [team, savedLineup(fixture, team)])))
@@ -59,6 +62,7 @@ export default function LineupEditor({ fixture, names, api, busy, run, searchPla
         onAdd={(player) => update('starters', (list) => [...list, player])}
         exclude={named}
         searchPlayers={searchPlayers}
+        addGuest={addGuest}
       />
       <PlayerGroup
         title={`Substitutes (${bench.length}/${config.max_substitutes})`}
@@ -68,6 +72,7 @@ export default function LineupEditor({ fixture, names, api, busy, run, searchPla
         onAdd={(player) => update('bench', (list) => [...list, player])}
         exclude={named}
         searchPlayers={searchPlayers}
+        addGuest={addGuest}
       />
 
       <div className="kb-row">
@@ -80,7 +85,7 @@ export default function LineupEditor({ fixture, names, api, busy, run, searchPla
   )
 }
 
-function PlayerGroup({ title, players, max, onRemove, onAdd, exclude, searchPlayers }) {
+function PlayerGroup({ title, players, max, onRemove, onAdd, exclude, searchPlayers, addGuest }) {
   return (
     <div className="kb-group">
       <p className="kb-step">{title}</p>
@@ -88,7 +93,7 @@ function PlayerGroup({ title, players, max, onRemove, onAdd, exclude, searchPlay
         <div className="kb-chips">
           {players.map((player) => (
             <span key={player._id} className="kb-chip kb-chip-static">
-              {player.name} <span className="kb-muted">@{player.username}</span>
+              {player.name} <span className="kb-muted">{playerHandle(player)}</span>
               <button type="button" className="kb-chip-x" onClick={() => onRemove(player._id)} aria-label={`Remove ${player.name}`}>
                 ×
               </button>
@@ -96,15 +101,19 @@ function PlayerGroup({ title, players, max, onRemove, onAdd, exclude, searchPlay
           ))}
         </div>
       )}
-      {players.length < max && <PlayerSearch onPick={onAdd} exclude={exclude} searchPlayers={searchPlayers} />}
+      {players.length < max && (
+        <PlayerSearch onPick={onAdd} exclude={exclude} searchPlayers={searchPlayers} addGuest={addGuest} />
+      )}
     </div>
   )
 }
 
-function PlayerSearch({ onPick, exclude, searchPlayers }) {
+function PlayerSearch({ onPick, exclude, searchPlayers, addGuest }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState({ search: '', players: [], error: '' })
+  const [guest, setGuest] = useState({ busy: false, error: '' })
   const search = query.trim()
+  const canAddGuest = Boolean(addGuest) && search.length >= 2
 
   useEffect(() => {
     if (!search) return
@@ -127,6 +136,22 @@ function PlayerSearch({ onPick, exclude, searchPlayers }) {
   function pick(player) {
     onPick(player)
     setQuery('')
+    setGuest({ busy: false, error: '' })
+  }
+
+  // Someone without an account, added by name for this match only.
+  async function addAsGuest() {
+    setGuest({ busy: true, error: '' })
+    try {
+      const added = await addGuest(search)
+      if (exclude.has(added._id)) {
+        setGuest({ busy: false, error: `${added.name} is already in this match.` })
+        return
+      }
+      pick(added)
+    } catch (err) {
+      setGuest({ busy: false, error: err.message })
+    }
   }
 
   return (
@@ -135,7 +160,10 @@ function PlayerSearch({ onPick, exclude, searchPlayers }) {
         className="kb-input"
         type="search"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          if (guest.error) setGuest({ busy: false, error: '' })
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
             event.preventDefault()
@@ -151,7 +179,7 @@ function PlayerSearch({ onPick, exclude, searchPlayers }) {
           {!upToDate && <p className="kb-hint">Searching…</p>}
           {upToDate && results.error && <p className="kb-hint">{results.error}</p>}
           {upToDate && !results.error && options.length === 0 && <p className="kb-hint">No players found</p>}
-          {options.length > 0 && (
+          {(options.length > 0 || canAddGuest) && (
             <ul>
               {options.map((player) => (
                 <li key={player._id}>
@@ -163,7 +191,20 @@ function PlayerSearch({ onPick, exclude, searchPlayers }) {
                   </button>
                 </li>
               ))}
+              {canAddGuest && (
+                <li>
+                  <button type="button" onClick={addAsGuest} disabled={guest.busy}>
+                    {guest.busy ? 'Adding…' : `+ Add “${search}” for this match only`}{' '}
+                    <span className="kb-muted">No account needed. Not added to the player list.</span>
+                  </button>
+                </li>
+              )}
             </ul>
+          )}
+          {guest.error && (
+            <p className="kb-hint" role="alert">
+              {guest.error}
+            </p>
           )}
         </div>
       )}

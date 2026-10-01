@@ -1,4 +1,5 @@
 import { sameId } from '../../../sports/cricket/format.js'
+import { playerHandle } from '../../../sports/playerHandle.js'
 
 // Pick one player from a list: the new batter, or the bowler with the overs each one has bowled.
 // Players for whom `blocked(player)` is true are shown but cannot be picked.
@@ -29,7 +30,7 @@ export default function PlayerPicker({ title, hint, players, detail, tag, blocke
                   onClick={() => onPick(player)}
                 >
                   <span className="co-cr-pick-name">{player.name}</span>
-                  <span className="co-muted co-small">{detail ? detail(player) : `@${player.username}`}</span>
+                  <span className="co-muted co-small">{detail ? detail(player) : playerHandle(player)}</span>
                   {label && <span className="co-cr-pick-tag">{label}</span>}
                 </button>
               </li>

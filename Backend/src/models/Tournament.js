@@ -16,7 +16,17 @@ const houseSchema = new mongoose.Schema({
   },
 });
 
-// tournament: tournament_id (_id), tournament_name, list(game_id) (games), houses
+// The houses the admin declares as a sport's winner and runner-up once its matches are over.
+const winnersSchema = new mongoose.Schema(
+  {
+    game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game', required: true },
+    winner: { type: mongoose.Schema.Types.ObjectId, default: null },
+    runner_up: { type: mongoose.Schema.Types.ObjectId, default: null },
+  },
+  { _id: false },
+);
+
+// tournament: tournament_id (_id), tournament_name, list(game_id) (games), houses, winners per sport
 const tournamentSchema = new mongoose.Schema(
   {
     tournament_name: {
@@ -51,6 +61,8 @@ const tournamentSchema = new mongoose.Schema(
     // Planned dates, shown to people. They never change the status on their own.
     start_date: Date,
     end_date: Date,
+    // At most one entry per sport (game); both houses are houses of this tournament.
+    winners: { type: [winnersSchema], default: [] },
   },
   schemaOptions,
 );

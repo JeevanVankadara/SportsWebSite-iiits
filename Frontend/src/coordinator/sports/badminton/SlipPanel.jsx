@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { coordinatorBadmintonApi as api } from '../../../api/endpoints.js'
 import { MATCH_TYPE_LABELS, playersPerSide } from '../../../sports/badminton/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
+import { GuestScope } from '../../components/guestScope.jsx'
 import PlayerSlot from '../../components/PlayerSlot.jsx'
 
 const TEAMS = ['team1', 'team2']
@@ -15,7 +16,7 @@ export default function SlipPanel({ fixture, matches, names, busy, run, embedded
   const version = matches.map((match) => match[field].map((player) => player._id).join(',')).join('|')
 
   const content = (
-    <>
+    <GuestScope sport="badminton" fixtureId={fixture._id}>
       <div className="co-tabs" role="tablist" aria-label="Slips">
         {TEAMS.map((item) => (
           <button
@@ -40,7 +41,7 @@ export default function SlipPanel({ fixture, matches, names, busy, run, embedded
         busy={busy}
         onSave={(lineup, submit) => run(() => api.saveSlip(fixture._id, team, { lineup, submit }))}
       />
-    </>
+    </GuestScope>
   )
 
   if (embedded) return content

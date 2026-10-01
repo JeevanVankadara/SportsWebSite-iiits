@@ -7,6 +7,7 @@ import {
   listMyFixtures,
   setSetup,
   setToss,
+  addGuest,
 } from '../../controllers/co-ordinators/cricket/fixture.controller.js';
 import { ball, batter, bowler, end, swap, undo } from '../../controllers/co-ordinators/cricket/innings.controller.js';
 import { requireCoordinator } from '../../middleware/auth.js';
@@ -17,6 +18,7 @@ router.use(requireCoordinator);
 
 router.get('/fixtures', listMyFixtures);
 router.get('/fixtures/:id', getMyFixture);
+router.post('/fixtures/:id/guests', addGuest);
 router.put('/fixtures/:id/setup', setSetup);
 router.put('/fixtures/:id/toss', setToss);
 router.post('/fixtures/:id/innings', beginInnings);

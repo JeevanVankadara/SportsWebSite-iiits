@@ -1,7 +1,7 @@
 import { Player } from '../../models/Player.js';
 import { TEAMS } from '../../models/sports/cricket/constants.js';
+import { checkLineupPlayers, playerLabel } from '../guestPlayer.service.js';
 import { HttpError } from '../../utils/httpError.js';
-import { ensureAllExist } from '../../utils/validation.js';
 import { setupComplete } from './rules.js';
 
 function ensureNotStarted(fixture, message) {
@@ -24,11 +24,10 @@ export async function saveSetup(fixture, { overs, powerplay_overs: powerplayOver
     seen.add(id);
   }
   if (repeated) {
-    const player = await Player.findById(repeated, 'name username');
-    const who = player ? `${player.name} (@${player.username})` : 'A player';
+    const who = playerLabel(await Player.findById(repeated, 'name username is_guest'));
     throw new HttpError(400, `${who} is named more than once. A player can play for one house only.`);
   }
-  await ensureAllExist(Player, named, 'players');
+  await checkLineupPlayers(fixture, named);
 
   fixture.set({
     overs,

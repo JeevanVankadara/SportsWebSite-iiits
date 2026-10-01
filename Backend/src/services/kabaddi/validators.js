@@ -122,21 +122,31 @@ export function parseMatchEvent(body = {}, { allowCorrection = false } = {}) {
   const team = requireTeam(body.team);
 
   switch (body.type) {
-    case 'raid':
+    case 'raid': {
+      // touched: every defender who went out, in order; stepped_out: those of them who crossed the line.
+      const touched = playerIdList(body.touched, 'Defenders out');
+      const steppedOut = playerIdList(body.stepped_out, 'Defenders who stepped out');
+      if (steppedOut.some((id) => !touched.includes(id))) {
+        throw new HttpError(400, 'A defender who stepped out must also be in the list of defenders out');
+      }
       return {
         type: 'raid',
         team,
         raider: playerId(body.raider, 'Pick the raider'),
-        touched: playerIdList(body.touched, 'Defenders touched'),
+        touched,
+        stepped_out: steppedOut,
         bonus: Boolean(body.bonus),
         note,
       };
+    }
     case 'tackle': {
       const tackler = playerId(body.tackler, 'Pick the defender who made the tackle');
       const assists = playerIdList(body.assists, 'Assists');
       if (assists.includes(tackler)) throw new HttpError(400, 'The tackler cannot also be an assist');
       return { type: 'tackle', team, raider: playerId(body.raider, 'Pick the raider'), tackler, assists, note };
     }
+    case 'line_out':
+      return { type: 'line_out', team, raider: playerId(body.raider, 'Pick the raider who stepped out'), note };
     case 'technical': {
       const points = toWholeNumber(body.points);
       if (!Number.isInteger(points) || points < 1 || points > 5) {

@@ -17,6 +17,7 @@ import cricketRoutes from './src/routes/cricket/cricket.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
 import kabaddiCoordinatorRoutes from './src/routes/kabaddi/coordinator.routes.js';
 import kabaddiRoutes from './src/routes/kabaddi/kabaddi.routes.js';
+import liveRoutes from './src/routes/live.routes.js';
 import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
 import volleyballRoutes from './src/routes/volleyball/volleyball.routes.js';
@@ -32,21 +33,26 @@ app.use(express.json({ limit: '100kb' }));
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
-app.use('/api/admin', adminRoutes);
-app.use('/api/tournaments', tournamentRoutes);
+
 app.use('/api/games', gameRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+
 app.use('/api/players', playerRoutes);
-app.use('/api/badminton', badmintonRoutes);
-app.use('/api/coordinator/badminton', badmintonCoordinatorRoutes);
-app.use('/api/football', footballRoutes);
-app.use('/api/coordinator/football', footballCoordinatorRoutes);
-app.use('/api/cricket', cricketRoutes);
-app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
 app.use('/api/kabaddi', kabaddiRoutes);
-app.use('/api/coordinator/kabaddi', kabaddiCoordinatorRoutes);
+app.use('/api/cricket', cricketRoutes);
+app.use('/api/football', footballRoutes);
+app.use('/api/badminton', badmintonRoutes);
 app.use('/api/volleyball', volleyballRoutes);
-app.use('/api/coordinator/volleyball', volleyballCoordinatorRoutes);
+app.use('/api/live', liveRoutes);
+
+app.use('/api/admin', adminRoutes);
 app.use('/api/coordinator', coordinatorRoutes);
+
+app.use('/api/coordinator/kabaddi', kabaddiCoordinatorRoutes);
+app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
+app.use('/api/coordinator/football', footballCoordinatorRoutes);
+app.use('/api/coordinator/badminton', badmintonCoordinatorRoutes);
+app.use('/api/coordinator/volleyball', volleyballCoordinatorRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

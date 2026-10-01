@@ -502,6 +502,9 @@ export async function loadPlayers(overview) {
   }
   function add(player, item, team) {
     if (!player?.name || !player?._id) return
+    // Guests were added for one match only (no account): they get no player profile or totals.
+    // tally() only counts people added here, so their runs, goals and points are skipped too.
+    if (player.is_guest) return
     const key = idOf(player)
     const current = people.get(key) ?? {
       _id: key,

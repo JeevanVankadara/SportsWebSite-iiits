@@ -8,8 +8,11 @@ import {
   setFixtureDecision as applyFixtureDecision,
 } from '../../../services/football/fixture.service.js';
 import { validateFixtureDecision } from '../../../services/football/validators.js';
+import { publishFixture } from '../../../services/liveBus.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { ensureAllExist, findByIdOr404, isObjectId, optionalDate, optionalIdList } from '../../../utils/validation.js';
+import { parseStage } from '../../../models/fixtureStage.js';
+import { ensureNoGuests } from '../../../services/guestPlayer.service.js';
 
 const TEAM_LABELS = { team1: 'Team 1', team2: 'Team 2' };
 
@@ -33,11 +36,15 @@ async function applyDetails(fixture, tournament, body) {
   const referees = optionalIdList(body.referees, 'Referees');
   if (referees) {
     await ensureAllExist(Player, referees, 'referees');
+    await ensureNoGuests(referees);
     fixture.referees = referees;
   }
 
   const scheduledAt = optionalDate(body.scheduled_at, 'Date and time');
   if (scheduledAt !== undefined) fixture.scheduled_at = scheduledAt;
+
+  const stage = parseStage(body.stage);
+  if (stage !== undefined) fixture.stage = stage;
 }
 
 export async function createFixture(req, res) {
@@ -62,17 +69,20 @@ export async function updateFixture(req, res) {
   await applyDetails(fixture, tournament, body);
   await fixture.save();
 
+  publishFixture('football', fixture._id);
   res.json({ fixture: await loadFixtureDetail(fixture._id) });
 }
 
 export async function deleteFixture(req, res) {
   const fixture = await findByIdOr404(FootballFixture, req.params.id, 'Fixture not found');
   await deleteFixtures({ _id: fixture._id });
+  publishFixture('football', fixture._id);
   res.status(204).end();
 }
 
 export async function setFixtureDecision(req, res) {
   const fixture = await findByIdOr404(FootballFixture, req.params.id, 'Fixture not found');
   const decision = validateFixtureDecision(req.body ?? {});
+  publishFixture('football', fixture._id);
   res.json({ fixture: await applyFixtureDecision(fixture, decision) });
 }

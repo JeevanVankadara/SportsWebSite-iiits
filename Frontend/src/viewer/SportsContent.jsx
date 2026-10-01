@@ -19,7 +19,7 @@ import {
 } from '../sports/football/format.js'
 import {
   describeEvent as describeKabaddiEvent,
-  EVENT_LABELS as KABADDI_EVENT_LABELS,
+  eventBadge as kabaddiEventBadge,
   formatClock as formatKabaddiClock,
   lineupPlayers as kabaddiLineupPlayers,
   PERIOD_LABELS as KABADDI_PERIOD_LABELS,
@@ -452,14 +452,14 @@ function KabaddiTimeline({ data }) {
           <ol className="kb-log">
             {rows.map(({ event, entry, number }) => {
               const gained = ['team1', 'team2'].filter((team) => entry?.points?.[team])
+              const badge = kabaddiEventBadge(event, entry)
               return (
                 <li key={event._id || number} className="kb-log-row">
                   <span className="kb-log-no">{number}</span>
-                  <span className={`kb-tag kb-tag-${event.type}`}>{KABADDI_EVENT_LABELS[event.type] ?? event.type}</span>
+                  <span className={`kb-tag kb-tag-${badge.tone}`}>{badge.label}</span>
                   <span className="kb-log-text">
                     <strong>{names[event.team]}</strong> {describeKabaddiEvent(event, players)}
-                    {entry?.super_raid && <span className="kb-tag kb-tag-good">Super raid</span>}
-                    {entry?.super_tackle && <span className="kb-tag kb-tag-good">Super tackle</span>}
+                    {event.type === 'raid' && entry?.line_outs?.length > 0 && <span className="kb-tag kb-tag-line_out">Line out</span>}
                     {entry?.do_or_die && <span className="kb-tag kb-tag-warn">Do-or-die</span>}
                     {entry?.all_out && <span className="kb-tag kb-tag-bad">All out: {names[entry.all_out]}</span>}
                   </span>

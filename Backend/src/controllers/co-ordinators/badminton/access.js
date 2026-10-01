@@ -3,6 +3,7 @@ import { BadmintonMatch } from '../../../models/sports/badminton/BadmintonMatch.
 import { BadmintonSet } from '../../../models/sports/badminton/BadmintonSet.js';
 import { Tournament } from '../../../models/Tournament.js';
 import { loadFixtureDetail } from '../../../services/badminton/fixture.service.js';
+import { publishFixture } from '../../../services/liveBus.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { isObjectId } from '../../../utils/validation.js';
 
@@ -43,8 +44,11 @@ export async function openRefereeSet(setId, player) {
 
 // What the co-ordinator's fixture page shows: the fixture, its matches with players and sets,
 // and the tournament (for the house names).
-export async function refereeDetail(fixtureId) {
+// Publishes by default: every referee action answers with this. Read-only callers pass
+// { publish: false } so just opening the page does not push an update to viewers.
+export async function refereeDetail(fixtureId, { publish = true } = {}) {
   const { fixture, matches } = await loadFixtureDetail(fixtureId);
   const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');
+  if (publish) publishFixture('badminton', fixture._id);
   return { fixture, matches, tournament };
 }

@@ -21,6 +21,9 @@ export const tournamentsApi = {
   create: (data) => request('/api/tournaments', { method: 'POST', body: data }),
   update: (tournamentId, data) => request(`/api/tournaments/${id(tournamentId)}`, { method: 'PATCH', body: data }),
   remove: (tournamentId) => request(`/api/tournaments/${id(tournamentId)}`, { method: 'DELETE' }),
+  // body: { game, winner, runner_up } — house ids, or null for both to clear the sport's winners.
+  setWinners: (tournamentId, data) =>
+    request(`/api/tournaments/${id(tournamentId)}/winners`, { method: 'PUT', body: data }),
 }
 
 // The predefined sports (Cricket, Badminton) that can be picked for a tournament.
@@ -114,6 +117,9 @@ export const coordinatorAuth = {
 
 export const coordinatorPlayersApi = {
   search: (text) => coordinatorRequest(`/api/coordinator/players?search=${encodeURIComponent(text)}`),
+  // Adds someone without an account, for this match only. Answers { player }.
+  addGuest: (sport, fixtureId, name) =>
+    coordinatorRequest(`/api/coordinator/${sport}/fixtures/${id(fixtureId)}/guests`, { method: 'POST', body: { name } }),
 }
 
 // Every action answers with the whole fixture: { fixture, matches, tournament }.
@@ -224,6 +230,9 @@ export const viewerApi = {
     publicRequest(`/api/${sport}/tournaments/${id(tournamentId)}/standings`),
   fixture: (fixtureId, sport) =>
     publicRequest(`/api/${sport}/fixtures/${id(fixtureId)}`),
+  // Every live fixture of every sport, plus the current state of `known` (fixtures shown as live).
+  liveFixtures: (known = []) =>
+    publicRequest(`/api/live/fixtures${known.length ? `?known=${known.map(id).join(',')}` : ''}`),
 }
 
 const kabaddiCoordinatorPath = (path) => `/api/coordinator/kabaddi/${path}`

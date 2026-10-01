@@ -13,6 +13,7 @@ import {
   parseMatchConfig,
   validateFixtureDecision,
 } from '../../../services/football/validators.js';
+import { createGuest } from '../../../services/guestPlayer.service.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { ensureOpen, refereeDetail, refereeFixture } from './access.js';
 
@@ -26,7 +27,7 @@ export async function myFixtures(req, res) {
 
 export async function getFixture(req, res) {
   await refereeFixture(req.params.id, req.player);
-  res.json(await refereeDetail(req.params.id));
+  res.json(await refereeDetail(req.params.id, { publish: false }));
 }
 
 export async function saveConfig(req, res) {
@@ -65,4 +66,12 @@ export async function decideFixture(req, res) {
 
   await setFixtureDecision(fixture, decision);
   res.json(await refereeDetail(req.params.id));
+}
+
+// POST /api/coordinator/football/fixtures/:id/guests — body: { name }
+// Adds a player who has no account, for this match only (services/guestPlayer.service.js).
+export async function addGuest(req, res) {
+  const fixture = await refereeFixture(req.params.id, req.player);
+  ensureOpen(fixture);
+  res.status(201).json({ player: await createGuest('football', fixture, req.body?.name) });
 }

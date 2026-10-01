@@ -4,10 +4,11 @@ import { CricketBall } from '../../models/sports/cricket/CricketBall.js';
 import { CricketFixture } from '../../models/sports/cricket/CricketFixture.js';
 import { CricketInnings } from '../../models/sports/cricket/CricketInnings.js';
 import { HttpError } from '../../utils/httpError.js';
+import { deleteGuestsOf } from '../guestPlayer.service.js';
 import { refreshPlayerStats } from './playerStats.service.js';
 import { matchOutcome } from './rules.js';
 
-const PLAYER_FIELDS = 'name username roll_number';
+const PLAYER_FIELDS = 'name username roll_number is_guest';
 
 export function findCricketGame() {
   return Game.findOne({ game_name: 'Cricket' }).collation(caseInsensitive);
@@ -80,6 +81,7 @@ export async function deleteFixtures(filter) {
   await CricketInnings.deleteMany({ fixture: { $in: fixtureIds } });
   await CricketFixture.deleteMany({ _id: { $in: fixtureIds } });
   await refreshPlayerStats(fixtures.flatMap(playingXIs));
+  await deleteGuestsOf(fixtureIds);
 }
 
 // Stops a tournament edit that would leave cricket fixtures pointing at a removed house or sport.

@@ -348,6 +348,48 @@
   font-size: 11px;
   color: var(--st-muted);
 }
+/* The sport's winner and runner-up, at the top of the sport page. */
+.st-winners {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+  margin: 0 0 24px;
+  padding: 18px 22px;
+  border: 1px solid var(--st-line);
+  border-radius: var(--st-r-card);
+  background: var(--st-warm-soft);
+  color: var(--st-ink);
+}
+.st-winners > svg {
+  color: var(--st-warm);
+  flex: none;
+}
+.st-winners > div {
+  display: grid;
+  gap: 2px;
+}
+.st-winners strong {
+  font-size: 18px;
+  font-weight: 700;
+}
+/* A fixture's tag line: Semi final, Final, ... */
+.st-stage-tag {
+  display: inline-block;
+  margin: 0 6px 0 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--st-warm-soft);
+  color: var(--st-warm);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+.st-fixture-eyebrow .st-stage-tag {
+  margin: 0 0 0 8px;
+}
 .st-team-row {
   display: flex;
   align-items: center;

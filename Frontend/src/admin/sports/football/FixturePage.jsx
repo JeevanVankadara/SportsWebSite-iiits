@@ -16,6 +16,7 @@ import { CalendarIcon } from '../../components/icons.jsx'
 import { Breadcrumbs, EmptyState, LoadError, StatusBadge } from '../../components/ui.jsx'
 import { useFootball } from './footballContext.js'
 import FixtureDecision from './FixtureDecision.jsx'
+import { playerHandle } from '../../../sports/playerHandle.js'
 
 // One football fixture for the admin: score, lineups and the referee's event log, plus corrections.
 export default function FixturePage() {
@@ -166,7 +167,7 @@ function PlayerChips({ players }) {
     <ul className="house-list">
       {players.map((player) => (
         <li key={player._id} className="house-chip">
-          {player.name} <span className="muted">@{player.username}</span>
+          {player.name} <span className="muted">{playerHandle(player)}</span>
         </li>
       ))}
     </ul>

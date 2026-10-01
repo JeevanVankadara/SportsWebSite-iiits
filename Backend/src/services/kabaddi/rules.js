@@ -6,6 +6,7 @@
 import {
   DEFAULT_CONFIG,
   DO_OR_DIE_FAIL_POINTS,
+  LINE_OUT_POINTS,
   TACKLE_POINTS,
 } from '../../models/sports/kabaddi/constants.js';
 
@@ -60,8 +61,8 @@ function newPlayerLine() {
  * Returns { score, sides, timeline, players, next_raid }:
  *  - score: { team1, team2 }
  *  - sides: per house { on_court, out, bench, subbed_off, empty_raids }
- *  - timeline: per event { event_id, points: { team1, team2 }, outs, revived, all_out, super_raid,
- *              super_tackle, do_or_die, empty, score_after }
+ *  - timeline: per event { event_id, points: { team1, team2 }, outs, line_outs, revived, all_out,
+ *              super_raid, super_tackle, do_or_die, empty, score_after }
  *  - players: per player id { raids, raid_points, tackle_points, ... }
  *  - next_raid: { team, do_or_die } for the current half
  */
@@ -83,6 +84,7 @@ export function replayMatch(fixture) {
       event_id: idOf(event._id),
       points: { team1: 0, team2: 0 },
       outs: [],
+      line_outs: [],
       revived: [],
       all_out: null,
       super_raid: false,
@@ -113,14 +115,20 @@ export function replayMatch(fixture) {
 
     if (event.type === 'raid') {
       const doOrDie = config.do_or_die_enabled && sides[raiding].empty_raids >= config.do_or_die_after_empty_raids;
+      // touched lists every defender who went out, in order; stepped_out marks the line outs.
+      // Each one out is a point for the raiding house, but only touches (and the bonus) are the
+      // raider's own points, and only those count towards a super raid.
       const touched = idsOf(event.touched);
+      const steppedOut = new Set(idsOf(event.stepped_out));
       const bonus = event.bonus ? 1 : 0;
-      const raidPoints = touched.length + bonus;
+      entry.line_outs = touched.filter((id) => steppedOut.has(id));
+      const raidPoints = touched.length - entry.line_outs.length + bonus;
+      const housePoints = raidPoints + entry.line_outs.length * LINE_OUT_POINTS;
       const stats = raider ? line(raider) : newPlayerLine();
       stats.raids += 1;
       entry.do_or_die = doOrDie;
 
-      if (raidPoints === 0 && doOrDie) {
+      if (housePoints === 0 && doOrDie) {
         // A do-or-die raid that scores nothing: the raider is out and the defenders get a point.
         entry.outs = takeOut(sides[raiding], raider ? [raider] : []);
         add(defending, DO_OR_DIE_FAIL_POINTS);
@@ -129,12 +137,12 @@ export function replayMatch(fixture) {
         sides[raiding].empty_raids = 0;
       } else {
         entry.outs = takeOut(sides[defending], touched);
-        add(raiding, raidPoints);
+        add(raiding, housePoints);
         entry.revived.push(...revive(sides[raiding], entry.outs.length));
         checkAllOut(raiding, defending, entry.outs.length);
-        entry.empty = raidPoints === 0;
+        entry.empty = housePoints === 0;
         entry.super_raid = raidPoints >= config.super_raid_min_points;
-        sides[raiding].empty_raids = raidPoints === 0 ? sides[raiding].empty_raids + 1 : 0;
+        sides[raiding].empty_raids = housePoints === 0 ? sides[raiding].empty_raids + 1 : 0;
         if (raidPoints > 0) stats.successful_raids += 1;
         stats.raid_points += raidPoints;
         stats.bonus_points += bonus;
@@ -161,6 +169,18 @@ export function replayMatch(fixture) {
         stats.tackle_points += tacklePoints;
         if (entry.super_tackle) stats.super_tackles += 1;
       }
+      lastRaid = event;
+    } else if (event.type === 'line_out') {
+      // The raider stepped out of bounds: the raider is out and the defenders get the point.
+      // It still counts as the raiding house's raid, so the next raid goes to the other house.
+      entry.do_or_die = config.do_or_die_enabled && sides[raiding].empty_raids >= config.do_or_die_after_empty_raids;
+      entry.line_outs = raider ? [raider] : [];
+      entry.outs = takeOut(sides[raiding], entry.line_outs);
+      add(defending, LINE_OUT_POINTS);
+      entry.revived.push(...revive(sides[defending], LINE_OUT_POINTS));
+      checkAllOut(defending, raiding, entry.outs.length);
+      sides[raiding].empty_raids = 0;
+      if (raider) line(raider).raids += 1;
       lastRaid = event;
     } else if (event.type === 'technical' || event.type === 'correction') {
       add(event.team, event.points ?? 0);

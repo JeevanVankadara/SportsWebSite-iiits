@@ -8,8 +8,11 @@ import {
   loadFixtureDetail,
 } from '../../../services/badminton/fixture.service.js';
 import { validateFixtureDecision } from '../../../services/badminton/validators.js';
+import { publishFixture } from '../../../services/liveBus.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { ensureAllExist, findByIdOr404, isObjectId, optionalDate, optionalIdList } from '../../../utils/validation.js';
+import { parseStage } from '../../../models/fixtureStage.js';
+import { ensureNoGuests } from '../../../services/guestPlayer.service.js';
 
 const TEAM_LABELS = { team1: 'Team 1', team2: 'Team 2' };
 
@@ -35,11 +38,15 @@ async function applyDetails(fixture, tournament, body) {
   const referees = optionalIdList(body.referees, 'Referees');
   if (referees) {
     await ensureAllExist(Player, referees, 'referees');
+    await ensureNoGuests(referees);
     fixture.referees = referees;
   }
 
   const scheduledAt = optionalDate(body.scheduled_at, 'Date and time');
   if (scheduledAt !== undefined) fixture.scheduled_at = scheduledAt;
+
+  const stage = parseStage(body.stage);
+  if (stage !== undefined) fixture.stage = stage;
 }
 
 // POST /api/badminton/tournaments/:tournamentId/fixtures
@@ -68,6 +75,7 @@ export async function updateFixture(req, res) {
   await applyDetails(fixture, tournament, body);
   await fixture.save();
 
+  publishFixture('badminton', fixture._id);
   res.json(await loadFixtureDetail(fixture._id));
 }
 
@@ -75,6 +83,7 @@ export async function updateFixture(req, res) {
 export async function deleteFixture(req, res) {
   const fixture = await findByIdOr404(BadmintonFixture, req.params.id, 'Fixture not found');
   await deleteFixtures({ _id: fixture._id });
+  publishFixture('badminton', fixture._id);
   res.status(204).end();
 }
 
@@ -83,5 +92,6 @@ export async function deleteFixture(req, res) {
 export async function setFixtureDecision(req, res) {
   const fixture = await findByIdOr404(BadmintonFixture, req.params.id, 'Fixture not found');
   await applyFixtureDecision(fixture, validateFixtureDecision(req.body ?? {}));
+  publishFixture('badminton', fixture._id);
   res.json(await loadFixtureDetail(fixture._id));
 }

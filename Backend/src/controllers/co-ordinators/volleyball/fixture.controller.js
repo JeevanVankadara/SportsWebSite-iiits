@@ -22,6 +22,7 @@ import {
   parseSubstitution,
   validateFixtureDecision,
 } from '../../../services/volleyball/validators.js';
+import { createGuest } from '../../../services/guestPlayer.service.js';
 import { HttpError } from '../../../utils/httpError.js';
 import { isObjectId } from '../../../utils/validation.js';
 
@@ -56,7 +57,7 @@ export async function getFixture(req, res) {
 export async function saveConfig(req, res) {
   const fixture = await openFixture(req);
   await saveMatchConfig(fixture, parseMatchConfig(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function saveTeamLineup(req, res) {
@@ -64,7 +65,7 @@ export async function saveTeamLineup(req, res) {
   const { team } = req.params;
   if (team !== 'team1' && team !== 'team2') throw new HttpError(400, 'Team must be team1 or team2');
   await saveLineup(fixture, team, parseLineup(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function decideFixture(req, res) {
@@ -72,47 +73,54 @@ export async function decideFixture(req, res) {
   const decision = validateFixtureDecision(req.body ?? {});
   if (decision.result_type !== 'abandoned') throw new HttpError(400, 'Choose who gets the match and add a note');
   await setFixtureDecision(fixture, decision);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function start(req, res) {
   const fixture = await openFixture(req);
   await startMatch(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function score(req, res) {
   const fixture = await openFixture(req);
   await changeScore(fixture, parseScoreChange(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function nextSet(req, res) {
   const fixture = await openFixture(req);
   await startNextSet(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function finish(req, res) {
   const fixture = await openFixture(req);
   await finishMatch(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function editSet(req, res) {
   const fixture = await openFixture(req);
   await editSetScore(fixture, req.params.setId, parseSetScore(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function createSubstitution(req, res) {
   const fixture = await openFixture(req);
   await addSubstitution(fixture, parseSubstitution(req.body ?? {}));
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
 export async function undoEvent(req, res) {
   const fixture = await openFixture(req);
   await undoLastEvent(fixture);
-  res.json(await fixtureResponse(fixture._id));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
+}
+
+// POST /api/coordinator/volleyball/fixtures/:id/guests — body: { name }
+// Adds a player who has no account, for this match only (services/guestPlayer.service.js).
+export async function addGuest(req, res) {
+  const fixture = await openFixture(req);
+  res.status(201).json({ player: await createGuest('volleyball', fixture, req.body?.name) });
 }

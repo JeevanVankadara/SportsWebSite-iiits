@@ -5,6 +5,7 @@ import {
   listMyFixtures,
   setMatchOrder,
   setSlip,
+  addGuest,
 } from '../../controllers/co-ordinators/badminton/fixture.controller.js';
 import { abandon, editSet, finish, nextSet, score, start } from '../../controllers/co-ordinators/badminton/match.controller.js';
 import { requireCoordinator } from '../../middleware/auth.js';
@@ -16,6 +17,7 @@ router.use(requireCoordinator);
 
 router.get('/fixtures', listMyFixtures);
 router.get('/fixtures/:id', getMyFixture);
+router.post('/fixtures/:id/guests', addGuest);
 router.put('/fixtures/:id/order', setMatchOrder);
 router.put('/fixtures/:id/slips/:team', setSlip);
 router.put('/fixtures/:id/decision', decideFixture);

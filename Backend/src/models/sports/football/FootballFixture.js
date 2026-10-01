@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { stageField } from '../../fixtureStage.js';
 import { schemaOptions } from '../../schemaOptions.js';
 import {
   CARD_TYPES,
@@ -69,6 +70,8 @@ const fixtureSchema = new mongoose.Schema(
     team2: { type: ObjectId, required: [true, 'Team 2 is required'] },
     referees: [{ type: ObjectId, ref: 'Player' }],
     scheduled_at: Date,
+    // Optional tag line, e.g. semi_final or final (models/fixtureStage.js).
+    stage: stageField,
     status: { type: String, enum: FIXTURE_STATUSES, default: 'scheduled' },
 
     config: { type: configSchema, default: () => ({}) },
