@@ -127,7 +127,9 @@ export async function listTournaments(req, res) {
     throw new HttpError(400, 'Status must be live or completed');
   }
 
-  const tournaments = await Tournament.find(status ? { status } : {})
+  const filter = { is_friendly: { $ne: true } };
+  if (status) filter.status = status;
+  const tournaments = await Tournament.find(filter)
     .sort({ created_at: -1 })
     .populate(WITH_GAMES);
   res.json({ tournaments });

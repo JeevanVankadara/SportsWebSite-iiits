@@ -9,6 +9,8 @@ import './admin.css'
 import AdminLayout from './AdminLayout.jsx'
 import SuperAdminOnly from './components/SuperAdminOnly.jsx'
 import AdminsPage from './pages/AdminsPage.jsx'
+import FriendliesPage from './pages/FriendliesPage.jsx'
+import FriendlyFormPage from './pages/FriendlyFormPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import SportPage from './pages/SportPage.jsx'
@@ -35,6 +37,8 @@ export default function AdminApp() {
           <Route path="tournaments/:id" element={<TournamentPage />} />
           <Route path="tournaments/:id/edit" element={<SuperAdminOnly><TournamentFormPage /></SuperAdminOnly>} />
           <Route path="admins" element={<SuperAdminOnly><AdminsPage /></SuperAdminOnly>} />
+          <Route path="friendlies" element={<SuperAdminOnly><FriendliesPage /></SuperAdminOnly>} />
+          <Route path="friendlies/new" element={<SuperAdminOnly><FriendlyFormPage /></SuperAdminOnly>} />
           <Route path="tournaments/:id/sports/:gameId/*" element={<SportPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

@@ -6,6 +6,7 @@ import { isSuperAdmin } from './permissions.js'
 const NAV_ITEMS = [
   { path: 'dashboard', label: 'Dashboard' },
   { path: 'tournaments/new', label: 'Add tournament', superOnly: true },
+  { path: 'friendlies', label: 'Friendly matches', superOnly: true },
   { path: 'admins', label: 'Admins', superOnly: true },
 ]
 
@@ -15,7 +16,9 @@ export default function AdminLayout() {
   const { pathname } = useLocation()
 
   // Tournament, sport and edit pages are reached from the dashboard, so they keep Dashboard highlighted.
-  const activePath = NAV_ITEMS.find((item) => item.superOnly && pathname === adminPath(item.path))?.path ?? 'dashboard'
+  const activePath =
+    NAV_ITEMS.find((item) => item.superOnly && (pathname === adminPath(item.path) || pathname.startsWith(`${adminPath(item.path)}/`)))
+      ?.path ?? 'dashboard'
   const navItems = NAV_ITEMS.filter((item) => !item.superOnly || isSuperAdmin(admin))
 
   function handleSignOut() {

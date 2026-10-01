@@ -1,6 +1,6 @@
 import { Player } from '../../../models/Player.js';
 import { KabaddiFixture } from '../../../models/sports/kabaddi/KabaddiFixture.js';
-import { Tournament } from '../../../models/Tournament.js';
+import { deleteFriendlyIfEmpty, Tournament } from '../../../models/Tournament.js';
 import {
   deleteFixtures,
   findKabaddiGame,
@@ -77,6 +77,7 @@ export async function updateFixture(req, res) {
 export async function deleteFixture(req, res) {
   const fixture = await loadFixture(req);
   await deleteFixtures({ _id: fixture._id });
+  await deleteFriendlyIfEmpty(fixture.tournament, KabaddiFixture);
   publishFixture('kabaddi', fixture._id);
   res.status(204).end();
 }

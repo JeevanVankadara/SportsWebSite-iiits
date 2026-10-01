@@ -12,6 +12,7 @@ import badmintonRoutes from './src/routes/badminton/badminton.routes.js';
 import badmintonCoordinatorRoutes from './src/routes/badminton/coordinator.routes.js';
 import coordinatorRoutes from './src/routes/coordinator.routes.js';
 import footballRoutes from './src/routes/football/football.routes.js';
+import friendlyRoutes from './src/routes/friendly.routes.js';
 import footballCoordinatorRoutes from './src/routes/football/coordinator.routes.js';
 import cricketCoordinatorRoutes from './src/routes/cricket/coordinator.routes.js';
 import cricketRoutes from './src/routes/cricket/cricket.routes.js';
@@ -37,6 +38,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/games', gameRoutes);
 app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/friendlies', friendlyRoutes);
 
 app.use('/api/players', playerRoutes);
 app.use('/api/kabaddi', kabaddiRoutes);

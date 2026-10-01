@@ -152,7 +152,8 @@
   list-style: none;
 }
 
-.co-cr-squad li {
+/* Only the squad rows: the player search inside a row has its own list. */
+.co-cr-squad > li {
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr);
   align-items: center;

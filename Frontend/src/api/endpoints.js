@@ -37,6 +37,15 @@ export const tournamentsApi = {
     request(`/api/tournaments/${id(tournamentId)}/winners`, { method: 'PUT', body: data }),
 }
 
+// Super admin only: friendly matches, outside every tournament. Each answers like a tournament
+// (tournament.is_friendly) with one sport; its match is changed through that sport's api below.
+export const friendliesApi = {
+  // { friendlies: [{ tournament, sport: 'cricket', fixture }] }
+  list: () => request('/api/friendlies'),
+  // body: { game, team1_name, team2_name, scheduled_at, referees: [playerId] }. Answers { fixture, ... }.
+  create: (data) => request('/api/friendlies', { method: 'POST', body: data }),
+}
+
 // The predefined sports (Cricket, Badminton) that can be picked for a tournament.
 export const gamesApi = {
   list: () => request('/api/games'),

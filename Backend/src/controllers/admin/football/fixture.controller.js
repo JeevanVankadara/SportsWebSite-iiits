@@ -1,6 +1,6 @@
 import { Player } from '../../../models/Player.js';
 import { FootballFixture } from '../../../models/sports/football/FootballFixture.js';
-import { Tournament } from '../../../models/Tournament.js';
+import { deleteFriendlyIfEmpty, Tournament } from '../../../models/Tournament.js';
 import {
   deleteFixtures,
   findFootballGame,
@@ -76,6 +76,7 @@ export async function updateFixture(req, res) {
 export async function deleteFixture(req, res) {
   const fixture = await findByIdOr404(FootballFixture, req.params.id, 'Fixture not found');
   await deleteFixtures({ _id: fixture._id });
+  await deleteFriendlyIfEmpty(fixture.tournament, FootballFixture);
   publishFixture('football', fixture._id);
   res.status(204).end();
 }

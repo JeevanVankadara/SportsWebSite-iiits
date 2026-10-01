@@ -214,6 +214,7 @@ Passwords are hashed with bcrypt (cost 12) and never returned (`select: false` +
 | `GET /api/tournaments[?status=live]`, `GET /api/tournaments/:id` | public | Tournaments with sports |
 | `POST`, `PATCH /:id`, `DELETE /:id` `/api/tournaments` | super admin | Manage tournaments (body: `tournament_name`, `status`, dates, `games`, `houses`) |
 | `PUT /api/tournaments/:id/winners` | admin of that sport | Winner and runner-up of one sport |
+| `GET`, `POST /api/friendlies` | super admin | Friendly matches (body: `game`, `team1_name`, `team2_name`, `scheduled_at`, `referees`). A friendly is a hidden tournament (`is_friendly`) with one sport, the two teams as houses and one fixture, so the sport's own fixture routes edit, decide and delete it; deleting its fixture deletes the friendly. Friendlies are left out of `GET /api/tournaments` and `/api/live/fixtures` |
 | `GET`, `POST /api/admin/admins`, `PATCH`, `DELETE /api/admin/admins/:id` | super admin | Add admins (body: `username`, `password`, `sports`), change their sports or password, remove them |
 | `GET /api/games` | public | The predefined sports |
 | `POST /api/players/google` | public | Body `{ credential }`: is this Google account registered already? |
