@@ -830,6 +830,25 @@
   transform: translateX(3px);
 }
 
+.sport-tile-locked,
+.sport-tile-locked:hover {
+  border-color: var(--color-border);
+  box-shadow: none;
+  color: var(--color-muted);
+}
+
+.sport-tile-locked .sport-initial {
+  background: var(--color-subtle);
+  color: var(--color-muted);
+}
+
+.sport-lock {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 /* Sport pages (shared by every sport) */
 
 /* Tabs */

@@ -15,3 +15,7 @@ export const COORDINATOR_PATH = '/coordinator'
 export function coordinatorPath(subpath = '') {
   return subpath ? `${COORDINATOR_PATH}/${subpath}` : COORDINATOR_PATH
 }
+
+// OAuth client ID from Google Cloud Console (the same one as GOOGLE_CLIENT_ID in Backend/.env).
+// Players register and referees sign in with their @iiits.in Google account.
+export const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '').trim()

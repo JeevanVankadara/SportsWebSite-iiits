@@ -3,7 +3,16 @@ import mongoose from 'mongoose';
 import { schemaOptions } from './schemaOptions.js';
 
 export const USERNAME_PATTERN = /^[a-z0-9._]{3,30}$/;
-export const MIN_PASSWORD_LENGTH = 8;
+
+// IIITS roll numbers: S + batch year + 7 digits, e.g. S20230010250.
+const ROLL_NUMBER_PATTERN = /^S(\d{4})\d{7}$/;
+export const FIRST_BATCH_YEAR = 2023;
+
+// For registration: batches from 2023 up to this year. Guests and seeded demo players are not checked.
+export function isValidRollNumber(rollNumber) {
+  const year = Number(ROLL_NUMBER_PATTERN.exec(rollNumber)?.[1]);
+  return year >= FIRST_BATCH_YEAR && year <= new Date().getFullYear();
+}
 
 // A player's record in one sport, refreshed after every match they play.
 const sportRecordSchema = new mongoose.Schema(
@@ -48,6 +57,7 @@ const kabaddiRecordSchema = new mongoose.Schema(
 
 // player: player_id (_id), name, email, roll_number, username. Players are shared by every sport,
 // and any player can be picked as a referee (co-ordinator) for a fixture.
+// Players register and sign in with their college Google account (google_id); there are no passwords.
 const playerSchema = new mongoose.Schema(
   {
     name: {
@@ -81,7 +91,10 @@ const playerSchema = new mongoose.Schema(
       lowercase: true,
       match: [USERNAME_PATTERN, 'Username must be 3 to 30 characters: letters, numbers, dots or underscores'],
     },
-    password_hash: { type: String, required: true, select: false },
+    // Google's id for the account ("sub"). Guests and seeded demo players have none.
+    google_id: { type: String, trim: true },
+    // Only guests (a placeholder that matches nothing) and old seeded demo players have one.
+    password_hash: { type: String, select: false },
     // A guest is a name a referee added for one match only, for someone who has no account.
     // It has placeholder email/roll number/username (services/guestPlayer.service.js), cannot sign
     // in, never appears in player search, and can be named only in the lineups of that one match.
@@ -106,6 +119,7 @@ const playerSchema = new mongoose.Schema(
       versionKey: false,
       transform: (_doc, ret) => {
         delete ret.password_hash;
+        delete ret.google_id;
         return ret;
       },
     },
@@ -114,14 +128,11 @@ const playerSchema = new mongoose.Schema(
 
 // Finding (and deleting) the guests of a fixture.
 playerSchema.index({ 'guest_for.fixture': 1 }, { sparse: true });
+playerSchema.index({ google_id: 1 }, { unique: true, sparse: true });
 
+// Used by the demo seed scripts only.
 playerSchema.statics.hashPassword = function (password) {
   return bcrypt.hash(password, 12);
-};
-
-// Requires the document to have been loaded with .select('+password_hash').
-playerSchema.methods.verifyPassword = function (password) {
-  return bcrypt.compare(password, this.password_hash);
 };
 
 export const Player = mongoose.model('Player', playerSchema);

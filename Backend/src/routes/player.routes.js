@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { searchPlayers } from '../controllers/admin/player.controller.js';
-import { registerPlayer } from '../controllers/user/player.controller.js';
+import { checkGoogleAccount, registerPlayer } from '../controllers/user/player.controller.js';
 import { requireAdmin } from '../middleware/auth.js';
 
 // Generous, because many students sign up from the same campus network (one shared IP).
@@ -15,6 +15,7 @@ const registerLimiter = rateLimit({
 
 const router = Router();
 
+router.post('/google', registerLimiter, checkGoogleAccount);
 router.post('/register', registerLimiter, registerPlayer);
 router.get('/', requireAdmin, searchPlayers);
 

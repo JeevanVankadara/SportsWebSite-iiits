@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 // Password field with a Show/Hide button, handy when typing on a phone.
-export default function PasswordInput({ id, value, onChange, autoComplete, minLength }) {
+export default function PasswordInput({ id, value, onChange, autoComplete, minLength, required = true }) {
   const [shown, setShown] = useState(false)
 
   return (
@@ -14,7 +14,7 @@ export default function PasswordInput({ id, value, onChange, autoComplete, minLe
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
         minLength={minLength}
-        required
+        required={required}
       />
       <button
         type="button"

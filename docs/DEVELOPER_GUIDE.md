@@ -22,7 +22,9 @@ It has three areas, each with its own sign-in and its own code folder:
 | **Co-ordinator** | Referees (players picked by the admin for a fixture) | `/coordinator` | Built for badminton (match order, slips, live scoring) cricket (squads, toss, ball-by-ball scoring, super over) and football (match settings, lineups, match clock, goals, cards and substitutions) |
 | **Users** | Students | `/` | Public tournaments, fixtures, scores, standings and player directory for all four sports |
 
-Players register once at `/register` (name, college email, roll number, username, password). The same account is used when a player is made a referee.
+Players register once at `/register` with their college Google account (`@iiits.in` only). Google gives the name and email; the player types only the roll number (`S` + batch year 2023 or later + 7 digits, e.g. `S20230010250`). The username is first + last name in lowercase (`ravikumar`, then `ravikumar2`, `ravikumar3`... when taken). The same Google account is used to sign in as a referee.
+
+Admins: one **super admin** (created by `seed:admin`) manages tournaments and adds other admins from the **Admins** page with a username, a password and the sports they manage. Those admins can open every tournament but add and run matches (fixtures, decisions, winners) only for their sports.
 
 ---
 
@@ -181,8 +183,11 @@ HTTP request
 
 | Role | Token role | Signs in at | Guard | Sets |
 |---|---|---|---|---|
-| Admin | `admin` | `POST /api/admin/login` | `requireAdmin` | `req.admin` |
-| Co-ordinator | `coordinator` | `POST /api/coordinator/login` (player username + password) | `requireCoordinator` | `req.player` |
+| Admin | `admin` | `POST /api/admin/login` | `requireAdmin` (any admin), `requireSuperAdmin`, `requireSportAdmin('<sport>')` | `req.admin` |
+| Co-ordinator | `coordinator` | `POST /api/coordinator/google` (the player's `@iiits.in` Google ID token) | `requireCoordinator` | `req.player` |
+
+- Google ID tokens are checked by `services/googleAuth.service.js` against `GOOGLE_CLIENT_ID`; only verified accounts of the `iiits.in` Workspace (`hd` claim) get through.
+- Admin roles (`models/Admin.js`): `super_admin` does everything; `admin` has `sports: ['cricket', ...]` and passes `requireSportAdmin` only for those. Tournament create/edit/delete and `/api/admin/admins` are `requireSuperAdmin`.
 
 - Tokens are JWT (HS256) signed with `JWT_SECRET`, valid for `JWT_EXPIRES_IN`, sent as `Authorization: Bearer <token>`.
 - Failed sign-ins are limited to 10 per 15 minutes per IP (successful ones do not count). Player sign-up allows 100 per 15 minutes, because the whole campus shares one IP.
@@ -193,8 +198,8 @@ HTTP request
 
 | Collection | Model file | Fields | Notes |
 |---|---|---|---|
-| `admins` | `models/Admin.js` | `username`, `password_hash` | Created only by `seed:admin` |
-| `players` | `models/Player.js` | `name`, `email`, `roll_number`, `username`, `password_hash`, `sports.<sport>` | Unique email, roll number, username. `sports.badminton = { played, won }`, `sports.cricket = { played, won, runs, wickets }`, `sports.football = { played, won, goals, yellow_cards, red_cards }` |
+| `admins` | `models/Admin.js` | `username`, `password_hash`, `role` (`super_admin` / `admin`), `sports[]` | The super admin comes from `seed:admin`; the others are added by the super admin |
+| `players` | `models/Player.js` | `name`, `email`, `roll_number`, `username`, `google_id`, `sports.<sport>` | Unique email, roll number, username. `sports.badminton = { played, won }`, `sports.cricket = { played, won, runs, wickets }`, `sports.football = { played, won, goals, yellow_cards, red_cards }` |
 | `tournaments` | `models/Tournament.js` | `tournament_name`, `games[]` → Game, `houses[] { _id, house_name }`, `status` (`live` / `completed`), `start_date`, `end_date` | Houses are **embedded**: they belong to one tournament. Max 30, names unique within the tournament |
 | `games` | `models/Game.js` | `game_name`, `rules` → Rules | Only `PREDEFINED_GAMES` (Cricket, Badminton, Football, Kabaddi) are offered |
 | `rules` | `models/Rules.js` | `set_of_rules[]` | Kept for later sport details |
@@ -207,11 +212,14 @@ Passwords are hashed with bcrypt (cost 12) and never returned (`select: false` +
 |---|---|---|
 | `POST /api/admin/login`, `GET /api/admin/me` | public / admin | Admin sign-in |
 | `GET /api/tournaments[?status=live]`, `GET /api/tournaments/:id` | public | Tournaments with sports |
-| `POST`, `PATCH /:id`, `DELETE /:id` `/api/tournaments` | admin | Manage tournaments (body: `tournament_name`, `status`, dates, `games`, `houses`) |
+| `POST`, `PATCH /:id`, `DELETE /:id` `/api/tournaments` | super admin | Manage tournaments (body: `tournament_name`, `status`, dates, `games`, `houses`) |
+| `PUT /api/tournaments/:id/winners` | admin of that sport | Winner and runner-up of one sport |
+| `GET`, `POST /api/admin/admins`, `PATCH`, `DELETE /api/admin/admins/:id` | super admin | Add admins (body: `username`, `password`, `sports`), change their sports or password, remove them |
 | `GET /api/games` | public | The predefined sports |
-| `POST /api/players/register` | public | Player sign-up |
+| `POST /api/players/google` | public | Body `{ credential }`: is this Google account registered already? |
+| `POST /api/players/register` | public | Body `{ credential, roll_number }`: player sign-up |
 | `GET /api/players?search=` | admin | Find players (to pick referees) |
-| `POST /api/coordinator/login`, `GET /api/coordinator/me`, `GET /api/coordinator/players?search=` | public / co-ordinator | Co-ordinator sign-in and player search |
+| `POST /api/coordinator/google`, `GET /api/coordinator/me`, `GET /api/coordinator/players?search=` | public / co-ordinator | Co-ordinator sign-in (body `{ credential }`) and player search |
 
 Deleting a tournament also deletes its badminton fixtures. Removing a house or a sport from a tournament is refused while fixtures use it (`assertTournamentEditAllowed`).
 

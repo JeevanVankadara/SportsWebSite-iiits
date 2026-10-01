@@ -4,7 +4,7 @@ import { AuthContext } from './authContext.js'
 const SIGNED_OUT = { status: 'signed-out', user: null }
 
 // Keeps track of who is signed in to one area of the site (admin or co-ordinator).
-// session: from api/client.js. auth: { login(username, password) -> { token, user }, me() -> user }.
+// session: from api/client.js. auth: { login(...credentials) -> { token, user }, me() -> user }.
 export default function AuthProvider({ session, auth, children }) {
   // A token saved by an earlier visit has to be checked with the server before it is trusted.
   const [state, setState] = useState(() => (session.getToken() ? { status: 'checking', user: null } : SIGNED_OUT))
@@ -33,8 +33,9 @@ export default function AuthProvider({ session, auth, children }) {
     }
   }, [session, auth])
 
-  async function signIn(username, password) {
-    const { token, user } = await auth.login(username, password)
+  // Admins: signIn(username, password). Co-ordinators: signIn(googleCredential).
+  async function signIn(...credentials) {
+    const { token, user } = await auth.login(...credentials)
     session.setToken(token)
     setState({ status: 'signed-in', user })
   }

@@ -1,20 +1,21 @@
 import { signCoordinatorToken } from '../../middleware/auth.js';
 import { Player } from '../../models/Player.js';
+import { verifyCollegeAccount } from '../../services/googleAuth.service.js';
 import { searchPlayers as findPlayers } from '../../services/player.service.js';
 import { HttpError } from '../../utils/httpError.js';
 
-// POST /api/coordinator/login — a co-ordinator signs in with their player username and password.
-export async function login(req, res) {
-  const { username, password } = req.body ?? {};
-  if (typeof username !== 'string' || !username.trim() || typeof password !== 'string' || !password) {
-    throw new HttpError(400, 'Enter your username and password');
+// POST /api/coordinator/google — body: { credential }. A co-ordinator signs in with the college
+// Google account they registered with. Guest players (added for one match only) can never sign in.
+export async function googleLogin(req, res) {
+  const { googleId, email } = await verifyCollegeAccount(req.body?.credential);
+  const player = await Player.findOne({ $or: [{ google_id: googleId }, { email }], is_guest: { $ne: true } });
+  if (!player) {
+    throw new HttpError(404, 'No player account for this Google account. Register first.');
   }
-
-  const player = await Player.findOne({ username: username.trim().toLowerCase() }).select('+password_hash');
-  // Same message for an unknown username and a wrong password, so the form never reveals which usernames exist.
-  // Guest players (added for one match only) have no password and can never sign in.
-  if (!player || player.is_guest || !(await player.verifyPassword(password))) {
-    throw new HttpError(401, 'Incorrect username or password');
+  // Accounts made before Google sign-in (same college email) are linked on their first sign-in.
+  if (!player.google_id) {
+    player.google_id = googleId;
+    await player.save();
   }
 
   res.json({ token: signCoordinatorToken(player), player });

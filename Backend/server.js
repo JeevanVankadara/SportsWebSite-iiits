@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { connectDB } from './src/config/db.js';
 import { env } from './src/config/env.js';
 import { errorHandler, notFound } from './src/middleware/errorHandler.js';
+import { migrateAdminRoles } from './src/models/Admin.js';
 import { ensurePredefinedGames } from './src/models/Game.js';
 import { migrateUpcomingTournaments } from './src/models/Tournament.js';
 import adminRoutes from './src/routes/admin.routes.js';
@@ -61,6 +62,7 @@ try {
   await connectDB();
   await ensurePredefinedGames();
   await migrateUpcomingTournaments();
+  await migrateAdminRoles();
 } catch (err) {
   console.error(`Could not prepare the database: ${err.message}`);
   process.exit(1);

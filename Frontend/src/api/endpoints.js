@@ -1,9 +1,10 @@
-import { adminSession, coordinatorSession, publicRequest } from './client.js'
+import { adminSession, coordinatorSession, publicRequest, signUpSession } from './client.js'
 
 const id = (value) => encodeURIComponent(value)
 
 // Admin area and public reads.
 const request = adminSession.request
+const publicPost = (path, body) => signUpSession.request(path, { method: 'POST', body })
 
 // Sign-in helpers for AuthProvider: login -> { token, user }, me -> user.
 export const adminAuth = {
@@ -13,6 +14,16 @@ export const adminAuth = {
       user: admin,
     })),
   me: () => request('/api/admin/me').then(({ admin }) => admin),
+}
+
+// Super admin only: the other admins and the sports each one manages.
+export const adminsApi = {
+  list: () => request('/api/admin/admins'),
+  // body: { username, password, sports: ['cricket', ...] }
+  create: (data) => request('/api/admin/admins', { method: 'POST', body: data }),
+  // body: { sports?, password? }
+  update: (adminId, data) => request(`/api/admin/admins/${id(adminId)}`, { method: 'PATCH', body: data }),
+  remove: (adminId) => request(`/api/admin/admins/${id(adminId)}`, { method: 'DELETE' }),
 }
 
 export const tournamentsApi = {
@@ -32,7 +43,10 @@ export const gamesApi = {
 }
 
 export const playersApi = {
-  register: (data) => request('/api/players/register', { method: 'POST', body: data }),
+  // credential: the ID token from Google's button. Answers { registered, player, profile: { name, email } }.
+  checkGoogle: (credential) => publicPost('/api/players/google', { credential }),
+  // body: { credential, roll_number }. Answers { player }.
+  register: (data) => publicPost('/api/players/register', data),
   // Admin only: find players by username, name or roll number.
   search: (text) => request(`/api/players?search=${encodeURIComponent(text)}`),
 }
@@ -108,8 +122,9 @@ export const volleyballApi = {
 const coordinatorRequest = coordinatorSession.request
 
 export const coordinatorAuth = {
-  login: (username, password) =>
-    coordinatorRequest('/api/coordinator/login', { method: 'POST', body: { username, password } }).then(
+  // credential: the ID token from Google's button.
+  login: (credential) =>
+    coordinatorRequest('/api/coordinator/google', { method: 'POST', body: { credential } }).then(
       ({ token, player }) => ({ token, user: player }),
     ),
   me: () => coordinatorRequest('/api/coordinator/me').then(({ player }) => player),

@@ -7,10 +7,12 @@ import {
 } from '../../controllers/admin/badminton/fixture.controller.js';
 import { removeMatchResult, saveMatchResult } from '../../controllers/admin/badminton/match.controller.js';
 import { getFixture, getStandings, listFixtures, streamFixture } from '../../controllers/user/badminton/badminton.controller.js';
-import { requireAdmin } from '../../middleware/auth.js';
+import { requireSportAdmin } from '../../middleware/auth.js';
 
 // Mounted at /api/badminton
 const router = Router();
+// The super admin, or an admin the super admin gave badminton to.
+const sportAdmin = requireSportAdmin('badminton');
 
 // Public
 router.get('/tournaments/:tournamentId/fixtures', listFixtures);
@@ -19,11 +21,11 @@ router.get('/fixtures/:id', getFixture);
 router.get('/fixtures/:id/stream', streamFixture);
 
 // Admin
-router.post('/tournaments/:tournamentId/fixtures', requireAdmin, createFixture);
-router.patch('/fixtures/:id', requireAdmin, updateFixture);
-router.delete('/fixtures/:id', requireAdmin, deleteFixture);
-router.put('/fixtures/:id/decision', requireAdmin, setFixtureDecision);
-router.put('/matches/:id/result', requireAdmin, saveMatchResult);
-router.delete('/matches/:id/result', requireAdmin, removeMatchResult);
+router.post('/tournaments/:tournamentId/fixtures', sportAdmin, createFixture);
+router.patch('/fixtures/:id', sportAdmin, updateFixture);
+router.delete('/fixtures/:id', sportAdmin, deleteFixture);
+router.put('/fixtures/:id/decision', sportAdmin, setFixtureDecision);
+router.put('/matches/:id/result', sportAdmin, saveMatchResult);
+router.delete('/matches/:id/result', sportAdmin, removeMatchResult);
 
 export default router;

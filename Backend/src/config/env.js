@@ -25,4 +25,7 @@ export const env = {
     .filter(Boolean),
   // Set when running behind a reverse proxy so rate limiting sees real client IPs.
   trustProxy: process.env.TRUST_PROXY === 'true',
+  // OAuth client ID from Google Cloud Console. Players and referees sign in with Google; without it
+  // the server still runs, but those sign-ins answer "not set up yet".
+  googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() || '',
 };

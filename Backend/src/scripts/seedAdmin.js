@@ -1,4 +1,5 @@
-// Creates an admin account, or resets the password when the username already exists.
+// Creates the super admin, or resets the password when the username already exists (and makes it
+// the super admin). Other admins are added by the super admin from the admin dashboard.
 // Run from the Backend folder: npm run seed:admin
 import { stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
@@ -66,9 +67,10 @@ async function main() {
   const existing = await Admin.findOne({ username });
   const admin = existing ?? new Admin({ username });
   admin.password_hash = await Admin.hashPassword(password);
+  admin.role = 'super_admin';
   await admin.save();
 
-  console.log(existing ? `Password updated for "${username}".` : `Admin "${username}" created.`);
+  console.log(existing ? `Password updated for "${username}" (super admin).` : `Super admin "${username}" created.`);
 }
 
 try {

@@ -62,6 +62,7 @@ Private repository? Create a GitHub fine-grained token (read-only, this repo) an
 cat > .env <<'EOF'
 DOMAIN=sports.example.com
 VITE_ADMIN_PATH=/control-room
+VITE_GOOGLE_CLIENT_ID=<the Google OAuth client ID>
 EOF
 ```
 Change `VITE_ADMIN_PATH` to something hard to guess if you like. It is built into the frontend, so changing it later means rebuilding.
@@ -73,10 +74,12 @@ cat > Backend/.env <<EOF
 MONGODB_URI=mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/iiits_sports_prod?retryWrites=true&w=majority
 JWT_SECRET=$JWT
 JWT_EXPIRES_IN=1d
+GOOGLE_CLIENT_ID=<the Google OAuth client ID>
 EOF
 chmod 600 .env Backend/.env
-nano Backend/.env        # paste your real Atlas connection string
+nano Backend/.env        # paste your real Atlas connection string and the Google client ID
 ```
+The Google client ID goes in both files (`VITE_GOOGLE_CLIENT_ID` above, `GOOGLE_CLIENT_ID` here). In Google Cloud Console, add `https://<domain>` to the client's **Authorized JavaScript origins**.
 `PORT`, `TRUST_PROXY` and `CLIENT_ORIGIN` are set by `docker-compose.yml`. Don't add them here.
 
 ## 4. Start
@@ -88,12 +91,12 @@ docker compose logs -f           # Ctrl+C to stop following
 ```
 In the backend log, look for `MongoDB connected` and `API listening`. In the Caddy log, look for `certificate obtained successfully`.
 
-## 5. Create the admin account
+## 5. Create the super admin account
 
 ```bash
 docker compose exec backend node src/scripts/seedAdmin.js
 ```
-It asks for a username and password (hidden). **Do not run `seed:reset` or the other seed scripts here**: `seed:reset` deletes the whole database, and the seed scripts create accounts whose passwords are written in the repository.
+It asks for a username and password (hidden). This is the super admin; other admins are added from the **Admins** page of the admin dashboard. **Do not run `seed:reset` or the other seed scripts here**: `seed:reset` deletes the whole database, and the seed scripts create accounts whose passwords are written in the repository.
 
 ## 6. Check it works
 

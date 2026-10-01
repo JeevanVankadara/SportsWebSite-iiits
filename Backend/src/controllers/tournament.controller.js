@@ -102,6 +102,10 @@ export async function setWinners(req, res) {
   if (!tournament.games.some((id) => String(id) === game)) {
     throw new HttpError(400, 'Pick a sport of this tournament');
   }
+  const gameDoc = await Game.findById(game, 'game_name');
+  if (!gameDoc || !req.admin.canManageSport(gameDoc.game_name.toLowerCase())) {
+    throw new HttpError(403, `You do not have permission to manage ${gameDoc?.game_name ?? 'this sport'}. Ask the super admin.`);
+  }
   const winner = optionalHouse(tournament, body.winner, 'Winner');
   const runnerUp = optionalHouse(tournament, body.runner_up, 'Runner-up');
   if (runnerUp && !winner) throw new HttpError(400, 'Pick the winner before the runner-up');

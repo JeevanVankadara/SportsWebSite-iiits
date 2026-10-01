@@ -1,4 +1,7 @@
+const GOOGLE_GSI = 'https://accounts.google.com/gsi/'
+
 // Shared by production HTML, Vite preview, and hosts supporting a _headers file.
+// deploy/Caddyfile repeats this policy; keep the two the same.
 export function securityHeaders(apiUrl = '') {
   let apiOrigin = ''
   if (/[\r\n\u0000]/.test(apiUrl)) throw new Error('VITE_API_URL must be a valid HTTP(S) URL.')
@@ -11,7 +14,8 @@ export function securityHeaders(apiUrl = '') {
     apiOrigin = ` ${url.origin}`
   }
   return {
-    'Content-Security-Policy': `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'${apiOrigin}; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`,
+    // Google's sign-in button (players and referees) is the only outside code: its script, styles and iframe.
+    'Content-Security-Policy': `default-src 'self'; script-src 'self' ${GOOGLE_GSI}client; style-src 'self' 'unsafe-inline' ${GOOGLE_GSI}style; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'${apiOrigin} ${GOOGLE_GSI}; frame-src ${GOOGLE_GSI}; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`,
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'strict-origin-when-cross-origin',

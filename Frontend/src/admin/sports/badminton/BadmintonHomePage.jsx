@@ -9,12 +9,14 @@ import StandingsTable from './StandingsTable.jsx'
 const TABS = [
   { key: 'fixtures', label: 'Fixtures' },
   { key: 'table', label: 'Points table' },
+  // Declaring the sport's overall winner is kept apart from the matches, so it is not mistaken for one.
+  { key: 'winners', label: 'Winners' },
 ]
 
 export default function BadmintonHomePage() {
   const { tournament, sport, basePath, breadcrumbs } = useBadminton()
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab = searchParams.get('tab') === 'table' ? 'table' : 'fixtures'
+  const tab = TABS.find((item) => item.key === searchParams.get('tab'))?.key ?? 'fixtures'
 
   return (
     <>
@@ -29,8 +31,6 @@ export default function BadmintonHomePage() {
           </Link>
         }
       />
-
-      <WinnersPanel tournament={tournament} sport={sport} />
 
       <div className="tabs" role="tablist" aria-label="Badminton sections">
         {TABS.map((item) => (
@@ -47,7 +47,11 @@ export default function BadmintonHomePage() {
         ))}
       </div>
 
-      <div role="tabpanel">{tab === 'fixtures' ? <FixtureList /> : <StandingsTable />}</div>
+      <div role="tabpanel">
+        {tab === 'fixtures' && <FixtureList />}
+        {tab === 'table' && <StandingsTable />}
+        {tab === 'winners' && <WinnersPanel tournament={tournament} sport={sport} />}
+      </div>
     </>
   )
 }

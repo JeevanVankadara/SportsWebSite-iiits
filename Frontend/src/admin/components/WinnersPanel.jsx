@@ -79,10 +79,11 @@ export default function WinnersPanel({ tournament, sport }) {
   return (
     <form className="panel form-stack" onSubmit={submit}>
       <div>
-        <h2 className="panel-title">Winners</h2>
+        <h2 className="panel-title">{sport.game_name} winners</h2>
         <p className="field-hint">
-          Decide these after the {sport.game_name} matches are over. They are shown at the top of the{' '}
-          {sport.game_name} page for everyone.
+          This is not a match. Once all the {sport.game_name} matches are over, pick the house that won{' '}
+          {sport.game_name} overall and the runner-up. They are shown at the top of the {sport.game_name} page for
+          everyone. To add a match, use the Fixtures tab.
         </p>
       </div>
       <div className="form-row">

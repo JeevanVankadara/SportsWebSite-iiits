@@ -1,56 +1,72 @@
-import { MIN_PASSWORD_LENGTH, Player } from '../../models/Player.js';
-import { isReservedIdentity } from '../../services/guestPlayer.service.js';
+import { FIRST_BATCH_YEAR, isValidRollNumber, Player } from '../../models/Player.js';
+import { verifyCollegeAccount } from '../../services/googleAuth.service.js';
+import { freeUsername } from '../../services/player.service.js';
 import { HttpError } from '../../utils/httpError.js';
-import { requireText } from '../../utils/validation.js';
 
-const DUPLICATE_MESSAGES = {
-  email: 'An account with this email already exists',
-  roll_number: 'An account with this roll number already exists',
-  username: 'This username is taken. Try another one.',
-};
+// Players sign up with their college Google account. Google gives the name and email; the player
+// types only their roll number, once. The username is made from the name (services/player.service.js).
 
-// POST /api/players/register — body: { name, email, roll_number, username, password }
+function playerName({ firstName, lastName, fullName, email }) {
+  return [firstName, lastName].filter(Boolean).join(' ') || fullName || email.split('@')[0];
+}
+
+function findAccount({ googleId, email }) {
+  return Player.findOne({ $or: [{ google_id: googleId }, { email }], is_guest: { $ne: true } });
+}
+
+function parseRollNumber(value) {
+  const rollNumber = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (!isValidRollNumber(rollNumber)) {
+    throw new HttpError(
+      400,
+      `Enter a valid roll number: S, the batch year (${FIRST_BATCH_YEAR} or later) and 7 digits, e.g. S20230010250`,
+    );
+  }
+  return rollNumber;
+}
+
+// POST /api/players/google — body: { credential }
+// Called right after the Google button: says whether this account is already registered, so the page
+// knows whether to ask for the roll number.
+export async function checkGoogleAccount(req, res) {
+  const account = await verifyCollegeAccount(req.body?.credential);
+  const player = await findAccount(account);
+  res.json({
+    registered: Boolean(player),
+    player: player ?? null,
+    profile: { name: playerName(account), email: account.email },
+  });
+}
+
+// POST /api/players/register — body: { credential, roll_number }
 export async function registerPlayer(req, res) {
-  const body = req.body ?? {};
-  const { password } = body;
-  if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-    throw new HttpError(400, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
-  }
-  // bcrypt only uses the first 72 bytes of a password.
-  if (Buffer.byteLength(password) > 72) throw new HttpError(400, 'Password must be 72 characters or fewer');
+  const account = await verifyCollegeAccount(req.body?.credential);
+  const rollNumber = parseRollNumber(req.body?.roll_number);
 
-  const player = new Player({
-    name: requireText(body.name, 'Name'),
-    email: requireText(body.email, 'Email'),
-    roll_number: requireText(body.roll_number, 'Roll number'),
-    username: requireText(body.username, 'Username'),
-  });
-  // The password is hashed only after the other fields pass, as hashing is deliberately slow.
-  await player.validate({ pathsToSkip: ['password_hash'] });
-  // These forms are kept for guest players (services/guestPlayer.service.js).
-  if (isReservedIdentity(player)) {
-    throw new HttpError(400, 'Usernames starting with "guest_", roll numbers starting with "GUEST-" and @guest.invalid emails are reserved');
+  const existing = await findAccount(account);
+  if (existing) throw new HttpError(409, `You are already registered as @${existing.username}`);
+  if (await Player.exists({ roll_number: rollNumber })) {
+    throw new HttpError(409, 'An account with this roll number already exists');
   }
 
-  // Checked up front for a clear message; the unique indexes still guard against two sign-ups at once.
-  const clash = await Player.findOne({
-    $or: [{ email: player.email }, { roll_number: player.roll_number }, { username: player.username }],
-  });
-  if (clash) {
-    const field = ['email', 'roll_number', 'username'].find((key) => clash[key] === player[key]);
-    throw new HttpError(409, DUPLICATE_MESSAGES[field]);
-  }
-
-  player.password_hash = await Player.hashPassword(password);
-  try {
-    await player.save();
-  } catch (err) {
-    if (err?.code === 11000) {
-      const field = Object.keys(err.keyPattern ?? {})[0];
-      throw new HttpError(409, DUPLICATE_MESSAGES[field] ?? 'An account with these details already exists');
+  // Two people with the same name signing up at once can pick the same free username; try again then.
+  for (let attempt = 0; ; attempt += 1) {
+    const player = new Player({
+      name: playerName(account),
+      email: account.email,
+      roll_number: rollNumber,
+      username: await freeUsername(account),
+      google_id: account.googleId,
+    });
+    try {
+      await player.save();
+      return res.status(201).json({ player });
+    } catch (err) {
+      const field = err?.code === 11000 ? Object.keys(err.keyPattern ?? {})[0] : null;
+      if (field === 'username' && attempt < 3) continue;
+      if (field === 'roll_number') throw new HttpError(409, 'An account with this roll number already exists');
+      if (field) throw new HttpError(409, 'You are already registered. Sign in instead.');
+      throw err;
     }
-    throw err;
   }
-
-  res.status(201).json({ player });
 }

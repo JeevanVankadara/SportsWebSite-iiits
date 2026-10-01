@@ -2,7 +2,8 @@
 #   First time:  docker compose up -d --build
 #   Update:      git pull && docker compose up -d --build
 #   Logs:        docker compose logs -f
-# Needs Backend/.env (API secrets) and .env next to this file (DOMAIN, VITE_ADMIN_PATH).
+# Needs Backend/.env (API secrets, GOOGLE_CLIENT_ID) and .env next to this file
+# (DOMAIN, VITE_ADMIN_PATH, VITE_GOOGLE_CLIENT_ID).
 # See docs/DEPLOYMENT.md.
 
 services:
@@ -34,6 +35,7 @@ services:
       dockerfile: deploy/caddy.Dockerfile
       args:
         VITE_ADMIN_PATH: ${VITE_ADMIN_PATH:-/control-room}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     environment:
       DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
     depends_on:

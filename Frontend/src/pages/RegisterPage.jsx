@@ -1,64 +1,78 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Trophy, Users, Zap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Trophy, Users, Zap } from 'lucide-react'
 import { playersApi } from '../api/endpoints.js'
+import GoogleButton, { COLLEGE_DOMAIN } from '../components/GoogleButton.jsx'
 import './register.css'
 import { instituteLogo, useAppearance } from '../hooks/useAppearance.js'
 import ThemeToggle from '../viewer/ThemeToggle.jsx'
 
-const MIN_PASSWORD_LENGTH = 8
-const EMPTY_FORM = { name: '', email: '', roll_number: '', username: '', password: '', confirm: '' }
+// Same rule as the backend (models/Player.js): S + batch year (2023 to this year) + 7 digits.
+const FIRST_BATCH_YEAR = 2023
+const ROLL_EXAMPLE = 'S20230010250'
 
-function strength(password) {
-  let score = 0
-  if (password.length >= MIN_PASSWORD_LENGTH) score += 1
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1
-  if (/\d/.test(password)) score += 1
-  if (/[^A-Za-z0-9]/.test(password) || password.length >= 12) score += 1
-  return score
-}
-const STRENGTH_LABEL = ['Too short', 'Weak', 'Okay', 'Good', 'Strong']
-
-function Field({ label, hint, children, htmlFor }) {
-  return <div className="reg-field">
-    <label className="reg-label" htmlFor={htmlFor}>{label}</label>
-    {children}
-    {hint && <p className="reg-hint">{hint}</p>}
-  </div>
+function rollNumberError(value) {
+  const match = /^S(\d{4})\d{7}$/.exec(value)
+  const year = Number(match?.[1])
+  if (!match) return `Roll number is S, the batch year and 7 digits, e.g. ${ROLL_EXAMPLE}`
+  if (year < FIRST_BATCH_YEAR || year > new Date().getFullYear()) {
+    return `Batch year must be between ${FIRST_BATCH_YEAR} and ${new Date().getFullYear()}`
+  }
+  return ''
 }
 
-function Secret({ id, value, onChange, autoComplete, invalid }) {
-  const [shown, setShown] = useState(false)
-  return <div className="reg-secret">
-    <input id={id} className="reg-input" type={shown ? 'text' : 'password'} value={value} onChange={event => onChange(event.target.value)} autoComplete={autoComplete} minLength={MIN_PASSWORD_LENGTH} aria-invalid={invalid || undefined} required />
-    <button type="button" onClick={() => setShown(current => !current)} aria-label={shown ? 'Hide password' : 'Show password'}>{shown ? <EyeOff size={18} /> : <Eye size={18} />}</button>
-  </div>
-}
-
-// Player sign-up. Referees pick players for matches by the username chosen here.
+// Player sign-up with the college Google account: Google gives the name and email, the player types
+// only their roll number. The username (first + last name) is picked by the server.
 export default function RegisterPage() {
   const { theme, changeTheme } = useAppearance()
-  const [form, setForm] = useState(EMPTY_FORM)
+  // { credential, profile: { name, email } } once Google has answered and the account is new.
+  const [pending, setPending] = useState(null)
+  const [rollNumber, setRollNumber] = useState('')
+  const [touched, setTouched] = useState(false)
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [registered, setRegistered] = useState(null)
-  const update = (field, value) => setForm(current => ({ ...current, [field]: value }))
-  const score = strength(form.password)
-  const mismatch = form.confirm.length > 0 && form.confirm !== form.password
+  const [busy, setBusy] = useState(false)
+  // { player, already } when done.
+  const [done, setDone] = useState(null)
+
+  const rollError = rollNumberError(rollNumber)
+
+  async function handleCredential(credential) {
+    setError('')
+    setBusy(true)
+    try {
+      const { registered, player, profile } = await playersApi.checkGoogle(credential)
+      if (registered) setDone({ player, already: true })
+      else setPending({ credential, profile })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (form.password !== form.confirm) { setError('The two passwords do not match'); return }
+    setTouched(true)
+    if (rollError) return
     setError('')
-    setSubmitting(true)
+    setBusy(true)
     try {
-      const { name, email, roll_number, username, password } = form
-      const { player } = await playersApi.register({ name, email, roll_number, username, password })
-      setRegistered(player)
+      const { player } = await playersApi.register({ credential: pending.credential, roll_number: rollNumber })
+      setDone({ player, already: false })
     } catch (err) {
       setError(err.message)
-      setSubmitting(false)
+      // Google's token lasts about an hour; after that the player has to pick the account again.
+      if (err.status === 401) setPending(null)
+    } finally {
+      setBusy(false)
     }
+  }
+
+  function startOver() {
+    setPending(null)
+    setRollNumber('')
+    setTouched(false)
+    setError('')
   }
 
   return <main className="reg-page" data-theme={theme}>
@@ -78,35 +92,37 @@ export default function RegisterPage() {
     <section className="reg-panel">
       <div className="reg-toolbar"><Link to="/" className="reg-back"><ArrowLeft size={16} /> Back to home</Link><ThemeToggle theme={theme} onChange={changeTheme} /></div>
       <img src={instituteLogo(theme)} alt="" className="reg-mobile-logo" width="52" height="56" />
-      {registered ? <div className="reg-done">
+      {done ? <div className="reg-done">
         <span className="reg-done-icon"><Check size={28} /></span>
-        <h1>You're registered</h1>
-        <p>Your username is <strong>@{registered.username}</strong>. Give it to the referee when you play.</p>
+        <h1>{done.already ? 'You are already registered' : 'You are registered'}</h1>
+        <p>Your username is <strong>@{done.player.username}</strong>. Give it to the referee when you play.</p>
         <Link to="/" className="reg-submit">Go to home <ArrowRight size={18} /></Link>
-      </div> : <form className="reg-form" onSubmit={handleSubmit}>
+      </div> : pending ? <form className="reg-form" onSubmit={handleSubmit} noValidate>
         <header>
-          <h1>Create your player account</h1>
-          <p>Register once to play in IIITS tournaments.</p>
+          <h1>One last step</h1>
+          <p>Add your roll number to finish your player account.</p>
         </header>
         {error && <div className="reg-error" role="alert">{error}</div>}
-        <div className="reg-row">
-          <Field label="Full name" htmlFor="reg-name"><input id="reg-name" className="reg-input" value={form.name} onChange={event => update('name', event.target.value)} autoComplete="name" maxLength={80} required /></Field>
-          <Field label="Roll number" htmlFor="reg-roll"><input id="reg-roll" className="reg-input" value={form.roll_number} onChange={event => update('roll_number', event.target.value)} autoCapitalize="characters" spellCheck={false} maxLength={30} required /></Field>
+        <div className="reg-profile">
+          <strong>{pending.profile.name}</strong>
+          <span>{pending.profile.email}</span>
         </div>
-        <Field label="College email" htmlFor="reg-email"><input id="reg-email" className="reg-input" type="email" value={form.email} onChange={event => update('email', event.target.value)} autoComplete="email" maxLength={120} required /></Field>
-        <Field label="Username" htmlFor="reg-username" hint="3 to 30 characters: letters, numbers, dots or underscores.">
-          <div className="reg-prefix"><span>@</span><input id="reg-username" className="reg-input" value={form.username} onChange={event => update('username', event.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} pattern="[A-Za-z0-9._]{3,30}" title="3 to 30 characters: letters, numbers, dots or underscores" required /></div>
-        </Field>
-        <div className="reg-row">
-          <Field label="Password" htmlFor="reg-password"><Secret id="reg-password" value={form.password} onChange={value => update('password', value)} autoComplete="new-password" /></Field>
-          <Field label="Confirm password" htmlFor="reg-confirm"><Secret id="reg-confirm" value={form.confirm} onChange={value => update('confirm', value)} autoComplete="new-password" invalid={mismatch} /></Field>
+        <div className="reg-field">
+          <label className="reg-label" htmlFor="reg-roll">Roll number</label>
+          <input id="reg-roll" className="reg-input" value={rollNumber} onChange={event => setRollNumber(event.target.value.toUpperCase().replace(/\s/g, ''))} onBlur={() => setTouched(true)} placeholder={ROLL_EXAMPLE} autoCapitalize="characters" spellCheck={false} maxLength={12} aria-invalid={(touched && Boolean(rollError)) || undefined} aria-describedby="reg-roll-hint" autoFocus required />
+          <p className="reg-hint" id="reg-roll-hint">{touched && rollError ? rollError : `For example ${ROLL_EXAMPLE}. You cannot change it later.`}</p>
         </div>
-        <div className="reg-meter" data-score={form.password ? score : undefined} aria-live="polite">
-          <span /><span /><span /><span />
-          <small>{mismatch ? 'Passwords do not match' : form.password ? STRENGTH_LABEL[score] : `At least ${MIN_PASSWORD_LENGTH} characters`}</small>
-        </div>
-        <button type="submit" className="reg-submit" disabled={submitting}>{submitting ? 'Registering…' : <>Register <ArrowRight size={18} /></>}</button>
-      </form>}
+        <button type="submit" className="reg-submit" disabled={busy}>{busy ? 'Registering…' : <>Register <ArrowRight size={18} /></>}</button>
+        <button type="button" className="reg-link" onClick={startOver} disabled={busy}>Use a different Google account</button>
+      </form> : <div className="reg-form">
+        <header>
+          <h1>Create your player account</h1>
+          <p>Sign up with your college Google account (@{COLLEGE_DOMAIN}). Your name comes from Google.</p>
+        </header>
+        {error && <div className="reg-error" role="alert">{error}</div>}
+        {busy ? <p className="reg-hint" role="status">Checking your account…</p> : <GoogleButton onCredential={handleCredential} text="signup_with" theme={theme === 'dark' ? 'filled_black' : 'outline'} className="reg-google" />}
+        <p className="reg-hint">Referees sign in at <Link to="/coordinator">/coordinator</Link> with the same Google account.</p>
+      </div>}
     </section>
   </main>
 }

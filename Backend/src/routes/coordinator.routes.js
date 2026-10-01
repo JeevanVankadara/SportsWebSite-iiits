@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { getCurrentCoordinator, login, searchPlayers } from '../controllers/co-ordinators/auth.controller.js';
+import { getCurrentCoordinator, googleLogin, searchPlayers } from '../controllers/co-ordinators/auth.controller.js';
 import { requireCoordinator } from '../middleware/auth.js';
 
 // Only failed attempts count towards the limit.
@@ -16,7 +16,7 @@ const loginLimiter = rateLimit({
 // Mounted at /api/coordinator. Each sport adds its own routes under /api/coordinator/<sport>.
 const router = Router();
 
-router.post('/login', loginLimiter, login);
+router.post('/google', loginLimiter, googleLogin);
 router.get('/me', requireCoordinator, getCurrentCoordinator);
 router.get('/players', requireCoordinator, searchPlayers);
 

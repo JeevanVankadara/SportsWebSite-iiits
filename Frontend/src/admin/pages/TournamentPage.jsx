@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { tournamentsApi } from '../../api/endpoints.js'
+import { useAuth } from '../../auth/authContext.js'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { CalendarIcon } from '../components/icons.jsx'
 import Toast from '../../components/Toast.jsx'
 import { Breadcrumbs, EmptyState, LoadError, StatusBadge } from '../components/ui.jsx'
+import { canManageSport, isSuperAdmin } from '../permissions.js'
 import { useTournament } from '../useTournament.js'
 import { formatDateRange } from '../../utils/dates.js'
 
 export default function TournamentPage() {
   const { id } = useParams()
+  const { user: admin } = useAuth()
+  const isSuper = isSuperAdmin(admin)
   const { tournament, setTournament, error, retry } = useTournament(id)
   const [busy, setBusy] = useState(false)
   const [toast, setToast] = useState('')
@@ -52,6 +56,7 @@ export default function TournamentPage() {
           </div>
           <h1 className="page-title">{tournament_name}</h1>
         </div>
+        {isSuper && (
         <div className="page-actions">
           {status === 'live' ? (
             <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => changeStatus('completed')}>
@@ -66,6 +71,7 @@ export default function TournamentPage() {
             Edit tournament
           </Link>
         </div>
+        )}
       </div>
 
       <section className="dash-section" aria-labelledby="sports-heading">
@@ -74,26 +80,39 @@ export default function TournamentPage() {
         </h2>
         {games.length > 0 ? (
           <div className="sport-grid">
-            {games.map((game) => (
-              <Link key={game._id} to={adminPath(`tournaments/${id}/sports/${game._id}`)} className="sport-tile">
-                <span className="sport-initial" aria-hidden="true">
-                  {game.game_name.charAt(0)}
-                </span>
-                <span className="sport-name">{game.game_name}</span>
-                <span className="sport-arrow" aria-hidden="true">
-                  →
-                </span>
-              </Link>
-            ))}
+            {games.map((game) =>
+              canManageSport(admin, game.game_name) ? (
+                <Link key={game._id} to={adminPath(`tournaments/${id}/sports/${game._id}`)} className="sport-tile">
+                  <span className="sport-initial" aria-hidden="true">
+                    {game.game_name.charAt(0)}
+                  </span>
+                  <span className="sport-name">{game.game_name}</span>
+                  <span className="sport-arrow" aria-hidden="true">
+                    →
+                  </span>
+                </Link>
+              ) : (
+                // A sport this admin was not given: shown, but it does not open.
+                <div key={game._id} className="sport-tile sport-tile-locked">
+                  <span className="sport-initial" aria-hidden="true">
+                    {game.game_name.charAt(0)}
+                  </span>
+                  <span className="sport-name">{game.game_name}</span>
+                  <span className="sport-lock">No access</span>
+                </div>
+              ),
+            )}
           </div>
         ) : (
           <EmptyState
             title="No sports picked yet"
-            text="Edit the tournament to choose the sports it includes."
+            text={isSuper ? 'Edit the tournament to choose the sports it includes.' : 'The super admin picks the sports.'}
             action={
-              <Link to={adminPath(`tournaments/${id}/edit`)} className="btn btn-primary">
-                Edit tournament
-              </Link>
+              isSuper && (
+                <Link to={adminPath(`tournaments/${id}/edit`)} className="btn btn-primary">
+                  Edit tournament
+                </Link>
+              )
             }
           />
         )}
@@ -112,7 +131,7 @@ export default function TournamentPage() {
             ))}
           </ul>
         ) : (
-          <p className="muted">No houses yet. Add them from Edit tournament.</p>
+          <p className="muted">{isSuper ? 'No houses yet. Add them from Edit tournament.' : 'No houses yet.'}</p>
         )}
       </section>
 

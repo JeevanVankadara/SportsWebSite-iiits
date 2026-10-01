@@ -68,8 +68,9 @@ try {
   })
   await test('production CSP excludes executable inline code and untrusted API origins', () => {
     const headers = securityHeaders('https://scores.example/api')
-    assert.match(headers['Content-Security-Policy'], /script-src 'self';/)
-    assert.match(headers['Content-Security-Policy'], /connect-src 'self' https:\/\/scores.example;/)
+    assert.match(headers['Content-Security-Policy'], /script-src 'self' https:\/\/accounts\.google\.com\/gsi\/client;/)
+    assert.match(headers['Content-Security-Policy'], /connect-src 'self' https:\/\/scores.example https:\/\/accounts\.google\.com\/gsi\/;/)
+    assert.match(headers['Content-Security-Policy'], /frame-src https:\/\/accounts\.google\.com\/gsi\/;/)
     assert.match(headers['Content-Security-Policy'], /frame-ancestors 'none'/)
     assert.equal(headers['X-Content-Type-Options'], 'nosniff')
     assert.throws(() => securityHeaders('https://scores.example/\n;script-src *'), /HTTP/)

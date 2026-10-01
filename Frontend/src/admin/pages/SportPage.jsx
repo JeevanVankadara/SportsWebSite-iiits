@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { useAuth } from '../../auth/authContext.js'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { TrophyIcon } from '../components/icons.jsx'
@@ -8,30 +9,34 @@ import FootballRoutes from '../sports/football/FootballRoutes.jsx'
 import CricketRoutes from '../sports/cricket/CricketRoutes.jsx'
 import KabaddiRoutes from '../sports/kabaddi/KabaddiRoutes.jsx'
 import VolleyballRoutes from '../sports/volleyball/VolleyballRoutes.jsx'
+import { canManageSport } from '../permissions.js'
 import { useTournament } from '../useTournament.js'
 
 // Each sport has its own section under src/admin/sports/. Sports without one show a placeholder.
 export default function SportPage() {
   const { id, gameId } = useParams()
+  const { user: admin } = useAuth()
   const { tournament, error, retry } = useTournament(id)
 
   if (!tournament) return error ? <LoadError message={error} onRetry={retry} /> : <PageLoader />
 
   const tournamentUrl = adminPath(`tournaments/${id}`)
   const sport = tournament.games.find((game) => game._id === gameId)
-  if (sport?.game_name.toLowerCase() === 'badminton') {
+  const allowed = Boolean(sport) && canManageSport(admin, sport.game_name)
+  const sportName = allowed ? sport.game_name.toLowerCase() : ''
+  if (sportName === 'badminton') {
     return <BadmintonRoutes tournament={tournament} sport={sport} />
   }
-  if (sport?.game_name.toLowerCase() === 'football') {
+  if (sportName === 'football') {
     return <FootballRoutes tournament={tournament} sport={sport} />
   }
-  if (sport?.game_name.toLowerCase() === 'cricket') {
+  if (sportName === 'cricket') {
     return <CricketRoutes tournament={tournament} sport={sport} />
   }
-  if (sport?.game_name.toLowerCase() === 'kabaddi') {
+  if (sportName === 'kabaddi') {
     return <KabaddiRoutes tournament={tournament} sport={sport} />
   }
-  if (sport?.game_name.toLowerCase() === 'volleyball') {
+  if (sportName === 'volleyball') {
     return <VolleyballRoutes tournament={tournament} sport={sport} />
   }
 
@@ -51,7 +56,13 @@ export default function SportPage() {
         ]}
       />
 
-      {sport ? (
+      {sport && !allowed ? (
+        <EmptyState
+          title={`You do not manage ${sport.game_name}`}
+          text="Ask the super admin to give you this sport."
+          action={backButton}
+        />
+      ) : sport ? (
         <>
           <div className="page-header">
             <div>

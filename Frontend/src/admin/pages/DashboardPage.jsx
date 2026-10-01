@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { tournamentsApi } from '../../api/endpoints.js'
+import { useAuth } from '../../auth/authContext.js'
 import PageLoader from '../../components/PageLoader.jsx'
 import { adminPath } from '../../config.js'
 import { PlusIcon, TrophyIcon } from '../components/icons.jsx'
 import Toast from '../../components/Toast.jsx'
 import TournamentCard from '../components/TournamentCard.jsx'
 import { EmptyState, LoadError, PageHeader } from '../components/ui.jsx'
+import { isSuperAdmin, sportLabels } from '../permissions.js'
 
 export default function DashboardPage() {
+  const { user: admin } = useAuth()
+  const isSuper = isSuperAdmin(admin)
   const [tournaments, setTournaments] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -74,6 +78,7 @@ export default function DashboardPage() {
           key={tournament._id}
           tournament={tournament}
           busy={busyId === tournament._id}
+          canEdit={isSuper}
           onEnd={() => endTournament(tournament)}
           onDelete={() => deleteTournament(tournament)}
         />
@@ -83,7 +88,16 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="Open a tournament to see its sports and houses." />
+      <PageHeader
+        title="Dashboard"
+        description={
+          isSuper
+            ? 'Open a tournament to see its sports and houses.'
+            : admin?.sports?.length
+              ? `Open a tournament to manage its ${sportLabels(admin.sports).join(', ')} matches.`
+              : 'You have no sports yet. Ask the super admin to give you one.'
+        }
+      />
 
       <section className="dash-section" aria-labelledby="ongoing-heading">
         <h2 id="ongoing-heading" className="section-title">
@@ -95,12 +109,14 @@ export default function DashboardPage() {
           <EmptyState
             icon={<TrophyIcon size={24} />}
             title="Nothing is going on right now"
-            text="Add a tournament to get started."
+            text={isSuper ? 'Add a tournament to get started.' : 'The super admin adds tournaments.'}
             action={
-              <Link to={adminPath('tournaments/new')} className="btn btn-primary">
-                <PlusIcon />
-                Add tournament
-              </Link>
+              isSuper && (
+                <Link to={adminPath('tournaments/new')} className="btn btn-primary">
+                  <PlusIcon />
+                  Add tournament
+                </Link>
+              )
             }
           />
         )}

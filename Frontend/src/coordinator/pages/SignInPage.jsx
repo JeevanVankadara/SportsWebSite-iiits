@@ -1,25 +1,22 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router'
 import { useAuth } from '../../auth/authContext.js'
+import GoogleButton, { COLLEGE_DOMAIN } from '../../components/GoogleButton.jsx'
 import PageLoader from '../../components/PageLoader.jsx'
-import PasswordInput from '../../components/PasswordInput.jsx'
 import { coordinatorPath } from '../../config.js'
 import { Eyebrow } from '../components/ui.jsx'
 
 export default function SignInPage() {
   const { status, signIn } = useAuth()
   const location = useLocation()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(event) {
-    event.preventDefault()
+  async function handleCredential(credential) {
     setError('')
     setSubmitting(true)
     try {
-      await signIn(username, password)
+      await signIn(credential)
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
@@ -42,9 +39,9 @@ export default function SignInPage() {
         </p>
       </section>
 
-      <form className="co-panel co-signin-card" onSubmit={handleSubmit}>
+      <div className="co-panel co-signin-card">
         <h2 className="co-display co-display-md">Sign in</h2>
-        <p className="co-muted">Use your player username and password.</p>
+        <p className="co-muted">Use the college Google account (@{COLLEGE_DOMAIN}) you registered with.</p>
 
         {error && (
           <p className="co-alert" role="alert">
@@ -52,39 +49,18 @@ export default function SignInPage() {
           </p>
         )}
 
-        <label className="co-field">
-          <span className="co-label">Username</span>
-          <input
-            className="co-input"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck={false}
-            autoFocus
-            required
-          />
-        </label>
+        {submitting ? (
+          <p className="co-muted" role="status">
+            Signing in…
+          </p>
+        ) : (
+          <GoogleButton onCredential={handleCredential} theme="filled_black" className="co-muted" />
+        )}
 
-        <div className="co-field">
-          <label className="co-label" htmlFor="coordinator-password">
-            Password
-          </label>
-          <PasswordInput
-            id="coordinator-password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-          />
-        </div>
-
-        <button type="submit" className="co-btn co-btn-primary co-btn-block" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
-        </button>
         <p className="co-muted co-small">
           Not registered yet? <Link to="/register">Create a player account</Link>
         </p>
-      </form>
+      </div>
     </main>
   )
 }

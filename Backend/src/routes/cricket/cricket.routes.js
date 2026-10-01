@@ -6,10 +6,12 @@ import {
   updateFixture,
 } from '../../controllers/admin/cricket/fixture.controller.js';
 import { getFixture, getStandings, listFixtures, streamFixture } from '../../controllers/user/cricket/cricket.controller.js';
-import { requireAdmin } from '../../middleware/auth.js';
+import { requireSportAdmin } from '../../middleware/auth.js';
 
 // Mounted at /api/cricket
 const router = Router();
+// The super admin, or an admin the super admin gave cricket to.
+const sportAdmin = requireSportAdmin('cricket');
 
 // Public
 router.get('/tournaments/:tournamentId/fixtures', listFixtures);
@@ -18,9 +20,9 @@ router.get('/fixtures/:id', getFixture);
 router.get('/fixtures/:id/stream', streamFixture);
 
 // Admin
-router.post('/tournaments/:tournamentId/fixtures', requireAdmin, createFixture);
-router.patch('/fixtures/:id', requireAdmin, updateFixture);
-router.delete('/fixtures/:id', requireAdmin, deleteFixture);
-router.put('/fixtures/:id/decision', requireAdmin, setFixtureDecision);
+router.post('/tournaments/:tournamentId/fixtures', sportAdmin, createFixture);
+router.patch('/fixtures/:id', sportAdmin, updateFixture);
+router.delete('/fixtures/:id', sportAdmin, deleteFixture);
+router.put('/fixtures/:id/decision', sportAdmin, setFixtureDecision);
 
 export default router;

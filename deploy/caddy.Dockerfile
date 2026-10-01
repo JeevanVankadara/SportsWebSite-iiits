@@ -8,7 +8,9 @@ RUN npm ci
 COPY Frontend/ ./
 # Empty API URL = same origin: the page calls /api on its own domain, which Caddy forwards.
 ARG VITE_ADMIN_PATH=/control-room
-ENV VITE_API_URL="" VITE_ADMIN_PATH=${VITE_ADMIN_PATH}
+# Public OAuth client ID for the Google sign-in button (same as GOOGLE_CLIENT_ID in Backend/.env).
+ARG VITE_GOOGLE_CLIENT_ID=""
+ENV VITE_API_URL="" VITE_ADMIN_PATH=${VITE_ADMIN_PATH} VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 RUN npm run build
 
 # 2. Caddy with the built files and the config.

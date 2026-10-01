@@ -1,2 +1,5 @@
 node_modules/
 .env
+Backend/backups/
+# Google OAuth download: contains the client secret
+client_secret_*.json

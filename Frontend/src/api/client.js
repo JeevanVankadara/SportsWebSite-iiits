@@ -81,6 +81,8 @@ export function createSession(storageKey) {
 
 export const adminSession = createSession('iiits-sports-admin-token')
 export const coordinatorSession = createSession('iiits-sports-coordinator-token')
+// Player sign-up. It never gets a token, so it never sends the admin's or the referee's.
+export const signUpSession = createSession('iiits-sports-sign-up')
 
 function assertApiPath(path) {
   if (typeof path !== 'string' || !path.startsWith('/api/') || /[\\\r\n]/.test(path))

@@ -5,7 +5,8 @@ import { CalendarIcon } from './icons.jsx'
 import { StatusBadge } from './ui.jsx'
 
 // The whole card opens the tournament; the buttons at the bottom sit above that link.
-export default function TournamentCard({ tournament, busy, onEnd, onDelete }) {
+// canEdit: only the super admin gets the End, Edit and Delete buttons.
+export default function TournamentCard({ tournament, busy, canEdit, onEnd, onDelete }) {
   const { _id, tournament_name, status, games, houses } = tournament
   const dates = formatDateRange(tournament.start_date, tournament.end_date)
 
@@ -42,6 +43,7 @@ export default function TournamentCard({ tournament, busy, onEnd, onDelete }) {
         </div>
       </dl>
 
+      {canEdit && (
       <div className="t-card-actions">
         {status === 'live' && (
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={onEnd}>
@@ -55,6 +57,7 @@ export default function TournamentCard({ tournament, busy, onEnd, onDelete }) {
           Delete
         </button>
       </div>
+      )}
     </article>
   )
 }
