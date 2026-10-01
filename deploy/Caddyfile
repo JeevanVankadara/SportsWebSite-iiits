@@ -1,0 +1,48 @@
+# One domain for everything: Caddy serves the built frontend and forwards /api to the backend, so
+# the browser talks to a single origin (no CORS) and Caddy gets and renews the HTTPS certificate.
+# DOMAIN comes from the .env file next to docker-compose.yml.
+
+{$DOMAIN} {
+	# --- API, including the live score streams (Server-Sent Events) ---
+	handle /api/* {
+		reverse_proxy backend:4000 {
+			# Send every byte straight away: live score updates must not wait in a buffer.
+			flush_interval -1
+		}
+		# Deliberately no `encode` here: compressing an event stream holds updates back.
+	}
+
+	# --- The built frontend (a single-page app) ---
+	handle {
+		root * /srv
+		encode zstd gzip
+
+		# Same headers as Frontend/security-policy.mjs (the build puts the CSP in index.html,
+		# but frame-ancestors only works as a real header).
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "DENY"
+			Referrer-Policy "strict-origin-when-cross-origin"
+			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+			Strict-Transport-Security "max-age=31536000"
+			-Server
+		}
+
+		# Built files have content hashes in their names, so they can be cached for a year;
+		# everything else (index.html) must always be checked, so a new deploy shows up at once.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@other not path /assets/*
+		header @other Cache-Control "no-cache"
+
+		# Client-side routes (/t/..., /coordinator, ...) all load index.html.
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

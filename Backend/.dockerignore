@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+# Secrets come in at runtime (env_file in docker-compose.yml), never baked into the image.
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore

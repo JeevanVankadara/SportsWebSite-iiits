@@ -1,0 +1,57 @@
+# Production on one VM: Caddy (HTTPS + frontend) in front of the Node API. MongoDB is on Atlas.
+#   First time:  docker compose up -d --build
+#   Update:      git pull && docker compose up -d --build
+#   Logs:        docker compose logs -f
+# Needs Backend/.env (API secrets) and .env next to this file (DOMAIN, VITE_ADMIN_PATH).
+# See docs/DEPLOYMENT.md.
+
+services:
+  backend:
+    build: ./Backend
+    env_file: ./Backend/.env
+    environment:
+      # Fixed for this setup; everything else comes from Backend/.env.
+      PORT: 4000
+      TRUST_PROXY: "true"
+      CLIENT_ORIGIN: https://${DOMAIN:?Set DOMAIN in .env}
+    restart: unless-stopped
+    # Only Caddy reaches it, over the internal network; no port is opened on the VM.
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  caddy:
+    build:
+      context: .
+      dockerfile: deploy/caddy.Dockerfile
+      args:
+        VITE_ADMIN_PATH: ${VITE_ADMIN_PATH:-/control-room}
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Keeps the HTTPS certificates across restarts (Let's Encrypt limits how often you can ask).
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  caddy_data:
+  caddy_config:

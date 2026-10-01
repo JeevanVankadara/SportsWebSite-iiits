@@ -1,0 +1,10 @@
+# Build context for deploy/caddy.Dockerfile (the repo root). Keep it small and free of secrets.
+.git
+.claude
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+Backend
+docs
