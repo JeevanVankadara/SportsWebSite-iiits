@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react'
 import { deliveryValue, overNumber } from './cricketLiveData.js'
 import { houseName } from './data.js'
 
+import { formatPlayerName } from '../utils/names.js'
+
 const idOf = item => String(item?._id ?? item ?? '')
 export const liveInning = data => data?.detail?.innings?.find(row => row.status === 'live')
-export const shortName = (name = '') => {
-  const parts = String(name).trim().split(/\s+/)
-  return parts.length > 1 ? `${parts[0][0]} ${parts.slice(1).join(' ')}` : name
-}
+export const shortName = (name = '') => formatPlayerName(name)
 function playerMap(fixture) {
   return new Map(['team1', 'team2'].flatMap(team => [...(fixture[`${team}_players`] ?? []), ...(fixture[`${team}_substitutes`] ?? [])]).map(player => [idOf(player), player]))
 }

@@ -1,3 +1,5 @@
+import { formatPlayerName } from '../../utils/names.js'
+
 // Badminton labels and the scoring rule, shared by the admin and co-ordinator screens.
 // The server checks every result; the rule here only gives instant feedback while typing.
 
@@ -45,7 +47,7 @@ export function setWinner(team1Points, team2Points, pointsToWin, pointCap) {
 }
 
 export function playerNames(players) {
-  return players.map((player) => player.name).join(' & ')
+  return players.map((player) => formatPlayerName(player.name)).join(' & ')
 }
 
 export function fixtureResultText(fixture, team1, team2) {

@@ -1,3 +1,5 @@
+import { formatPlayerName } from '../../utils/names.js'
+
 // Kabaddi labels, helpers and formatters shared by the admin and co-ordinator screens.
 
 export const TEAMS = ['team1', 'team2']
@@ -95,7 +97,7 @@ export function lineupPlayers(fixture) {
 
 // One line describing an event, e.g. "Ravi touched Kiran, Arun + bonus · Sai stepped out".
 export function describeEvent(event, players) {
-  const name = (id) => players.get(id)?.name ?? 'Unknown'
+  const name = (id) => formatPlayerName(players.get(id)?.name ?? players.get(String(id))?.name ?? 'Unknown')
   const names = (ids = []) => ids.map(name).join(', ')
 
   switch (event.type) {

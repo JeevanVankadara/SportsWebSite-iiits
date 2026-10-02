@@ -2064,3 +2064,10 @@
 @media(max-width:1000px) { .st-app .st-cricket-live-layout { grid-template-columns:1fr; } .st-app .st-live-sidebar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:800px) { .st-app .st-live-score-hero { grid-template-columns:1fr auto; gap:20px; padding:24px 0; } .st-app .st-live-rates { grid-column:1/-1; text-align:left; } .st-app .st-live-rates > div { justify-content:flex-start; } .st-app .st-active-players { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } .st-app .st-active-player { padding-bottom:0; border-bottom:0; } .st-app .st-current-bowler { padding-left:12px; } }
 @media(max-width:560px) { .st-app .st-header-inner { gap:8px; } .st-app .st-header-actions { gap:4px; } .st-app .st-theme-toggle { width:72px; } .st-app .st-brand { gap:8px; } .st-app .st-live-team { gap:12px; } .st-app .st-live-team strong { font-size:28px; } .st-app .st-live-team > .st-house-badge { display:none; } .st-app .st-latest-delivery { min-width:80px; } .st-app .st-latest-delivery b { font-size:24px; } .st-app .st-live-team strong small { font-size:12px; } .st-app .st-live-sidebar { display:flex; } .st-app .st-active-player .st-portrait { width:68px; height:76px; } .st-app .st-active-player a { font-size:12px; } .st-app .st-active-player p b { font-size:20px; } .st-app .st-active-player small { font-size:10px; } .st-app .st-current-bowler { padding-left:8px; } .st-app .st-live-section-title > span { max-width:120px; text-align:right; } .st-app .st-projection-grid { gap:8px; } }
+@media(max-width:600px) {
+  .st-app .st-scorecard-table { min-width:100%; font-size:12px; }
+  .st-app .st-scorecard-table th, .st-app .st-scorecard-table td { padding:10px 8px; }
+  .st-app .st-scorecard-table thead th { padding:10px 8px; font-size:10px; }
+  .st-app .st-scorecard-table th:first-child { min-width:105px; max-width:135px; white-space:normal; }
+  .st-app .st-scorecard-table tbody th small { white-space:normal; word-break:break-word; line-height:1.25; }
+}

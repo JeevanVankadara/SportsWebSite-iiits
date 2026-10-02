@@ -11,6 +11,7 @@ import {
 } from '../../../sports/football/format.js'
 import { Eyebrow } from '../../components/ui.jsx'
 import { playerHandle } from '../../../sports/playerHandle.js'
+import { formatPlayerName } from '../../../utils/names.js'
 
 export default function MatchCenter({ fixture, names, busy, run }) {
   const clock = fixture.clock || {}
@@ -334,16 +335,16 @@ export default function MatchCenter({ fixture, names, busy, run }) {
                     <span style={{ fontWeight: 600 }}>{eventTeamName}:</span>
                     {event.type === 'goal' && (
                       <span>
-                        {event.player?.name || 'Unknown player'}
-                        {event.assist_player ? ` (assist: ${event.assist_player.name})` : ''}
+                        {formatPlayerName(event.player?.name) || 'Unknown player'}
+                        {event.assist_player ? ` (assist: ${formatPlayerName(event.assist_player.name)})` : ''}
                       </span>
                     )}
                     {(event.type === 'yellow_card' || event.type === 'red_card') && (
-                      <span>{event.player?.name || 'Unknown player'}</span>
+                      <span>{formatPlayerName(event.player?.name) || 'Unknown player'}</span>
                     )}
                     {event.type === 'substitution' && (
                       <span>
-                        {event.player_out?.name} ➔ {event.player_in?.name}
+                        {formatPlayerName(event.player_out?.name)} ➔ {formatPlayerName(event.player_in?.name)}
                       </span>
                     )}
                     {event.note && <span className="co-muted">({event.note})</span>}
