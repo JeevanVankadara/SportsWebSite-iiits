@@ -70,6 +70,57 @@ const eventSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now },
 });
 
+const playerStatsSchema = new mongoose.Schema(
+  {
+    player: { type: ObjectId, ref: 'Player', required: true },
+    name: { type: String, trim: true },
+    is_starter: { type: Boolean, default: false },
+    raids: { type: Number, default: 0 },
+    successful_raids: { type: Number, default: 0 },
+    touch_points: { type: Number, default: 0 },
+    bonus_points: { type: Number, default: 0 },
+    raid_points: { type: Number, default: 0 },
+    super_raids: { type: Number, default: 0 },
+    tackles: { type: Number, default: 0 },
+    tackle_points: { type: Number, default: 0 },
+    super_tackles: { type: Number, default: 0 },
+    total_points: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const halfTeamStatsSchema = new mongoose.Schema(
+  {
+    total_points: { type: Number, default: 0 },
+    raid_points: { type: Number, default: 0 },
+    tackle_points: { type: Number, default: 0 },
+    all_out_points: { type: Number, default: 0 },
+    extra_points: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const halfStatsSchema = new mongoose.Schema(
+  {
+    team1: { type: halfTeamStatsSchema, default: () => ({}) },
+    team2: { type: halfTeamStatsSchema, default: () => ({}) },
+  },
+  { _id: false },
+);
+
+const scorecardSchema = new mongoose.Schema(
+  {
+    team1: { type: [playerStatsSchema], default: [] },
+    team2: { type: [playerStatsSchema], default: [] },
+    half_stats: {
+      first_half: { type: halfStatsSchema, default: () => ({}) },
+      second_half: { type: halfStatsSchema, default: () => ({}) },
+      full_match: { type: halfStatsSchema, default: () => ({}) },
+    },
+  },
+  { _id: false },
+);
+
 const fixtureSchema = new mongoose.Schema(
   {
     tournament: { type: ObjectId, ref: 'Tournament', required: true },
@@ -99,6 +150,8 @@ const fixtureSchema = new mongoose.Schema(
     team1_score: { type: Number, default: 0 },
     team2_score: { type: Number, default: 0 },
     events: { type: [eventSchema], default: [] },
+
+    scorecard: { type: scorecardSchema, default: null },
 
     result: { type: String, enum: [...FIXTURE_RESULTS, null], default: null },
     result_type: { type: String, enum: RESULT_TYPES, default: 'normal' },

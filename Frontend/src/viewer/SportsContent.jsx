@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatPlayerName } from '../utils/names.js'
 import CricketLive from './CricketLive.jsx'
 import PlayerAvatar from './PlayerAvatar.jsx'
@@ -489,6 +490,225 @@ function KabaddiTimeline({ data }) {
   )
 }
 
+function KabaddiMatchComparison({ stats, team1Name, team2Name, first, second }) {
+  const currentStats = stats ?? {
+    team1: { total_points: 0, raid_points: 0, tackle_points: 0, all_out_points: 0, extra_points: 0 },
+    team2: { total_points: 0, raid_points: 0, tackle_points: 0, all_out_points: 0, extra_points: 0 },
+  }
+
+  const metrics = [
+    { label: 'Total Points', key: 'total_points' },
+    { label: 'Raid Points', key: 'raid_points' },
+    { label: 'Tackle Points', key: 'tackle_points' },
+    { label: 'All out Points', key: 'all_out_points' },
+    { label: 'Extra Points', key: 'extra_points' },
+  ]
+
+  return (
+    <section className="st-detail-panel st-kabaddi-comparison-panel">
+      <div className="st-comparison-card">
+        <div className="st-comparison-header">
+          <div className="st-comparison-team left">
+            <span className="st-comparison-team-name">{team1Name}</span>
+            <i className={`st-house-dot st-house-${(first ?? '').toLowerCase().split(' ')[0]}`} />
+            <div className="st-comparison-accent-bar left" />
+          </div>
+          <div className="st-comparison-title">Match Comparison</div>
+          <div className="st-comparison-team right">
+            <div className="st-comparison-accent-bar right" />
+            <i className={`st-house-dot st-house-${(second ?? '').toLowerCase().split(' ')[0]}`} />
+            <span className="st-comparison-team-name">{team2Name}</span>
+          </div>
+        </div>
+
+        <div className="st-comparison-rows">
+          {metrics.map(({ label, key }) => {
+            const v1 = currentStats.team1?.[key] ?? 0
+            const v2 = currentStats.team2?.[key] ?? 0
+            const maxVal = Math.max(v1, v2, 1)
+            const pct1 = Math.round((v1 / maxVal) * 85)
+            const pct2 = Math.round((v2 / maxVal) * 85)
+
+            return (
+              <div key={key} className="st-comparison-row">
+                <div className="st-comparison-val left">{v1}</div>
+                <div className="st-comparison-center">
+                  <span className="st-comparison-metric-label">{label}</span>
+                  <div className="st-comparison-bar-track">
+                    <div className="st-comparison-bar-half left">
+                      <div
+                        className="st-comparison-bar-fill left"
+                        style={{ width: `${pct1}%` }}
+                      />
+                    </div>
+                    <div className="st-comparison-bar-divider" />
+                    <div className="st-comparison-bar-half right">
+                      <div
+                        className="st-comparison-bar-fill right"
+                        style={{ width: `${pct2}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="st-comparison-val right">{v2}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function KabaddiScorecardTable({ teamName, houseClass, score, players = [] }) {
+  const totals = players.reduce(
+    (acc, p) => ({
+      raid_points: acc.raid_points + (p.raid_points || 0),
+      tackle_points: acc.tackle_points + (p.tackle_points || 0),
+    }),
+    {
+      raid_points: 0,
+      tackle_points: 0,
+    },
+  )
+
+  return (
+    <section className="st-detail-panel st-kabaddi-innings">
+      <header className="st-innings-head">
+        <div>
+          <span className="st-eyebrow">SCORECARD</span>
+          <h2>
+            <i className={`st-house-dot ${houseClass}`} style={{ marginRight: 8, display: 'inline-block' }} />
+            {teamName}
+          </h2>
+        </div>
+        <div className="st-innings-total">
+          {score} <small>pts</small>
+        </div>
+      </header>
+
+      <div className="st-kabaddi-table-wrap">
+        <table className="st-kabaddi-table">
+          <thead>
+            <tr>
+              <th scope="col">Player</th>
+              <th scope="col" style={{ textAlign: 'right' }}>Raid Points</th>
+              <th scope="col" style={{ textAlign: 'right' }}>Tackle Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p, idx) => (
+              <tr key={p.player || idx}>
+                <th scope="row">
+                  <div className="st-kabaddi-player-cell">
+                    <span className="st-kabaddi-player-name">{formatPlayerName(p.name) || p.name || 'Player'}</span>
+                    <span className="st-kabaddi-player-role">{p.is_starter ? 'Starter' : 'Substitute'}</span>
+                  </div>
+                </th>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="st-kabaddi-pts">{p.raid_points ?? 0}</span>
+                </td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="st-kabaddi-pts">{p.tackle_points ?? 0}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {players.length > 0 && (
+            <tfoot>
+              <tr>
+                <th scope="row">Team Total</th>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="st-kabaddi-pts" style={{ color: 'var(--st-brand)' }}>{totals.raid_points}</span>
+                </td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="st-kabaddi-pts" style={{ color: 'var(--st-brand)' }}>{totals.tackle_points}</span>
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+        {!players.length && (
+          <p className="st-table-empty">No player statistics recorded for this match.</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function KabaddiScorecard({ data }) {
+  const { fixture, tournament } = data
+  const team1Name = houseName(tournament, fixture.team1)
+  const team2Name = houseName(tournament, fixture.team2)
+  const scorecard = fixture.scorecard
+
+  return (
+    <div className="st-detail-stack">
+      <KabaddiScorecardTable
+        teamName={team1Name}
+        houseClass={`st-house-${(team1Name ?? '').toLowerCase().split(' ')[0]}`}
+        score={fixture.team1_score}
+        players={scorecard?.team1 ?? []}
+      />
+
+      <KabaddiScorecardTable
+        teamName={team2Name}
+        houseClass={`st-house-${(team2Name ?? '').toLowerCase().split(' ')[0]}`}
+        score={fixture.team2_score}
+        players={scorecard?.team2 ?? []}
+      />
+    </div>
+  )
+}
+
+function KabaddiMatchInfo({ data }) {
+  const { fixture: f, tournament } = data
+  const team1Name = houseName(tournament, f.team1)
+  const team2Name = houseName(tournament, f.team2)
+  const scorecard = f.scorecard
+  const fullStats = scorecard?.half_stats?.full_match ?? scorecard?.half_stats?.first_half ?? {
+    team1: { total_points: Number(f.team1_score || 0), raid_points: 0, tackle_points: 0, all_out_points: 0, extra_points: 0 },
+    team2: { total_points: Number(f.team2_score || 0), raid_points: 0, tackle_points: 0, all_out_points: 0, extra_points: 0 },
+  }
+
+  return (
+    <div className="st-detail-stack">
+      <KabaddiMatchComparison
+        stats={fullStats}
+        team1Name={team1Name}
+        team2Name={team2Name}
+        first={team1Name}
+        second={team2Name}
+      />
+
+      <div className="st-detail-grid">
+        <section className="st-detail-panel">
+          <span className="st-eyebrow">MATCH STATUS</span>
+          <h2>Match finished</h2>
+          <p>{resultLine(f, tournament)}</p>
+        </section>
+        <section className="st-detail-panel">
+          <span className="st-eyebrow">MATCH DETAILS</span>
+          <div className="st-detail-row">
+            <span>Sport</span>
+            <strong>{sportName(f.sport)}</strong>
+          </div>
+          <div className="st-detail-row">
+            <span>Scheduled</span>
+            <strong>{formatDate(f.scheduled_at)}</strong>
+          </div>
+          {f.referees?.length > 0 && (
+            <div className="st-detail-row">
+              <span>Referees</span>
+              <strong>{f.referees.map((ref) => ref.name).join(', ')}</strong>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
+}
+
 function VolleyballSets({ data }) {
   const { fixture, tournament } = data
   const names = {
@@ -605,16 +825,20 @@ export function FixtureContent({ tab, data }) {
   const { fixture: f } = data
   if (tab === 'squads') return <Squads data={data} />
   if (f.sport === 'volleyball') return <VolleyballSets data={data} />
+  if (tab === 'timeline') {
+    if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
+    return <FootballTimeline data={data} />
+  }
   if (tab === 'scorecard') {
     if (f.sport === 'cricket') return <CricketScorecard data={data} />
     if (f.sport === 'badminton') return <BadmintonMatches data={data} />
-    if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
+    if (f.sport === 'kabaddi') return f.status === 'completed' ? <KabaddiScorecard data={data} /> : <KabaddiTimeline data={data} />
     return <FootballTimeline data={data} />
   }
   if (f.status === 'live' || f.status === 'completed') {
     if (f.sport === 'cricket') return f.status === 'live' ? <CricketLive data={data} live={data.live} /> : <CricketScorecard data={data} />
     if (f.sport === 'badminton') return <BadmintonMatches data={data} />
-    if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
+    if (f.sport === 'kabaddi') return f.status === 'completed' ? <KabaddiMatchInfo data={data} /> : <KabaddiTimeline data={data} />
     return <FootballTimeline data={data} />
   }
   return (
