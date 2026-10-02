@@ -15,11 +15,14 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   CircleHelp,
   Clock3,
   House,
   Search,
+  Share2,
+  SlidersHorizontal,
   Trophy,
   Users,
   X,
@@ -72,6 +75,13 @@ function usePreview() {
   return new URLSearchParams(search).get('preview') === '1'
 }
 
+function shareToWhatsApp({ text, url }) {
+  const targetUrl = url || (typeof window !== 'undefined' ? window.location.href : '')
+  const fullMessage = text ? `${text}\n${targetUrl}` : targetUrl
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(fullMessage)}`
+  window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+}
+
 function LiveBadge({ compact = false }) {
   return (
     <span className={`st-live-badge ${compact ? 'st-live-badge-small' : ''}`}>
@@ -82,9 +92,17 @@ function LiveBadge({ compact = false }) {
 
 function StatusBadge({ status }) {
   if (status === 'live') return <LiveBadge compact />
+  if (status === 'completed') {
+    return (
+      <span className="st-status st-status-completed">
+        <span className="st-completed-dot" aria-hidden="true" />
+        <span>Completed</span>
+      </span>
+    )
+  }
   return (
     <span className={`st-status st-status-${status}`}>
-      {status === 'completed' ? 'Result' : 'Upcoming'}
+      Upcoming
     </span>
   )
 }
@@ -99,6 +117,7 @@ function Shell({ children }) {
   const location = useLocation()
   const motionRoot = useRef(null)
   useViewerMotion(motionRoot, location.pathname)
+
   const submit = (event) => {
     event.preventDefault()
     setSearchOpen(false)
@@ -395,7 +414,7 @@ function MatchCard({ item, tournament, variant = '' }) {
       className={`st-match-card ${variant}`}
     >
       <div className="st-match-top">
-        <div>
+        <div className="st-match-top-info">
           <span className="st-sport-tag">{sportName(item.sport)}</span>
           <span className="st-match-tourney">
             {tournament?.tournament_name}
@@ -449,17 +468,80 @@ function Home({ view = 'home' }) {
   // Only the home page refreshes, once a minute, and only its live cards.
   const live = useLiveRefresh(data?.fixtures ?? [], view === 'home' && !preview && Boolean(data))
   const lastUpdate = live.refreshedAt ?? updated
-  const [filter, setFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sportFilter, setSportFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
   const rail = useRef(null)
+  const searchInputRef = useRef(null)
   const tournaments = data?.tournaments ?? []
   const fixtures = sortFixtures(live.fixtures)
-  const shown = fixtures.filter(
-    (item) =>
-      filter === 'all' || item.status === filter || item.sport === filter,
-  )
+
   const findTournament = (item) =>
     tournaments.find((row) => idOf(row) === item.tournamentId)
+
+  const matchesSearch = (item) => {
+    if (!searchQuery.trim()) return true
+    const q = searchQuery.trim().toLowerCase()
+    const t = findTournament(item)
+    const t1 = houseName(t, item.team1).toLowerCase()
+    const t2 = houseName(t, item.team2).toLowerCase()
+    const rawT1 = String(item.team1 ?? '').toLowerCase()
+    const rawT2 = String(item.team2 ?? '').toLowerCase()
+    const sp = (item.sport ?? '').toLowerCase()
+    const spLabel = sportName(item.sport).toLowerCase()
+    const tourName = (t?.tournament_name ?? '').toLowerCase()
+    const stage = (stageLabel(item.stage) ?? '').toLowerCase()
+    return (
+      t1.includes(q) ||
+      t2.includes(q) ||
+      rawT1.includes(q) ||
+      rawT2.includes(q) ||
+      sp.includes(q) ||
+      spLabel.includes(q) ||
+      tourName.includes(q) ||
+      stage.includes(q)
+    )
+  }
+
+  // Live matches ordered by latest scheduled / started
+  const liveMatches = [...fixtures.filter((item) => item.status === 'live')].sort(
+    (a, b) => new Date(b.scheduled_at ?? 0) - new Date(a.scheduled_at ?? 0),
+  )
+
+  // On Home: show only latest 3 matches. If live ones exist, latest 3 live; if not, latest 3 matches.
+  const homeMatches =
+    liveMatches.length > 0
+      ? liveMatches.slice(0, 3)
+      : fixtures.slice(0, 3)
+
+  const fixturesMatches = fixtures.filter((item) => {
+    const statusMatch =
+      statusFilter === 'all' || item.status === statusFilter
+    const sportMatch =
+      sportFilter === 'all' || item.sport === sportFilter
+    return statusMatch && sportMatch && matchesSearch(item)
+  })
+
+  const shown = view === 'home' ? homeMatches : fixturesMatches
+
   const liveCount = fixtures.filter((item) => item.status === 'live').length
+  const hasActiveFilters =
+    statusFilter !== 'all' || sportFilter !== 'all' || Boolean(searchQuery.trim())
+
+  const resetAllFilters = () => {
+    setStatusFilter('all')
+    setSportFilter('all')
+    setSearchQuery('')
+    setFilterOpen(false)
+  }
+
+  const handleShareFixturesWhatsApp = () => {
+    shareToWhatsApp({
+      text: 'Catch the latest scores and fixtures on IIITS Sports!',
+    })
+  }
+
   return (
     <main id="viewer-content">
       <div className="st-container st-main-content">
@@ -471,37 +553,170 @@ function Home({ view = 'home' }) {
                 {view === 'fixtures'
                   ? 'Fixtures & results'
                   : 'Live scores & fixtures'}{' '}
-                <span className="st-count">{fixtures.length}</span>
+                <span className="st-count">{view === 'home' ? shown.length : fixtures.length}</span>
               </h1>
             </div>
-            {lastUpdate && !preview && (
-              <span className="st-updated">
-                {`Updated ${new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit' }).format(lastUpdate)}`}
-              </span>
-            )}
+            <div className="st-score-title-actions">
+              {view === 'fixtures' && (
+                <button
+                  type="button"
+                  className="st-share-icon-btn"
+                  onClick={handleShareFixturesWhatsApp}
+                  title="Share on WhatsApp"
+                  aria-label="Share on WhatsApp"
+                >
+                  <Share2 size={15} />
+                </button>
+              )}
+              {view === 'home' && fixtures.length > 3 && (
+                <Link className="st-text-link" to={withPreview('/fixtures')}>
+                  View all <ArrowRight size={16} />
+                </Link>
+              )}
+              {lastUpdate && !preview && (
+                <span className="st-updated">
+                  {`Updated ${new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit' }).format(lastUpdate)}`}
+                </span>
+              )}
+            </div>
           </div>
-          <div
-            className="st-filter-bar"
-            role="group"
-            aria-label="Filter fixtures"
-          >
-            {[
-              ['all', 'All matches'],
-              ['live', `Live ${liveCount ? `(${liveCount})` : ''}`],
-              ['scheduled', 'Upcoming'],
-              ['completed', 'Finished'],
-              ...sports.map((sport) => [sport, sportName(sport)]),
-            ].map(([key, label]) => (
-              <button
-                className={filter === key ? 'active' : ''}
-                aria-pressed={filter === key}
-                key={key}
-                onClick={() => setFilter(key)}
+
+          {/* Search & Filter Toolbar only in fixtures view */}
+          {view === 'fixtures' && (
+            <div className="st-fixtures-toolbar">
+              {/* Row 1: Unified Search Bar & Sport Filter side-by-side */}
+              <div className="st-fixtures-search-row">
+                <div
+                  className="st-fixtures-search-box"
+                  onClick={() => searchInputRef.current?.focus()}
+                >
+                  <Search size={16} className="st-search-box-icon" aria-hidden="true" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className="st-fixtures-search-input"
+                    placeholder="Search matches, teams (e.g. UG1)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search fixtures by team or sport"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="st-search-clear-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSearchQuery('')
+                        searchInputRef.current?.focus()
+                      }}
+                      aria-label="Clear search"
+                      title="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className={`st-filter-toggle-btn ${sportFilter !== 'all' ? 'is-active' : ''} ${filterOpen ? 'is-open' : ''}`}
+                  onClick={() => setFilterOpen((v) => !v)}
+                  aria-expanded={filterOpen}
+                  aria-label="Filter by sport"
+                >
+                  <SlidersHorizontal size={15} />
+                  <span className="st-filter-toggle-text">
+                    {sportFilter === 'all' ? 'Sports' : sportName(sportFilter)}
+                  </span>
+                  {sportFilter !== 'all' && <span className="st-filter-badge">1</span>}
+                  <ChevronDown size={13} className={`st-dropdown-arrow ${filterOpen ? 'is-open' : ''}`} />
+                </button>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    className="st-filter-reset-btn"
+                    onClick={resetAllFilters}
+                    title="Reset all filters"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              {/* Expandable Sport Filter Drawer */}
+              {filterOpen && (
+                <div className="st-sport-filter-drawer" role="region" aria-label="Filter by sport options">
+                  <div className="st-sport-drawer-header">
+                    <span>Filter by Sport:</span>
+                    {sportFilter !== 'all' && (
+                      <button
+                        type="button"
+                        className="st-sport-drawer-clear"
+                        onClick={() => setSportFilter('all')}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="st-sport-filter-pills">
+                    <button
+                      type="button"
+                      className={`st-sport-pill ${sportFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSportFilter('all')
+                        setFilterOpen(false)
+                      }}
+                    >
+                      All Sports
+                    </button>
+                    {sports.map((sport) => (
+                      <button
+                        key={sport}
+                        type="button"
+                        className={`st-sport-pill ${sportFilter === sport ? 'active' : ''}`}
+                        onClick={() => {
+                          setSportFilter(sport)
+                          setFilterOpen(false)
+                        }}
+                      >
+                        {sportName(sport)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Row 2: Apple-style Segmented Status Control */}
+              <div
+                className="st-segmented-control"
+                role="tablist"
+                aria-label="Filter fixtures by status"
               >
-                {label}
-              </button>
-            ))}
-          </div>
+                {[
+                  ['all', 'All'],
+                  ['live', 'Live', liveCount],
+                  ['scheduled', 'Upcoming'],
+                  ['completed', 'Finished'],
+                ].map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    role="tab"
+                    className={`st-segmented-tab ${statusFilter === key ? 'active' : ''}`}
+                    aria-selected={statusFilter === key}
+                    onClick={() => setStatusFilter(key)}
+                  >
+                    {key === 'live' && count > 0 && <span className="st-live-dot" aria-hidden="true" />}
+                    <span>{label}</span>
+                    {key === 'live' && count > 0 && (
+                      <span className="st-segmented-count">{count}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {data?.incomplete && (
             <div className="st-inline-alert" role="status">
               Some sport scores are unavailable.{' '}
@@ -569,8 +784,26 @@ function Home({ view = 'home' }) {
                 )}
               </>
             ) : (
-              <div className="st-message st-message-small">
-                No matches in this view yet.
+              <div className="st-fixtures-empty-search">
+                <p>
+                  No fixtures found
+                  {searchQuery.trim() ? (
+                    <> matching <strong>"{searchQuery}"</strong></>
+                  ) : null}
+                  {sportFilter !== 'all' ? (
+                    <> in <strong>{sportName(sportFilter)}</strong></>
+                  ) : null}
+                  {statusFilter !== 'all' ? (
+                    <> with status <strong>{statusFilter}</strong></>
+                  ) : null}.
+                </p>
+                <button
+                  type="button"
+                  className="st-fixtures-clear-btn"
+                  onClick={resetAllFilters}
+                >
+                  Clear all filters
+                </button>
               </div>
             )}
           </DataState>
@@ -1440,6 +1673,17 @@ function FixturePage() {
   const f = data?.fixture
   const first = data && houseName(data.tournament, f.team1)
   const second = data && houseName(data.tournament, f.team2)
+
+  const handleShareWhatsApp = () => {
+    const catchyLine =
+      f?.status === 'live'
+        ? `Watch ${first} vs ${second} live on IIITS Sports!`
+        : f?.status === 'completed'
+        ? `Check ${first} vs ${second} match result on IIITS Sports!`
+        : `Upcoming match: ${first} vs ${second} on IIITS Sports!`
+    shareToWhatsApp({ text: catchyLine })
+  }
+
   return (
     <main id="viewer-content" className="st-container st-inner-page">
       <Breadcrumb
@@ -1463,17 +1707,28 @@ function FixturePage() {
         {f && (
           <>
             <div className="st-fixture-hero">
+              <button
+                type="button"
+                className="st-share-icon-btn st-hero-share-btn"
+                onClick={handleShareWhatsApp}
+                title="Share on WhatsApp"
+                aria-label="Share on WhatsApp"
+              >
+                <Share2 size={15} />
+              </button>
               {sport !== 'cricket' && <SportCelebration event={scoreEvent} sport={sport} />}
               {sport === 'cricket' && f.status !== 'live' && <SportCelebration event={liveFeed.event} sport="cricket" />}
               <h1 className="st-sr-only">
                 {first} vs {second}
               </h1>
               <div className="st-fixture-eyebrow">
-                <span>
-                  {sportName(sport)} · {data.tournament.tournament_name}
-                  <StageTag stage={f.stage} />
-                </span>
-                <StatusBadge status={f.status} />
+                <div className="st-fixture-eyebrow-left">
+                  <span>
+                    {sportName(sport)} · {data.tournament.tournament_name}
+                    <StageTag stage={f.stage} />
+                  </span>
+                  <StatusBadge status={f.status} />
+                </div>
               </div>
               {sport === 'cricket' && f.status === 'live' ? <CricketLiveHeader data={data} live={liveFeed} /> : <>
               <div className="st-fixture-score">
