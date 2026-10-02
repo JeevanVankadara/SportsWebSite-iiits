@@ -1,8 +1,8 @@
 import { TABLE_POINTS } from '../../models/sports/kabaddi/constants.js';
 import { KabaddiFixture } from '../../models/sports/kabaddi/KabaddiFixture.js';
 
-// Houses level on table points are split by point difference, then points scored, then name.
-const RANKING = ['points', 'point_diff', 'points_for'];
+// Houses ranked by point difference, then table points, then points scored, then name.
+const RANKING = ['point_diff', 'points', 'points_for'];
 
 function emptyRow(house) {
   return {
