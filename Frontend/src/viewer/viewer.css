@@ -2571,3 +2571,317 @@
   .st-app .st-scorecard-table th:first-child { min-width:105px; max-width:135px; white-space:normal; }
   .st-app .st-scorecard-table tbody th small { white-space:normal; word-break:break-word; line-height:1.25; }
 }
+
+/* Kabaddi Match Comparison & Scorecard */
+.st-kabaddi-comparison-panel {
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--st-radius-lg, 16px);
+  background: var(--st-surface);
+  border: 1px solid var(--st-line);
+  margin-bottom: 24px;
+}
+
+.st-comparison-card {
+  padding: 24px 20px;
+}
+
+.st-comparison-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--st-line);
+}
+
+.st-comparison-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.st-comparison-team.left {
+  justify-content: flex-end;
+}
+
+.st-comparison-team.right {
+  justify-content: flex-start;
+}
+
+.st-comparison-team-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--st-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.st-comparison-accent-bar {
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+}
+
+.st-comparison-accent-bar.left {
+  background: var(--st-brand);
+  margin-left: 4px;
+}
+
+.st-comparison-accent-bar.right {
+  background: var(--st-warm);
+  margin-right: 4px;
+}
+
+.st-comparison-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--st-ink);
+  text-align: center;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.st-comparison-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.st-comparison-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.st-comparison-val {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-comparison-val.left {
+  color: var(--st-brand);
+  text-align: left;
+}
+
+.st-comparison-val.right {
+  color: var(--st-warm);
+  text-align: right;
+}
+
+.st-comparison-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.st-comparison-metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--st-ink);
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.st-comparison-bar-track {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  height: 8px;
+  gap: 2px;
+}
+
+.st-comparison-bar-half {
+  flex: 1;
+  height: 8px;
+  background: rgba(120, 120, 128, 0.16);
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.st-comparison-bar-half.left {
+  border-radius: 4px 0 0 4px;
+  justify-content: flex-end;
+}
+
+.st-comparison-bar-half.right {
+  border-radius: 0 4px 4px 0;
+  justify-content: flex-start;
+}
+
+.st-comparison-bar-fill {
+  height: 100%;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.st-comparison-bar-fill.left {
+  background: var(--st-brand);
+  border-radius: 4px 0 0 4px;
+}
+
+.st-comparison-bar-fill.right {
+  background: var(--st-warm);
+  border-radius: 0 4px 4px 0;
+}
+
+.st-comparison-bar-divider {
+  width: 2px;
+  height: 12px;
+  background: var(--st-line);
+  flex-shrink: 0;
+}
+
+.st-kabaddi-innings {
+  margin-bottom: 24px;
+}
+
+.st-kabaddi-table-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--st-radius-sm, 10px);
+}
+
+.st-kabaddi-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.st-kabaddi-table th,
+.st-kabaddi-table td {
+  padding: 13px 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--st-line);
+}
+
+.st-kabaddi-table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--st-muted);
+  background: var(--st-subtle);
+  border-bottom: 1px solid var(--st-line);
+}
+
+.st-kabaddi-table th:first-child,
+.st-kabaddi-table td:first-child {
+  width: 52%;
+  text-align: left;
+}
+
+.st-kabaddi-table th:nth-child(2),
+.st-kabaddi-table td:nth-child(2) {
+  width: 24%;
+  text-align: right;
+}
+
+.st-kabaddi-table th:nth-child(3),
+.st-kabaddi-table td:nth-child(3) {
+  width: 24%;
+  text-align: right;
+}
+
+.st-kabaddi-player-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.st-kabaddi-player-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--st-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-kabaddi-player-role {
+  font-size: 11px;
+  color: var(--st-muted);
+  font-weight: 400;
+}
+
+.st-kabaddi-pts {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--st-ink);
+}
+
+.st-kabaddi-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.st-kabaddi-table tbody tr:hover {
+  background: rgba(120, 120, 128, 0.05);
+}
+
+.st-kabaddi-table tbody tr:last-child td,
+.st-kabaddi-table tbody tr:last-child th {
+  border-bottom: 1px solid var(--st-line);
+}
+
+.st-kabaddi-table tfoot tr th,
+.st-kabaddi-table tfoot tr td {
+  background: var(--st-subtle);
+  border-top: 2px solid var(--st-line);
+  font-weight: 700;
+  color: var(--st-ink);
+}
+
+.st-kabaddi-table tfoot .st-kabaddi-pts {
+  color: var(--st-brand);
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .st-comparison-val {
+    font-size: 22px;
+    min-width: 36px;
+  }
+  .st-comparison-team-name {
+    max-width: 100px;
+    font-size: 12px;
+  }
+  .st-comparison-title {
+    font-size: 12px;
+    padding: 0 8px;
+  }
+  .st-comparison-card {
+    padding: 16px 12px;
+  }
+  .st-comparison-rows {
+    gap: 16px;
+  }
+  .st-kabaddi-table th,
+  .st-kabaddi-table td {
+    padding: 10px 8px;
+  }
+  .st-kabaddi-player-name {
+    font-size: 13px;
+  }
+  .st-kabaddi-player-role {
+    font-size: 10px;
+  }
+  .st-kabaddi-pts {
+    font-size: 13px;
+  }
+  .st-kabaddi-table thead th {
+    font-size: 10px;
+  }
+}
+

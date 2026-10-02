@@ -1791,18 +1791,31 @@ function FixturePage() {
                       ['summary', 'Sets'],
                       ['squads', 'Squads'],
                     ]
-                  : [
-                      ['summary', f.status === 'live' ? 'Live' : 'Match info'],
-                      [
-                        'scorecard',
-                        sport === 'football' || sport === 'kabaddi'
-                          ? 'Timeline'
-                          : sport === 'badminton'
-                            ? 'Matches'
-                            : 'Scorecard',
-                      ],
-                      ['squads', 'Squads'],
-                    ]
+                  : sport === 'kabaddi'
+                    ? [
+                        ['summary', f.status === 'live' ? 'Live' : 'Match info'],
+                        ...(f.status === 'completed'
+                          ? [
+                              ['scorecard', 'Scorecard'],
+                              ['timeline', 'Timeline'],
+                            ]
+                          : f.status === 'live'
+                            ? [['timeline', 'Timeline']]
+                            : []),
+                        ['squads', 'Squads'],
+                      ]
+                    : [
+                        ['summary', f.status === 'live' ? 'Live' : 'Match info'],
+                        [
+                          'scorecard',
+                          sport === 'football'
+                            ? 'Timeline'
+                            : sport === 'badminton'
+                              ? 'Matches'
+                              : 'Scorecard',
+                        ],
+                        ['squads', 'Squads'],
+                      ]
               }
             />
             <div

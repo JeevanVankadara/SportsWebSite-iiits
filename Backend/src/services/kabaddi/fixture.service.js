@@ -7,7 +7,7 @@ import { HttpError } from '../../utils/httpError.js';
 import { checkLineupPlayers, deleteGuestsOf, playerLabel } from '../guestPlayer.service.js';
 import { publishFixture } from '../liveBus.js';
 import { refreshPlayerStats } from './playerStats.service.js';
-import { computeElapsedSeconds, determineWinner, idOf, replayMatch } from './rules.js';
+import { computeElapsedSeconds, computeKabaddiScorecardStats, determineWinner, idOf, replayMatch } from './rules.js';
 
 const PLAYER_FIELDS = 'name username roll_number is_guest';
 
@@ -21,20 +21,9 @@ export function loadFixture(fixtureId) {
     .populate('team1_lineup.starters', PLAYER_FIELDS)
     .populate('team1_lineup.bench', PLAYER_FIELDS)
     .populate('team2_lineup.starters', PLAYER_FIELDS)
-    .populate('team2_lineup.bench', PLAYER_FIELDS);
-}
-
-/**
- * What every kabaddi screen needs: { fixture, state, tournament }.
- * state is the replayed match: who is on court and out, the score after each event and whose raid is next.
- */
-// Pass { publish: true } after a change, so open live streams send the new state to viewers.
-export async function fixtureResponse(fixtureId, { publish = false } = {}) {
-  const fixture = await loadFixture(fixtureId);
-  if (!fixture) throw new HttpError(404, 'Fixture not found');
-  const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');
-  if (publish) publishFixture('kabaddi', fixture._id);
-  return { fixture, state: replayMatch(fixture), tournament };
+    .populate('team2_lineup.bench', PLAYER_FIELDS)
+    .populate('scorecard.team1.player', PLAYER_FIELDS)
+    .populate('scorecard.team2.player', PLAYER_FIELDS);
 }
 
 export function lineupPlayers(fixture) {
@@ -47,6 +36,54 @@ export function lineupPlayers(fixture) {
 }
 
 /**
+ * Resolves player names and compiles the complete Kabaddi scorecard and half-wise stats.
+ */
+export async function generateKabaddiScorecard(fixture) {
+  const allPlayers = lineupPlayers(fixture);
+  const nameMap = {};
+  const missingIds = [];
+
+  for (const p of allPlayers) {
+    const id = idOf(p);
+    if (!id) continue;
+    if (p && typeof p === 'object' && p.name) {
+      nameMap[id] = p.name;
+    } else {
+      missingIds.push(id);
+    }
+  }
+
+  if (missingIds.length > 0) {
+    const docs = await Player.find({ _id: { $in: missingIds } }, 'name username is_guest');
+    for (const doc of docs) {
+      nameMap[idOf(doc._id)] = doc.name || doc.username || 'Player';
+    }
+  }
+
+  return computeKabaddiScorecardStats(fixture, nameMap);
+}
+
+/**
+ * What every kabaddi screen needs: { fixture, state, tournament }.
+ * state is the replayed match: who is on court and out, the score after each event and whose raid is next.
+ */
+// Pass { publish: true } after a change, so open live streams send the new state to viewers.
+export async function fixtureResponse(fixtureId, { publish = false } = {}) {
+  const fixture = await loadFixture(fixtureId);
+  if (!fixture) throw new HttpError(404, 'Fixture not found');
+
+  // Once a match is completed, if scorecard is not yet cached in DB, compute & persist once!
+  if (fixture.status === 'completed' && (!fixture.scorecard || !fixture.scorecard.team1?.length)) {
+    fixture.scorecard = await generateKabaddiScorecard(fixture);
+    await KabaddiFixture.updateOne({ _id: fixture._id }, { $set: { scorecard: fixture.scorecard } });
+  }
+
+  const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');
+  if (publish) publishFixture('kabaddi', fixture._id);
+  return { fixture, state: replayMatch(fixture), tournament };
+}
+
+/**
  * Recomputes the score (and the result of a finished match) from the events, then saves.
  */
 export async function recomputeFixture(fixture) {
@@ -56,6 +93,12 @@ export async function recomputeFixture(fixture) {
 
   if (fixture.status === 'completed' && fixture.result_type === 'normal') {
     fixture.result = determineWinner(score.team1, score.team2);
+  }
+
+  if (fixture.status === 'completed') {
+    fixture.scorecard = await generateKabaddiScorecard(fixture);
+  } else {
+    fixture.scorecard = null;
   }
 
   await fixture.save();

@@ -234,3 +234,124 @@ export function computeElapsedSeconds(clock, now = new Date()) {
   }
   return elapsed;
 }
+
+/**
+ * Calculates the complete player scorecard and half-wise comparison statistics.
+ * Pure computation function.
+ */
+export function computeKabaddiScorecardStats(fixture, playersMap = {}) {
+  const config = fixtureConfig(fixture);
+  const { timeline, players } = replayMatch(fixture);
+
+  const createHalfTeamStats = () => ({
+    total_points: 0,
+    raid_points: 0,
+    tackle_points: 0,
+    all_out_points: 0,
+    extra_points: 0,
+  });
+
+  const half_stats = {
+    first_half: { team1: createHalfTeamStats(), team2: createHalfTeamStats() },
+    second_half: { team1: createHalfTeamStats(), team2: createHalfTeamStats() },
+    full_match: { team1: createHalfTeamStats(), team2: createHalfTeamStats() },
+  };
+
+  const addStat = (team, category, pts, half) => {
+    if (!pts || pts <= 0) return;
+    const targetHalf = half === 'second_half' ? 'second_half' : 'first_half';
+    if (half_stats[targetHalf] && half_stats[targetHalf][team]) {
+      half_stats[targetHalf][team][category] += pts;
+      half_stats[targetHalf][team].total_points += pts;
+    }
+    half_stats.full_match[team][category] += pts;
+    half_stats.full_match[team].total_points += pts;
+  };
+
+  (fixture.events ?? []).forEach((event, index) => {
+    const entry = timeline[index];
+    const half = event.half;
+    const raiding = event.team;
+    const defending = otherTeam(raiding);
+
+    if (event.type === 'raid') {
+      const touched = idsOf(event.touched);
+      const steppedOut = new Set(idsOf(event.stepped_out));
+      const lineOuts = touched.filter((id) => steppedOut.has(id));
+      const bonus = event.bonus ? 1 : 0;
+      const raidPoints = touched.length - lineOuts.length + bonus;
+      const lineOutPoints = lineOuts.length * LINE_OUT_POINTS;
+      const housePoints = raidPoints + lineOutPoints;
+
+      if (housePoints === 0 && entry?.do_or_die) {
+        addStat(defending, 'tackle_points', DO_OR_DIE_FAIL_POINTS, half);
+      } else {
+        if (raidPoints > 0) addStat(raiding, 'raid_points', raidPoints, half);
+        if (lineOutPoints > 0) addStat(raiding, 'extra_points', lineOutPoints, half);
+      }
+    } else if (event.type === 'tackle') {
+      const tacklePoints = entry?.super_tackle ? config.super_tackle_points : TACKLE_POINTS;
+      addStat(defending, 'tackle_points', tacklePoints, half);
+    } else if (event.type === 'line_out') {
+      addStat(defending, 'extra_points', LINE_OUT_POINTS, half);
+    } else if (event.type === 'technical' || event.type === 'correction') {
+      addStat(event.team, 'extra_points', event.points ?? 0, half);
+    }
+
+    if (entry?.all_out) {
+      const scoringTeam = otherTeam(entry.all_out);
+      addStat(scoringTeam, 'all_out_points', config.all_out_points, half);
+    }
+  });
+
+  const buildTeamScorecard = (teamKey) => {
+    const lineup = fixture[`${teamKey}_lineup`] || {};
+    const startersList = idsOf(lineup.starters);
+    const benchList = idsOf(lineup.bench);
+    const starterSet = new Set(startersList);
+    const benchSet = new Set(benchList);
+    const seen = new Set();
+    const list = [];
+
+    const addPlayer = (id, isStarter) => {
+      const idStr = idOf(id);
+      if (!idStr || seen.has(idStr)) return;
+      seen.add(idStr);
+      const st = players[idStr] || newPlayerLine();
+      const pName = playersMap[idStr] || (id && typeof id === 'object' && id.name ? id.name : null) || 'Player';
+      list.push({
+        player: idStr,
+        name: pName,
+        is_starter: isStarter,
+        raids: st.raids || 0,
+        successful_raids: st.successful_raids || 0,
+        touch_points: Math.max(0, (st.raid_points || 0) - (st.bonus_points || 0)),
+        bonus_points: st.bonus_points || 0,
+        raid_points: st.raid_points || 0,
+        super_raids: st.super_raids || 0,
+        tackles: st.tackles || 0,
+        tackle_points: st.tackle_points || 0,
+        super_tackles: st.super_tackles || 0,
+        total_points: (st.raid_points || 0) + (st.tackle_points || 0),
+      });
+    };
+
+    startersList.forEach((id) => addPlayer(id, true));
+    benchList.forEach((id) => addPlayer(id, false));
+
+    // Also include any other players who have stats and belong to this team
+    Object.keys(players).forEach((idStr) => {
+      if (!seen.has(idStr) && (starterSet.has(idStr) || benchSet.has(idStr))) {
+        addPlayer(idStr, false);
+      }
+    });
+
+    return list;
+  };
+
+  return {
+    team1: buildTeamScorecard('team1'),
+    team2: buildTeamScorecard('team2'),
+    half_stats,
+  };
+}

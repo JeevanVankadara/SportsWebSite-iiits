@@ -254,6 +254,18 @@ const demoFixtures = [
     team2_matches_won: 2,
   },
   {
+    _id: 'preview-kabaddi-finished',
+    sport: 'kabaddi',
+    tournamentId: demoTournament._id,
+    team1: 'red',
+    team2: 'blue',
+    status: 'completed',
+    result: 'team1',
+    scheduled_at: '2026-09-29T18:00:00+05:30',
+    team1_score: 34,
+    team2_score: 33,
+  },
+  {
     _id: 'preview-cricket-upcoming',
     sport: 'cricket',
     tournamentId: demoTournament._id,
@@ -479,6 +491,46 @@ export function previewFixture(sport, fixtureId) {
         ],
       },
     ]
+  }
+  if (sport === 'kabaddi') {
+    full = {
+      ...full,
+      scorecard: {
+        team1: [
+          { player: 'p1', name: 'Naveen Kumar', is_starter: true, raids: 14, successful_raids: 9, touch_points: 7, bonus_points: 3, raid_points: 10, super_raids: 1, tackles: 1, tackle_points: 1, super_tackles: 0, total_points: 11 },
+          { player: 'p2', name: 'Ashu Malik', is_starter: true, raids: 11, successful_raids: 6, touch_points: 5, bonus_points: 2, raid_points: 7, super_raids: 0, tackles: 2, tackle_points: 2, super_tackles: 0, total_points: 9 },
+          { player: 'p3', name: 'Yogesh Dahiya', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 6, tackle_points: 5, super_tackles: 1, total_points: 5 },
+          { player: 'p4', name: 'Vishal Bharadwaj', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 4, tackle_points: 3, super_tackles: 0, total_points: 3 },
+          { player: 'p5', name: 'Vikrant', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 3, tackle_points: 2, super_tackles: 0, total_points: 2 },
+          { player: 'p6', name: 'Mohit Deswal', is_starter: true, raids: 2, successful_raids: 1, touch_points: 1, bonus_points: 0, raid_points: 1, super_raids: 0, tackles: 2, tackle_points: 1, super_tackles: 0, total_points: 2 },
+          { player: 'p7', name: 'Balasaheb Jadhav', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 2, tackle_points: 1, super_tackles: 0, total_points: 1 },
+          { player: 'p8', name: 'Brijendra Chaudhary', is_starter: false, raids: 3, successful_raids: 1, touch_points: 1, bonus_points: 0, raid_points: 1, super_raids: 0, tackles: 0, tackle_points: 0, super_tackles: 0, total_points: 1 },
+        ],
+        team2: [
+          { player: 'p9', name: 'Aslam Inamdar', is_starter: true, raids: 13, successful_raids: 7, touch_points: 6, bonus_points: 2, raid_points: 8, super_raids: 0, tackles: 2, tackle_points: 2, super_tackles: 0, total_points: 10 },
+          { player: 'p10', name: 'Mohit Goyat', is_starter: true, raids: 12, successful_raids: 6, touch_points: 4, bonus_points: 2, raid_points: 6, super_raids: 0, tackles: 2, tackle_points: 2, super_tackles: 0, total_points: 8 },
+          { player: 'p11', name: 'Pankaj Mohite', is_starter: true, raids: 8, successful_raids: 4, touch_points: 3, bonus_points: 1, raid_points: 4, super_raids: 0, tackles: 0, tackle_points: 0, super_tackles: 0, total_points: 4 },
+          { player: 'p12', name: 'Gaurav Khatri', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 5, tackle_points: 4, super_tackles: 0, total_points: 4 },
+          { player: 'p13', name: 'Mohammadreza Shadloui', is_starter: true, raids: 1, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 6, tackle_points: 4, super_tackles: 1, total_points: 4 },
+          { player: 'p14', name: 'Abinesh Nadarajan', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 4, tackle_points: 2, super_tackles: 0, total_points: 2 },
+          { player: 'p15', name: 'Sanket Sawant', is_starter: true, raids: 0, successful_raids: 0, touch_points: 0, bonus_points: 0, raid_points: 0, super_raids: 0, tackles: 3, tackle_points: 1, super_tackles: 0, total_points: 1 },
+        ],
+        half_stats: {
+          first_half: {
+            team1: { total_points: 20, raid_points: 13, tackle_points: 3, all_out_points: 2, extra_points: 2 },
+            team2: { total_points: 14, raid_points: 7, tackle_points: 7, all_out_points: 0, extra_points: 0 },
+          },
+          second_half: {
+            team1: { total_points: 14, raid_points: 6, tackle_points: 6, all_out_points: 0, extra_points: 2 },
+            team2: { total_points: 19, raid_points: 11, tackle_points: 6, all_out_points: 2, extra_points: 0 },
+          },
+          full_match: {
+            team1: { total_points: 34, raid_points: 19, tackle_points: 9, all_out_points: 2, extra_points: 4 },
+            team2: { total_points: 33, raid_points: 18, tackle_points: 13, all_out_points: 2, extra_points: 0 },
+          },
+        },
+      },
+    }
   }
   return {
     tournament: demoTournament,
