@@ -1,5 +1,6 @@
 import {
   dismissalText,
+  firstName,
   inningsTitle,
   oversText,
   playerName,
@@ -87,7 +88,7 @@ function InningsScorecard({ inn, fixture, names, players }) {
       </p>
       {inn.super_over === 0 && didNotBat.length > 0 && (
         <p className="co-cr-line">
-          <strong>Did not bat:</strong> {didNotBat.map((player) => player.name).join(', ')}
+          <strong>Did not bat:</strong> {didNotBat.map((player) => firstName(player.name)).join(', ')}
         </p>
       )}
       {inn.fall_of_wickets.length > 0 && (

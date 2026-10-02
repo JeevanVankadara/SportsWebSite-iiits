@@ -1,3 +1,4 @@
+import { formatPlayerName } from '../utils/names.js'
 import CricketLive from './CricketLive.jsx'
 import PlayerAvatar from './PlayerAvatar.jsx'
 import { Check, Clock3 } from 'lucide-react'
@@ -43,8 +44,12 @@ function playerIndex(fixture) {
       .map((player) => [idOf(player), player]),
   )
 }
-const playerName = (players, id) =>
-  players.get(idOf(id))?.name ?? 'Player to be announced'
+const playerName = (players, id) => {
+  const p = players?.get(idOf(id))
+  if (!p) return 'Player to be announced'
+  const formatted = formatPlayerName(p.name) || p.name || 'Player'
+  return p.substitute ? `sub [${formatted}]` : formatted
+}
 
 function BattingTable({ innings, players, live = false }) {
   const rows = (innings.batting ?? []).filter(
@@ -225,7 +230,7 @@ function CricketScorecard({ data, live = false }) {
                 {didNotBat.length > 0 && (
                   <p>
                     <strong>Did not bat:</strong>{' '}
-                    {didNotBat.map((player) => player.name).join(', ')}
+                    {didNotBat.map((player) => formatPlayerName(player.name)).join(', ')}
                   </p>
                 )}
                 {inning.fall_of_wickets?.length > 0 && (
@@ -309,7 +314,7 @@ function BadmintonMatches({ data }) {
                 <div className="st-badminton-player-portraits">{(match[`${team}_players`] ?? []).map(player => <PlayerAvatar key={idOf(player)} id={idOf(player)} />)}</div>
                 <strong>
                   {(match[`${team}_players`] ?? [])
-                    .map((player) => player.name)
+                    .map((player) => formatPlayerName(player.name))
                     .join(' / ') || 'Players to be announced'}
                 </strong>
                 <div>
@@ -363,12 +368,12 @@ function FootballTimeline({ data }) {
             </b>
             <p>
               {event.type === 'substitution'
-                ? `${event.player_in?.name ?? 'Player'} on · ${event.player_out?.name ?? 'Player'} off`
-                : (event.player?.name ??
+                ? `${formatPlayerName(event.player_in?.name) || 'Player'} on · ${formatPlayerName(event.player_out?.name) || 'Player'} off`
+                : (formatPlayerName(event.player?.name) ||
                   houseName(data.tournament, f[event.team]))}
             </p>
             {event.assist_player?.name && (
-              <p>Assist: {event.assist_player.name}</p>
+              <p>Assist: {formatPlayerName(event.assist_player.name)}</p>
             )}
           </div>
           <span>{houseName(data.tournament, f[event.team])}</span>
@@ -419,7 +424,7 @@ function KabaddiTimeline({ data }) {
                   <div className="kb-chips">
                     {side.on_court.map((id) => (
                       <span key={id} className="kb-chip kb-chip-static">
-                        {players.get(id)?.name ?? 'Unknown'}
+                        {formatPlayerName(players.get(id)?.name) || 'Unknown'}
                       </span>
                     ))}
                   </div>
@@ -433,7 +438,7 @@ function KabaddiTimeline({ data }) {
                     {side.out.map((id, index) => (
                       <span key={id} className="kb-chip kb-chip-static">
                         <span className="kb-chip-order">{index + 1}</span>
-                        {players.get(id)?.name ?? 'Unknown'}
+                        {formatPlayerName(players.get(id)?.name) || 'Unknown'}
                       </span>
                     ))}
                   </div>
@@ -576,7 +581,7 @@ function Squads({ data }) {
               players.map((player) => (
                 <div className="st-roster-row" key={idOf(player)}>
                   {f.sport !== 'volleyball' && <PlayerAvatar id={idOf(player)} />}
-                  <strong>{player.name}</strong>
+                  <strong>{formatPlayerName(player.name)}</strong>
                   {onPitch && (
                     <span>
                       {onPitch.has(idOf(player))

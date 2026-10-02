@@ -1,3 +1,5 @@
+import { formatPlayerName } from '../../utils/names.js'
+
 // Cricket labels and small calculations shared by the admin and co-ordinator screens.
 // The server decides every rule; these only mirror it for what the screen shows.
 
@@ -64,10 +66,15 @@ export function playerIndex(fixture) {
   return players
 }
 
+export const firstName = formatPlayerName
+
 export function playerName(players, id) {
-  const player = players.get(String(id))
+  if (!players) return 'Unknown player'
+  const key = String(id?._id ?? id ?? '')
+  const player = players.get ? (players.get(key) ?? players.get(id)) : null
   if (!player) return 'Unknown player'
-  return player.substitute ? `sub [${player.name}]` : player.name
+  const formatted = formatPlayerName(player.name) || player.name || 'Unknown player'
+  return player.substitute ? `sub [${formatted}]` : formatted
 }
 
 export function dismissalText(dismissal, players) {

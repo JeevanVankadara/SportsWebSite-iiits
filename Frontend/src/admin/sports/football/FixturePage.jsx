@@ -17,6 +17,7 @@ import { Breadcrumbs, EmptyState, LoadError, StatusBadge } from '../../component
 import { useFootball } from './footballContext.js'
 import FixtureDecision from './FixtureDecision.jsx'
 import { playerHandle } from '../../../sports/playerHandle.js'
+import { formatPlayerName } from '../../../utils/names.js'
 
 // One football fixture for the admin: score, lineups and the referee's event log, plus corrections.
 export default function FixturePage() {
@@ -188,12 +189,12 @@ function EventRow({ event, names }) {
       <strong>{names[event.team]}:</strong>
       {event.type === 'substitution' ? (
         <span>
-          {event.player_out?.name ?? 'Unknown'} ➔ {event.player_in?.name ?? 'Unknown'}
+          {formatPlayerName(event.player_out?.name) || 'Unknown'} ➔ {formatPlayerName(event.player_in?.name) || 'Unknown'}
         </span>
       ) : (
         <span>
-          {event.player?.name ?? 'Unknown player'}
-          {event.assist_player && ` (assist: ${event.assist_player.name})`}
+          {formatPlayerName(event.player?.name) || 'Unknown player'}
+          {event.assist_player && ` (assist: ${formatPlayerName(event.assist_player.name)})`}
         </span>
       )}
       {event.note && <span className="muted">({event.note})</span>}

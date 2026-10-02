@@ -5,13 +5,13 @@ import PlayerAvatar from './PlayerAvatar.jsx'
 import { SportCelebration, CountUp, SegToggle } from './Fx.jsx'
 import { liveInning, shortName } from './liveFeed.js'
 import { idOf, houseName, resultLine } from './data.js'
-import { oversText, runRate, strikeRate } from '../sports/cricket/format.js'
+import { firstName, oversText, runRate, strikeRate } from '../sports/cricket/format.js'
 import { deliveryValue, overNumber, partnership } from './cricketLiveData.js'
 
 function PlayerName({ player }) {
   if (!player?._id) return <strong>Player to be announced</strong>
   const preview = new URLSearchParams(window.location.search).get('preview') === '1'
-  return <Link to={`/players/${idOf(player)}${preview ? '?preview=1' : ''}`}>{player.name}</Link>
+  return <Link to={`/players/${idOf(player)}${preview ? '?preview=1' : ''}`}>{firstName(player.name) || player.name}</Link>
 }
 
 export function CricketLiveHeader({ data, live }) {

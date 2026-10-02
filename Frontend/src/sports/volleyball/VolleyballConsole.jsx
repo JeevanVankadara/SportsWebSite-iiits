@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { configOf, describeSub, lineupPlayers, MATCH_SETS, setsToWin, setWinner, TEAMS } from './format.js'
+import { formatPlayerName } from '../../utils/names.js'
 import './volleyball.css'
 
 // The live match, shared by the referee (co-ordinator) and the admin's read-only view.
@@ -302,7 +303,7 @@ function Court({ state, names, players }) {
               <div className="vb-chips">
                 {side.on_court.map((id) => (
                   <span key={id} className="vb-chip vb-chip-static">
-                    {players.get(id)?.name ?? 'Unknown'}
+                    {formatPlayerName(players.get(id)?.name) || 'Unknown'}
                   </span>
                 ))}
               </div>
@@ -314,7 +315,7 @@ function Court({ state, names, players }) {
               <div className="vb-chips">
                 {side.bench.map((id) => (
                   <span key={id} className="vb-chip vb-chip-static">
-                    {players.get(id)?.name ?? 'Unknown'}
+                    {formatPlayerName(players.get(id)?.name) || 'Unknown'}
                   </span>
                 ))}
               </div>

@@ -1,3 +1,5 @@
+import { formatPlayerName } from '../../utils/names.js'
+
 // Volleyball labels, helpers and formatters shared by the admin, co-ordinator and viewer screens.
 
 export const TEAMS = ['team1', 'team2']
@@ -62,6 +64,6 @@ export function lineupPlayers(fixture) {
 
 // One line describing a substitution, e.g. "Ravi off, Kiran on".
 export function describeSub(event, players) {
-  const name = (id) => players.get(id)?.name ?? players.get(String(id))?.name ?? 'Unknown'
+  const name = (id) => formatPlayerName(players.get(id)?.name ?? players.get(String(id))?.name ?? 'Unknown')
   return `${name(event.player_out)} off, ${name(event.player_in)} on`
 }
