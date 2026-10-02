@@ -1,0 +1,67 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # -----------------------------------------------------------
+  # Phase 1: Test & Validate
+  # Runs tests and builds to catch any syntax or build errors
+  # before touching the production server.
+  # -----------------------------------------------------------
+  test:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd Frontend
+          npm ci
+
+      - name: Verify Frontend Production Build
+        run: |
+          cd Frontend
+          npm run build
+
+  # -----------------------------------------------------------
+  # Phase 2: Deploy to GCP VM
+  # Executes only if Phase 1 succeeds.
+  # -----------------------------------------------------------
+  deploy:
+    name: Deploy to GCP Production VM
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: SSH into GCP VM and update containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "Navigating to project directory..."
+            cd ~/SportsWebSite-iiits
+
+            echo "Pulling latest changes from main..."
+            git pull origin main
+
+            echo "Rebuilding and restarting Docker containers..."
+            docker compose up -d --build
+
+            echo "Cleaning up dangling images to save disk space..."
+            docker image prune -f
+
+            echo "Deployment successfully finished!"
