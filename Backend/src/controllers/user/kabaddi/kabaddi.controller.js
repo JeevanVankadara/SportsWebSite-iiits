@@ -1,3 +1,4 @@
+import { TABLE_POINTS } from '../../../models/sports/kabaddi/constants.js';
 import { KabaddiFixture } from '../../../models/sports/kabaddi/KabaddiFixture.js';
 import { Tournament } from '../../../models/Tournament.js';
 import { fixtureStreamHandler } from '../../../services/fixtureStream.js';
@@ -26,7 +27,7 @@ export async function getFixture(req, res) {
 
 export async function getStandings(req, res) {
   const tournament = await findByIdOr404(Tournament, req.params.tournamentId, 'Tournament not found');
-  res.json({ standings: await computeStandings(tournament) });
+  res.json({ standings: await computeStandings(tournament), table_points: TABLE_POINTS });
 }
 
 // GET /api/kabaddi/fixtures/:id/stream — the same payload as getFixture, pushed live over SSE.

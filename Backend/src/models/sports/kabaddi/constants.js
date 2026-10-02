@@ -37,5 +37,5 @@ export const TACKLE_POINTS = 1;
 export const LINE_OUT_POINTS = 1;
 export const DO_OR_DIE_FAIL_POINTS = 1;
 
-// Points table: win 3, draw 1, loss 0. Ties split by point difference, then points scored.
-export const TABLE_POINTS = { win: 3, draw: 1, loss: 0 };
+// Points table: win 2, draw 1, loss 0. Ties split by point difference, then points scored.
+export const TABLE_POINTS = { win: 2, draw: 1, loss: 0 };
