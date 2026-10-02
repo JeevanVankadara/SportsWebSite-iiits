@@ -488,6 +488,7 @@ export function previewFixture(sport, fixtureId) {
 }
 
 export async function loadPlayers(overview) {
+  if (!overview?.fixtures?.length) return { players: [], incomplete: false }
   const details = await Promise.allSettled(
     overview.fixtures.map((item) => viewerApi.fixture(item._id, item.sport)),
   )

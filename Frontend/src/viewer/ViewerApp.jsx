@@ -1112,7 +1112,6 @@ function usePlayers() {
       preview
         ? Promise.resolve({ players: previewPlayers })
         : loadPlayers(overview.data),
-    false,
     Boolean(overview.data),
   )
   const people = {
