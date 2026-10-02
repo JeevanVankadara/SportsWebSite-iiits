@@ -191,10 +191,32 @@ export async function run({ execute = false } = {}) {
   await disconnectDB();
 }
 
+export async function verify() {
+  await connectDB();
+  console.log('\n=== VERIFYING KABADDI DATA IN DB ===\n');
+  const fixtures = await KabaddiFixture.find({ tournament: TOURNAMENT_ID }).lean();
+  console.log(`Found ${fixtures.length} fixture(s) in tournament:`);
+  for (const f of fixtures) {
+    console.log(`  ID: ${f._id} | Status: ${f.status} | Score: UG4 ${f.team1_score} – ${f.team2_score} UG1 | Result: ${f.result} | Decision: ${f.decision_note}`);
+  }
+
+  console.log('\n--- UG4 Player Profiles in DB ---');
+  for (const [key, id] of Object.entries(UG4_PLAYERS)) {
+    const p = await Player.findById(id).lean();
+    const k = p?.sports?.kabaddi || {};
+    console.log(`  ${(p?.name || key).padEnd(25)} -> Played: ${k.played}, Won: ${k.won}, Raid: ${k.raid_points}, Tackle: ${k.tackle_points}, Total: ${k.points}`);
+  }
+  await disconnectDB();
+}
+
 if (process.argv[1]?.endsWith('seedKabaddiMatch.js')) {
-  const isExecute = process.argv.includes('--execute');
-  run({ execute: isExecute }).catch((err) => {
-    console.error('Error:', err);
-    process.exit(1);
-  });
+  if (process.argv.includes('--verify')) {
+    verify().catch(err => { console.error('Error:', err); process.exit(1); });
+  } else {
+    const isExecute = process.argv.includes('--execute');
+    run({ execute: isExecute }).catch((err) => {
+      console.error('Error:', err);
+      process.exit(1);
+    });
+  }
 }
