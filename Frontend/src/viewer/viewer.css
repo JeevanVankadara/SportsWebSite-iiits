@@ -1369,25 +1369,37 @@
   font-size: 12px;
   padding: 8px 16px;
 }
+.st-player-stats-panel {
+  padding: 18px 20px;
+}
+.st-player-stats-panel h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
 .st-player-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  margin-top: 24px;
+  grid-template-columns: repeat(var(--metric-cols, 4), minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
 }
 .st-player-metrics > div {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 .st-player-metrics strong {
-  font-size: 24px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 .st-player-metrics span {
   font-size: 11px;
+  line-height: 1.25;
   color: var(--st-muted);
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .st-detail-grid + .st-section-heading {
   margin-top: 32px;
@@ -1882,6 +1894,21 @@
   }
   .st-detail-panel {
     padding: 20px;
+  }
+  .st-player-stats-panel {
+    padding: 14px 16px;
+  }
+  .st-player-metrics {
+    gap: 10px 8px;
+  }
+  .st-player-metrics--many {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .st-player-metrics strong {
+    font-size: 16px;
+  }
+  .st-player-metrics span {
+    font-size: 10px;
   }
   .st-innings-head h2 {
     font-size: 16px;

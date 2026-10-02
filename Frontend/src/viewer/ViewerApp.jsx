@@ -1615,10 +1615,13 @@ function PlayerStatistics({ sport, stats }) {
             ['Points won', 'points'],
           ]
   return (
-    <section className="st-detail-panel">
+    <section className="st-detail-panel st-player-stats-panel">
       <h2>{sportName(sport)}</h2>
       {stats ? (
-        <div className="st-player-metrics">
+        <div
+          className={`st-player-metrics ${fields.length > 4 ? 'st-player-metrics--many' : ''}`}
+          style={{ '--metric-cols': fields.length }}
+        >
           {fields.map(([label, key]) => (
             <div key={key}>
               <strong>{stats[key] ?? 0}</strong>
