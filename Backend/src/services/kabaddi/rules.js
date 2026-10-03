@@ -21,14 +21,15 @@ export function fixtureConfig(fixture) {
   return { ...DEFAULT_CONFIG, ...(stored ?? {}) };
 }
 
-function startingSide(lineup) {
+function startingSide(lineup, defaultCourt = 7) {
+  const starters = idsOf(lineup?.starters);
   return {
-    on_court: idsOf(lineup?.starters),
-    // Out players in the order they went out: the first one out is the first one revived.
+    on_court: starters,
     out: [],
     bench: idsOf(lineup?.bench),
     subbed_off: [],
     empty_raids: 0,
+    on_mat_count: starters.length || defaultCourt,
   };
 }
 
@@ -60,7 +61,7 @@ function newPlayerLine() {
  * Replays every event of a fixture.
  * Returns { score, sides, timeline, players, next_raid }:
  *  - score: { team1, team2 }
- *  - sides: per house { on_court, out, bench, subbed_off, empty_raids }
+ *  - sides: per house { on_court, out, bench, subbed_off, empty_raids, on_mat_count }
  *  - timeline: per event { event_id, points: { team1, team2 }, outs, line_outs, revived, all_out,
  *              super_raid, super_tackle, do_or_die, empty, score_after }
  *  - players: per player id { raids, raid_points, tackle_points, ... }
@@ -68,7 +69,11 @@ function newPlayerLine() {
  */
 export function replayMatch(fixture) {
   const config = fixtureConfig(fixture);
-  const sides = { team1: startingSide(fixture.team1_lineup), team2: startingSide(fixture.team2_lineup) };
+  const maxCourt = config.players_on_court || 7;
+  const sides = {
+    team1: startingSide(fixture.team1_lineup, maxCourt),
+    team2: startingSide(fixture.team2_lineup, maxCourt),
+  };
   const score = { team1: 0, team2: 0 };
   const players = {};
   const timeline = [];
@@ -97,68 +102,122 @@ export function replayMatch(fixture) {
       score[team] += points;
     };
 
-    // If every defender is out after this event, the scoring house earns the all-out bonus and
-    // the whole house that was all out comes back on court.
-    const checkAllOut = (scoringTeam, allOutTeam, outsThisEvent) => {
-      const side = sides[allOutTeam];
-      if (outsThisEvent === 0 || side.on_court.length > 0) return;
-      add(scoringTeam, config.all_out_points);
-      entry.revived.push(...revive(sides[scoringTeam], config.all_out_points));
-      side.on_court = [...side.out];
-      side.out = [];
-      entry.all_out = allOutTeam;
-    };
-
     const raiding = event.team;
     const defending = otherTeam(raiding);
     const raider = idOf(event.raider);
 
     if (event.type === 'raid') {
       const doOrDie = config.do_or_die_enabled && sides[raiding].empty_raids >= config.do_or_die_after_empty_raids;
-      // touched lists every defender who went out, in order; stepped_out marks the line outs.
-      // Each one out is a point for the raiding house, but only touches (and the bonus) are the
-      // raider's own points, and only those count towards a super raid.
-      const touched = idsOf(event.touched);
-      const steppedOut = new Set(idsOf(event.stepped_out));
-      const bonus = event.bonus ? 1 : 0;
-      entry.line_outs = touched.filter((id) => steppedOut.has(id));
-      const raidPoints = touched.length - entry.line_outs.length + bonus;
-      const housePoints = raidPoints + entry.line_outs.length * LINE_OUT_POINTS;
+      entry.do_or_die = doOrDie;
       const stats = raider ? line(raider) : newPlayerLine();
       stats.raids += 1;
-      entry.do_or_die = doOrDie;
 
-      if (housePoints === 0 && doOrDie) {
-        // A do-or-die raid that scores nothing: the raider is out and the defenders get a point.
-        entry.outs = takeOut(sides[raiding], raider ? [raider] : []);
+      const defendersBefore = sides[defending].on_mat_count ?? sides[defending].on_court.length;
+      const isCounter = event.points != null || event.defending_points != null;
+      const bonus = event.bonus ? 1 : 0;
+      let raidPoints = 0;
+      let housePoints = 0;
+      let outsCount = 0;
+
+      if (isCounter) {
+        const touchPts = Math.max(0, event.points || 0);
+        raidPoints = touchPts + bonus;
+        housePoints = raidPoints;
+        outsCount = touchPts;
+        // Keep all players in on_court so raider selection is not restricted; reduce on_mat_count
+        sides[defending].on_mat_count = Math.max(0, (sides[defending].on_mat_count ?? maxCourt) - touchPts);
+      } else {
+        const touched = idsOf(event.touched);
+        const steppedOut = new Set(idsOf(event.stepped_out));
+        entry.line_outs = touched.filter((id) => steppedOut.has(id));
+        raidPoints = touched.length - entry.line_outs.length + bonus;
+        housePoints = raidPoints + entry.line_outs.length * LINE_OUT_POINTS;
+        const outsDefending = takeOut(sides[defending], touched);
+        outsCount = outsDefending.length;
+        entry.outs = [...outsDefending];
+        sides[defending].on_mat_count = Math.max(0, (sides[defending].on_mat_count ?? maxCourt) - outsCount);
+      }
+
+      const defendingPoints = Math.max(0, event.defending_points || 0);
+
+      if (housePoints === 0 && defendingPoints === 0 && doOrDie) {
+        // A do-or-die raid that scores nothing: raider is out, defenders get 1 point
+        sides[raiding].on_mat_count = Math.max(0, (sides[raiding].on_mat_count ?? maxCourt) - 1);
         add(defending, DO_OR_DIE_FAIL_POINTS);
-        entry.revived.push(...revive(sides[defending], DO_OR_DIE_FAIL_POINTS));
-        checkAllOut(defending, raiding, entry.outs.length);
+        sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + DO_OR_DIE_FAIL_POINTS);
+        if (sides[raiding].on_mat_count === 0) {
+          add(defending, config.all_out_points);
+          sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + config.all_out_points);
+          sides[raiding].on_mat_count = maxCourt;
+          entry.all_out = raiding;
+        }
         sides[raiding].empty_raids = 0;
       } else {
-        entry.outs = takeOut(sides[defending], touched);
-        add(raiding, housePoints);
-        entry.revived.push(...revive(sides[raiding], entry.outs.length));
-        checkAllOut(raiding, defending, entry.outs.length);
-        entry.empty = housePoints === 0;
+        if (housePoints > 0) {
+          add(raiding, housePoints);
+          sides[raiding].on_mat_count = Math.min(maxCourt, (sides[raiding].on_mat_count ?? 0) + outsCount);
+          if (sides[defending].on_mat_count === 0) {
+            add(raiding, config.all_out_points);
+            sides[raiding].on_mat_count = Math.min(maxCourt, (sides[raiding].on_mat_count ?? 0) + config.all_out_points);
+            sides[defending].on_mat_count = maxCourt;
+            entry.all_out = defending;
+          }
+          stats.successful_raids += 1;
+        }
+
+        entry.empty = housePoints === 0 && defendingPoints === 0;
         entry.super_raid = raidPoints >= config.super_raid_min_points;
-        sides[raiding].empty_raids = housePoints === 0 ? sides[raiding].empty_raids + 1 : 0;
-        if (raidPoints > 0) stats.successful_raids += 1;
+        sides[raiding].empty_raids = entry.empty ? sides[raiding].empty_raids + 1 : 0;
         stats.raid_points += raidPoints;
         stats.bonus_points += bonus;
+        stats.touch_points += Math.max(0, raidPoints - bonus);
         if (entry.super_raid) stats.super_raids += 1;
+
+        if (defendingPoints > 0) {
+          const isSuperTackle =
+            config.super_tackle_enabled &&
+            defendersBefore <= config.super_tackle_threshold &&
+            defendingPoints >= config.super_tackle_points;
+          entry.super_tackle = isSuperTackle;
+
+          add(defending, defendingPoints);
+          // In Kabaddi (AKFI/PKL), a Super Tackle awards 2 points, but only 1 player is revived
+          const defRevivals = 1;
+          sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + defRevivals);
+          sides[raiding].on_mat_count = Math.max(0, (sides[raiding].on_mat_count ?? maxCourt) - 1);
+
+          if (sides[raiding].on_mat_count === 0) {
+            add(defending, config.all_out_points);
+            sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + config.all_out_points);
+            sides[raiding].on_mat_count = maxCourt;
+            entry.all_out = raiding;
+          }
+
+          const tackler = idOf(event.tackler);
+          if (tackler && !event.is_self_out) {
+            const tacklerStats = line(tackler);
+            tacklerStats.tackles += 1;
+            tacklerStats.tackle_points += defendingPoints;
+            if (isSuperTackle) tacklerStats.super_tackles += 1;
+          }
+        }
       }
       lastRaid = event;
     } else if (event.type === 'tackle') {
-      const defendersBefore = sides[defending].on_court.length;
+      const defendersBefore = sides[defending].on_mat_count ?? sides[defending].on_court.length;
       entry.super_tackle = config.super_tackle_enabled && defendersBefore <= config.super_tackle_threshold;
       entry.do_or_die = config.do_or_die_enabled && sides[raiding].empty_raids >= config.do_or_die_after_empty_raids;
       const tacklePoints = entry.super_tackle ? config.super_tackle_points : TACKLE_POINTS;
 
-      entry.outs = takeOut(sides[raiding], raider ? [raider] : []);
+      sides[raiding].on_mat_count = Math.max(0, (sides[raiding].on_mat_count ?? maxCourt) - 1);
       add(defending, tacklePoints);
-      entry.revived.push(...revive(sides[defending], tacklePoints));
-      checkAllOut(defending, raiding, entry.outs.length);
+      sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + 1);
+      if (sides[raiding].on_mat_count === 0) {
+        add(defending, config.all_out_points);
+        sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + config.all_out_points);
+        sides[raiding].on_mat_count = maxCourt;
+        entry.all_out = raiding;
+      }
       sides[raiding].empty_raids = 0;
 
       if (raider) line(raider).raids += 1;
@@ -174,11 +233,15 @@ export function replayMatch(fixture) {
       // The raider stepped out of bounds: the raider is out and the defenders get the point.
       // It still counts as the raiding house's raid, so the next raid goes to the other house.
       entry.do_or_die = config.do_or_die_enabled && sides[raiding].empty_raids >= config.do_or_die_after_empty_raids;
-      entry.line_outs = raider ? [raider] : [];
-      entry.outs = takeOut(sides[raiding], entry.line_outs);
+      sides[raiding].on_mat_count = Math.max(0, (sides[raiding].on_mat_count ?? maxCourt) - 1);
       add(defending, LINE_OUT_POINTS);
-      entry.revived.push(...revive(sides[defending], LINE_OUT_POINTS));
-      checkAllOut(defending, raiding, entry.outs.length);
+      sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + LINE_OUT_POINTS);
+      if (sides[raiding].on_mat_count === 0) {
+        add(defending, config.all_out_points);
+        sides[defending].on_mat_count = Math.min(maxCourt, (sides[defending].on_mat_count ?? 0) + config.all_out_points);
+        sides[raiding].on_mat_count = maxCourt;
+        entry.all_out = raiding;
+      }
       sides[raiding].empty_raids = 0;
       if (raider) line(raider).raids += 1;
       lastRaid = event;
@@ -275,19 +338,36 @@ export function computeKabaddiScorecardStats(fixture, playersMap = {}) {
     const defending = otherTeam(raiding);
 
     if (event.type === 'raid') {
-      const touched = idsOf(event.touched);
-      const steppedOut = new Set(idsOf(event.stepped_out));
-      const lineOuts = touched.filter((id) => steppedOut.has(id));
-      const bonus = event.bonus ? 1 : 0;
-      const raidPoints = touched.length - lineOuts.length + bonus;
-      const lineOutPoints = lineOuts.length * LINE_OUT_POINTS;
+      const isCounter = event.points != null || event.defending_points != null;
+      let raidPoints = 0;
+      let lineOutPoints = 0;
+      const defendingPoints = Math.max(0, event.defending_points || 0);
+
+      if (isCounter) {
+        const bonus = event.bonus ? 1 : 0;
+        raidPoints = Math.max(0, event.points || 0) + bonus;
+      } else {
+        const touched = idsOf(event.touched);
+        const steppedOut = new Set(idsOf(event.stepped_out));
+        const lineOuts = touched.filter((id) => steppedOut.has(id));
+        const bonus = event.bonus ? 1 : 0;
+        raidPoints = touched.length - lineOuts.length + bonus;
+        lineOutPoints = lineOuts.length * LINE_OUT_POINTS;
+      }
       const housePoints = raidPoints + lineOutPoints;
 
-      if (housePoints === 0 && entry?.do_or_die) {
+      if (housePoints === 0 && defendingPoints === 0 && entry?.do_or_die) {
         addStat(defending, 'tackle_points', DO_OR_DIE_FAIL_POINTS, half);
       } else {
         if (raidPoints > 0) addStat(raiding, 'raid_points', raidPoints, half);
         if (lineOutPoints > 0) addStat(raiding, 'extra_points', lineOutPoints, half);
+        if (defendingPoints > 0) {
+          if (event.is_self_out) {
+            addStat(defending, 'extra_points', defendingPoints, half);
+          } else {
+            addStat(defending, 'tackle_points', defendingPoints, half);
+          }
+        }
       }
     } else if (event.type === 'tackle') {
       const tacklePoints = entry?.super_tackle ? config.super_tackle_points : TACKLE_POINTS;

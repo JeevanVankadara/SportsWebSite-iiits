@@ -102,6 +102,23 @@ export function describeEvent(event, players) {
 
   switch (event.type) {
     case 'raid': {
+      const rName = name(event.raider)
+      if (event.points != null || event.defending_points != null) {
+        const parts = []
+        if (event.points > 0) parts.push(`${event.points} pt${event.points > 1 ? 's' : ''}`)
+        if (event.bonus) parts.push('bonus')
+
+        const raidDesc = parts.length ? `${rName} scored ${parts.join(' + ')}` : `${rName} empty raid`
+
+        if (event.defending_points > 0) {
+          const tacklerDesc = event.is_self_out
+            ? `raider self-out (+${event.defending_points})`
+            : `tackled by ${name(event.tackler)} (+${event.defending_points})`
+          return parts.length ? `${raidDesc} · ${tacklerDesc}` : `${rName} ${tacklerDesc}`
+        }
+        return raidDesc
+      }
+
       // touched lists every defender who went out; stepped_out marks the ones who crossed the line.
       const stepped = new Set((event.stepped_out ?? []).map(String))
       const touched = (event.touched ?? []).filter((id) => !stepped.has(String(id)))
@@ -110,7 +127,7 @@ export function describeEvent(event, players) {
       if (touched.length) parts.push(`touched ${names(touched)}`)
       if (event.bonus) parts.push(touched.length ? '+ bonus' : 'bonus')
       const raid = parts.length ? parts.join(' ') : lineOuts.length ? 'came back' : 'empty raid'
-      return `${name(event.raider)} ${raid}${lineOuts.length ? ` · ${names(lineOuts)} stepped out` : ''}`
+      return `${rName} ${raid}${lineOuts.length ? ` · ${names(lineOuts)} stepped out` : ''}`
     }
     case 'tackle':
       return `${name(event.raider)} tackled by ${name(event.tackler)}${event.assists?.length ? ` (with ${names(event.assists)})` : ''}`
@@ -119,6 +136,11 @@ export function describeEvent(event, players) {
     case 'substitution':
       return `${name(event.player_out)} off, ${name(event.player_in)} on`
     default:
+      if (event.type === 'correction') {
+        const pts = event.points != null ? (event.points > 0 ? `+${event.points}` : `${event.points}`) : ''
+        const prefix = pts ? `Score correction (${pts})` : 'Score correction'
+        return event.note ? `${prefix} · ${event.note}` : prefix
+      }
       return event.note || ''
   }
 }

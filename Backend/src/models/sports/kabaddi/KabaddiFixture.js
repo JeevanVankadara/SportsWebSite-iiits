@@ -64,6 +64,8 @@ const eventSchema = new mongoose.Schema({
   tackler: { type: ObjectId, ref: 'Player', default: null },
   assists: [{ type: ObjectId, ref: 'Player' }],
   points: { type: Number, default: 0 },
+  defending_points: { type: Number, default: 0 },
+  is_self_out: { type: Boolean, default: false },
   player_out: { type: ObjectId, ref: 'Player', default: null },
   player_in: { type: ObjectId, ref: 'Player', default: null },
   note: { type: String, trim: true, maxlength: 200 },

@@ -91,8 +91,18 @@ function checkAgainstState(fixture, event) {
   }
   if (event.type === 'raid') {
     if (event.bonus && !config.bonus_enabled) throw new HttpError(400, 'Bonus points are off for this match');
-    if (event.touched.some((id) => !onCourt(opponents, id))) {
+    const opponentsOnMat = opponents.on_mat_count ?? opponents.on_court.length;
+    if (event.bonus && opponentsOnMat < 6) {
+      throw new HttpError(400, 'Bonus is only active when 6 or more defenders are on court');
+    }
+    if (event.points && event.points > opponentsOnMat) {
+      throw new HttpError(400, `Touch points cannot be more than the defenders on the mat (${opponentsOnMat})`);
+    }
+    if (event.touched && event.touched.length > 0 && event.touched.some((id) => !onCourt(opponents, id))) {
       throw new HttpError(400, 'Defenders out must be defenders on court');
+    }
+    if (event.tackler && !onCourt(opponents, event.tackler)) {
+      throw new HttpError(400, 'The tackler must be a defender on court');
     }
   }
   if (event.type === 'tackle') {

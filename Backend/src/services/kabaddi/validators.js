@@ -123,16 +123,36 @@ export function parseMatchEvent(body = {}, { allowCorrection = false } = {}) {
 
   switch (body.type) {
     case 'raid': {
-      // touched: every defender who went out, in order; stepped_out: those of them who crossed the line.
-      const touched = playerIdList(body.touched, 'Defenders out');
-      const steppedOut = playerIdList(body.stepped_out, 'Defenders who stepped out');
-      if (steppedOut.some((id) => !touched.includes(id))) {
-        throw new HttpError(400, 'A defender who stepped out must also be in the list of defenders out');
+      const rawPoints = body.points != null ? toWholeNumber(body.points) : null;
+      const rawDefendingPoints = body.defending_points != null ? toWholeNumber(body.defending_points) : null;
+      const isCounterModel = rawPoints !== null || rawDefendingPoints !== null;
+
+      let touched = [];
+      let steppedOut = [];
+      if (!isCounterModel && body.touched != null) {
+        touched = playerIdList(body.touched, 'Defenders out');
+        steppedOut = playerIdList(body.stepped_out, 'Defenders who stepped out');
+        if (steppedOut.some((id) => !touched.includes(id))) {
+          throw new HttpError(400, 'A defender who stepped out must also be in the list of defenders out');
+        }
       }
+
+      const points = Number.isInteger(rawPoints) && rawPoints >= 0 ? rawPoints : 0;
+      const defendingPoints = Number.isInteger(rawDefendingPoints) && rawDefendingPoints >= 0 ? rawDefendingPoints : 0;
+
+      let tackler = null;
+      if (body.tackler) {
+        tackler = playerId(body.tackler, 'Pick the defender who made the tackle');
+      }
+
       return {
         type: 'raid',
         team,
         raider: playerId(body.raider, 'Pick the raider'),
+        points,
+        defending_points: defendingPoints,
+        tackler,
+        is_self_out: Boolean(body.is_self_out),
         touched,
         stepped_out: steppedOut,
         bonus: Boolean(body.bonus),
@@ -155,12 +175,12 @@ export function parseMatchEvent(body = {}, { allowCorrection = false } = {}) {
       return { type: 'technical', team, points, note: requireNote(body.note, 'Add the reason for the technical point') };
     }
     case 'correction': {
-      if (!allowCorrection) throw new HttpError(403, 'Only the admin can correct the score');
       const points = toWholeNumber(body.points);
       if (!Number.isInteger(points) || points === 0 || Math.abs(points) > 20) {
         throw new HttpError(400, 'A correction must be between -20 and 20 points, and not 0');
       }
-      return { type: 'correction', team, points, note: requireNote(body.note, 'Add the reason for the correction') };
+      const note = typeof body.note === 'string' ? body.note.trim().slice(0, 200) : '';
+      return { type: 'correction', team, points, note };
     }
     case 'substitution': {
       const outgoing = playerId(body.player_out, 'Pick the player going off');

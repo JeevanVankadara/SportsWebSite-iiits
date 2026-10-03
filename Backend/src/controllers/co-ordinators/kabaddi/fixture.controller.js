@@ -92,7 +92,7 @@ export async function endMatch(req, res) {
 
 export async function createEvent(req, res) {
   const fixture = await openFixture(req);
-  await addMatchEvent(fixture, parseMatchEvent(req.body ?? {}));
+  await addMatchEvent(fixture, parseMatchEvent(req.body ?? {}, { allowCorrection: true }));
   res.json(await fixtureResponse(fixture._id, { publish: true }));
 }
 
