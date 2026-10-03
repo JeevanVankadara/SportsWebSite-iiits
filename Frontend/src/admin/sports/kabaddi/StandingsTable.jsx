@@ -66,7 +66,7 @@ export default function StandingsTable() {
         </table>
       </div>
       <p className="standings-legend">
-        Win 3 points, tie 1, loss 0. Houses level on points are separated by point difference (PD), then points
+        Win 2 points, tie 1, loss 0. Houses are ranked by point difference (PD), then table points (Pts), then points
         scored (PF).
       </p>
     </section>

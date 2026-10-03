@@ -924,8 +924,11 @@ export function PointsTable({ data, sport }) {
         ? `${row.matches_won ?? 0}–${row.matches_lost ?? 0}`
         : key === 'sets'
           ? `${row.sets_won ?? 0}–${row.sets_lost ?? 0}`
-          : key === 'point_diff'
-            ? (row.points_scored ?? 0) - (row.points_conceded ?? 0)
+          : key === 'point_diff' || key === 'goal_diff'
+            ? (() => {
+                const diff = row[key] ?? ((row.points_scored ?? 0) - (row.points_conceded ?? 0))
+                return diff > 0 ? `+${diff}` : diff
+              })()
             : (row[key] ?? 0)
   if (!rows.length)
     return (
