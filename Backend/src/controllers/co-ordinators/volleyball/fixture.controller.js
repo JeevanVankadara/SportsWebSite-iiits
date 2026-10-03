@@ -39,7 +39,10 @@ async function openFixture(req) {
 }
 
 export async function myFixtures(req, res) {
-  const fixtures = await VolleyballFixture.find({ referees: req.player._id })
+  const fixtures = await VolleyballFixture.find({
+    referees: req.player._id,
+    status: { $in: ['live', 'scheduled'] },
+  })
     .select('-events')
     .populate('tournament', 'tournament_name houses')
     .sort({ scheduled_at: 1, created_at: -1 });

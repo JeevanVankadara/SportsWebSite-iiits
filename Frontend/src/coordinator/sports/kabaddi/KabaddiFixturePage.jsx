@@ -96,6 +96,11 @@ export default function KabaddiFixturePage() {
                 </p>
               )}
               <p className="co-muted">This fixture is over. Only the admin can change it now.</p>
+              <div style={{ marginTop: '0.875rem' }}>
+                <Link to={coordinatorPath('games')} className="co-btn co-btn-primary">
+                  ← Back to assigned games
+                </Link>
+              </div>
             </section>
           )}
 

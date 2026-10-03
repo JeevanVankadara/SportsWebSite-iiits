@@ -7,7 +7,7 @@ import { formatDateTime } from '../../../utils/dates.js'
 import { houseName } from '../../../sports/badminton/format.js'
 import { CoEmpty, CoError, Eyebrow, StatusPill } from '../../components/ui.jsx'
 
-const ORDER = { live: 0, scheduled: 1, completed: 2 }
+const ORDER = { live: 0, scheduled: 1 }
 
 // The badminton section of the co-ordinator's home page: every badminton fixture they referee.
 export default function BadmintonAssignments({ sectionNumber }) {
@@ -15,9 +15,12 @@ export default function BadmintonAssignments({ sectionNumber }) {
     coordinatorBadmintonApi.fixtures().then((data) => data.fixtures),
   )
 
-  const counts = { live: 0, scheduled: 0, completed: 0 }
-  for (const fixture of fixtures ?? []) counts[fixture.status] += 1
-  const sorted = [...(fixtures ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status])
+  const activeFixtures = (fixtures ?? []).filter((fixture) => fixture.status !== 'completed')
+  const counts = { live: 0, scheduled: 0 }
+  for (const fixture of activeFixtures) {
+    if (counts[fixture.status] != null) counts[fixture.status] += 1
+  }
+  const sorted = [...activeFixtures].sort((a, b) => (ORDER[a.status] ?? 99) - (ORDER[b.status] ?? 99))
 
   return (
     <section className="co-section" aria-labelledby="badminton-heading">
@@ -38,10 +41,6 @@ export default function BadmintonAssignments({ sectionNumber }) {
               <dt>Upcoming</dt>
               <dd>{counts.scheduled}</dd>
             </div>
-            <div>
-              <dt>Completed</dt>
-              <dd>{counts.completed}</dd>
-            </div>
           </dl>
         )}
       </div>
@@ -53,7 +52,7 @@ export default function BadmintonAssignments({ sectionNumber }) {
           <PageLoader />
         )
       ) : sorted.length === 0 ? (
-        <CoEmpty title="No badminton fixtures yet" text="Fixtures the admin assigns to you will show up here." />
+        <CoEmpty title="No active badminton fixtures" text="Ongoing and upcoming fixtures assigned to you will show up here." />
       ) : (
         <ul className="co-card-grid">
           {sorted.map((fixture) => (
@@ -86,7 +85,7 @@ function FixtureCard({ fixture }) {
         </div>
         <div className="co-fixture-card-foot">
           <span>{fixture.scheduled_at ? formatDateTime(fixture.scheduled_at) : 'Time not announced'}</span>
-          <span className="co-fixture-card-open">{fixture.status === 'completed' ? 'View' : 'Open'} →</span>
+          <span className="co-fixture-card-open">Open →</span>
         </div>
       </Link>
     </li>

@@ -20,6 +20,7 @@ export const EVENT_LABELS = {
   technical: 'Technical',
   correction: 'Correction',
   substitution: 'Sub',
+  score_change: 'Score changed',
 }
 
 // The one badge an event shows in a timeline. A super raid or super tackle replaces the plain
@@ -136,6 +137,11 @@ export function describeEvent(event, players) {
     case 'substitution':
       return `${name(event.player_out)} off, ${name(event.player_in)} on`
     default:
+      if (event.type === 'score_change') {
+        const mat = `On mat: ${event.team1_on_mat ?? '—'} vs ${event.team2_on_mat ?? '—'}`
+        const desc = `Score changed to ${event.team1_score}–${event.team2_score} (${mat})`
+        return event.note ? `${desc} · ${event.note}` : desc
+      }
       if (event.type === 'correction') {
         const pts = event.points != null ? (event.points > 0 ? `+${event.points}` : `${event.points}`) : ''
         const prefix = pts ? `Score correction (${pts})` : 'Score correction'

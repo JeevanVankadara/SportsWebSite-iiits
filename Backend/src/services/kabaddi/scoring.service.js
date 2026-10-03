@@ -133,7 +133,7 @@ function checkAgainstState(fixture, event) {
  */
 export async function addMatchEvent(fixture, event, { admin = false } = {}) {
   const { period } = fixture.clock;
-  const scoreOnly = event.type === 'technical' || event.type === 'correction';
+  const scoreOnly = event.type === 'technical' || event.type === 'correction' || event.type === 'score_change';
 
   if (fixture.status === 'completed') {
     if (!admin || !scoreOnly) throw new HttpError(409, 'This match is over');

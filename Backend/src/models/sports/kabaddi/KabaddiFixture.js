@@ -68,6 +68,10 @@ const eventSchema = new mongoose.Schema({
   is_self_out: { type: Boolean, default: false },
   player_out: { type: ObjectId, ref: 'Player', default: null },
   player_in: { type: ObjectId, ref: 'Player', default: null },
+  team1_score: { type: Number },
+  team2_score: { type: Number },
+  team1_on_mat: { type: Number },
+  team2_on_mat: { type: Number },
   note: { type: String, trim: true, maxlength: 200 },
   created_at: { type: Date, default: Date.now },
 });
