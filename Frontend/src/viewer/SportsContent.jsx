@@ -29,6 +29,7 @@ import {
   TEAMS as KABADDI_TEAMS,
 } from '../sports/kabaddi/format.js'
 import '../sports/kabaddi/kabaddi.css'
+import { OnTheMat } from '../sports/kabaddi/MatchConsole.jsx'
 import {
   configOf as volleyballConfigOf,
   MATCH_SETS,
@@ -411,44 +412,9 @@ function KabaddiTimeline({ data }) {
         <span style={{ color: 'var(--kb-muted)' }}>{fixture.clock?.is_running ? 'Clock running' : 'Clock paused'}</span>
       </section>
 
-      {sides && (
-        <section className="kb-court">
-          {KABADDI_TEAMS.map((team) => {
-            const side = sides[team] ?? { on_court: [], out: [], bench: [] }
-            return (
-              <div key={team} className="kb-panel">
-                <h3 className="kb-title">{names[team]}</h3>
-                <p className="kb-step">On court ({side.on_court.length})</p>
-                {side.on_court.length === 0 ? (
-                  <p className="kb-hint">Nobody on court</p>
-                ) : (
-                  <div className="kb-chips">
-                    {side.on_court.map((id) => (
-                      <span key={id} className="kb-chip kb-chip-static">
-                        {formatPlayerName(players.get(id)?.name) || 'Unknown'}
-                      </span>
-                    ))}
-                  </div>
-                )}
+      {sides && <OnTheMat state={detail.state} />}
 
-                <p className="kb-step">Out, next back first ({side.out.length})</p>
-                {side.out.length === 0 ? (
-                  <p className="kb-hint">Nobody out</p>
-                ) : (
-                  <div className="kb-chips">
-                    {side.out.map((id, index) => (
-                      <span key={id} className="kb-chip kb-chip-static">
-                        <span className="kb-chip-order">{index + 1}</span>
-                        {formatPlayerName(players.get(id)?.name) || 'Unknown'}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </section>
-      )}
+
 
       <section className="kb-panel">
         <h3 className="kb-title">Events</h3>
@@ -602,7 +568,6 @@ function KabaddiScorecardTable({ teamName, houseClass, score, players = [] }) {
                 <th scope="row">
                   <div className="st-kabaddi-player-cell">
                     <span className="st-kabaddi-player-name">{formatPlayerName(p.name) || p.name || 'Player'}</span>
-                    <span className="st-kabaddi-player-role">{p.is_starter ? 'Starter' : 'Substitute'}</span>
                   </div>
                 </th>
                 <td style={{ textAlign: 'right' }}>
@@ -636,11 +601,58 @@ function KabaddiScorecardTable({ teamName, houseClass, score, players = [] }) {
   )
 }
 
+function buildLiveKabaddiScorecard(fixture, state, playersMap) {
+  const buildTeam = (teamKey) => {
+    const lineup = fixture[`${teamKey}_lineup`] || {}
+    const starters = lineup.starters ?? []
+    const bench = lineup.bench ?? []
+    const seen = new Set()
+    const list = []
+
+    const addPlayer = (playerObjOrId, isStarter) => {
+      const id = typeof playerObjOrId === 'object' && playerObjOrId?._id ? String(playerObjOrId._id) : String(playerObjOrId)
+      if (!id || seen.has(id)) return
+      seen.add(id)
+      const st = state?.players?.[id] || {}
+      const p = playersMap.get(id) || (typeof playerObjOrId === 'object' ? playerObjOrId : null)
+      const name = p?.name || 'Player'
+
+      list.push({
+        player: id,
+        name,
+        is_starter: isStarter,
+        raids: st.raids || 0,
+        successful_raids: st.successful_raids || 0,
+        touch_points: Math.max(0, (st.raid_points || 0) - (st.bonus_points || 0)),
+        bonus_points: st.bonus_points || 0,
+        raid_points: st.raid_points || 0,
+        super_raids: st.super_raids || 0,
+        tackles: st.tackles || 0,
+        tackle_points: st.tackle_points || 0,
+        super_tackles: st.super_tackles || 0,
+        total_points: (st.raid_points || 0) + (st.tackle_points || 0),
+      })
+    }
+
+    starters.forEach((p) => addPlayer(p, true))
+    bench.forEach((p) => addPlayer(p, false))
+    return list
+  }
+
+  return {
+    team1: buildTeam('team1'),
+    team2: buildTeam('team2'),
+  }
+}
+
 function KabaddiScorecard({ data }) {
-  const { fixture, tournament } = data
+  const { fixture, tournament, detail } = data
   const team1Name = houseName(tournament, fixture.team1)
   const team2Name = houseName(tournament, fixture.team2)
-  const scorecard = fixture.scorecard
+  const scorecard =
+    fixture.scorecard && fixture.scorecard.team1?.length
+      ? fixture.scorecard
+      : buildLiveKabaddiScorecard(fixture, detail?.state, kabaddiLineupPlayers(fixture))
 
   return (
     <div className="st-detail-stack">
@@ -832,7 +844,7 @@ export function FixtureContent({ tab, data }) {
   if (tab === 'scorecard') {
     if (f.sport === 'cricket') return <CricketScorecard data={data} />
     if (f.sport === 'badminton') return <BadmintonMatches data={data} />
-    if (f.sport === 'kabaddi') return f.status === 'completed' ? <KabaddiScorecard data={data} /> : <KabaddiTimeline data={data} />
+    if (f.sport === 'kabaddi') return <KabaddiScorecard data={data} />
     return <FootballTimeline data={data} />
   }
   if (f.status === 'live' || f.status === 'completed') {

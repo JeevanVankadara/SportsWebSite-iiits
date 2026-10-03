@@ -76,6 +76,9 @@ export async function fixtureResponse(fixtureId, { publish = false } = {}) {
   if (fixture.status === 'completed' && (!fixture.scorecard || !fixture.scorecard.team1?.length)) {
     fixture.scorecard = await generateKabaddiScorecard(fixture);
     await KabaddiFixture.updateOne({ _id: fixture._id }, { $set: { scorecard: fixture.scorecard } });
+  } else if (fixture.status === 'live') {
+    // Provide real-time live scorecard in-memory for live viewers (0 DB writes)
+    fixture.scorecard = await generateKabaddiScorecard(fixture);
   }
 
   const tournament = await Tournament.findById(fixture.tournament, 'tournament_name houses');

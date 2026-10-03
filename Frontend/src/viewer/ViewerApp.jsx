@@ -1781,51 +1781,57 @@ function FixturePage() {
                   'A referee decision ended this fixture.'}
               </div>
             )}
-            <ContentTabs
-              id="fixture-tabs"
-              value={tab}
-              onChange={setTab}
-              items={
-                sport === 'volleyball'
+            {(() => {
+              const tabItems =
+              sport === 'volleyball'
+                ? [
+                    ['summary', 'Sets'],
+                    ['squads', 'Squads'],
+                  ]
+                : sport === 'kabaddi'
                   ? [
-                      ['summary', 'Sets'],
+                      ['summary', f.status === 'live' ? 'Live' : 'Match info'],
+                      ['scorecard', 'Scorecard'],
+                      ...(f.status === 'completed'
+                        ? [
+                            ['timeline', 'Timeline'],
+                          ]
+                        : []),
                       ['squads', 'Squads'],
                     ]
-                  : sport === 'kabaddi'
-                    ? [
-                        ['summary', f.status === 'live' ? 'Live' : 'Match info'],
-                        ...(f.status === 'completed'
-                          ? [
-                              ['scorecard', 'Scorecard'],
-                              ['timeline', 'Timeline'],
-                            ]
-                          : f.status === 'live'
-                            ? [['timeline', 'Timeline']]
-                            : []),
-                        ['squads', 'Squads'],
-                      ]
-                    : [
-                        ['summary', f.status === 'live' ? 'Live' : 'Match info'],
-                        [
-                          'scorecard',
-                          sport === 'football'
-                            ? 'Timeline'
-                            : sport === 'badminton'
-                              ? 'Matches'
-                              : 'Scorecard',
-                        ],
-                        ['squads', 'Squads'],
-                      ]
-              }
-            />
-            <div
-              id="fixture-tabs-panel"
-              role="tabpanel"
-              aria-labelledby={`fixture-tabs-${tab}`}
-              tabIndex={0}
-            >
-              <FixtureContent tab={tab} data={data} />
-            </div>
+                  : [
+                      ['summary', f.status === 'live' ? 'Live' : 'Match info'],
+                      [
+                        'scorecard',
+                        sport === 'football'
+                          ? 'Timeline'
+                          : sport === 'badminton'
+                            ? 'Matches'
+                            : 'Scorecard',
+                      ],
+                      ['squads', 'Squads'],
+                    ]
+            const activeTab = tabItems.some(([name]) => name === tab) ? tab : tabItems[0][0]
+
+            return (
+              <>
+                <ContentTabs
+                  id="fixture-tabs"
+                  value={activeTab}
+                  onChange={setTab}
+                  items={tabItems}
+                />
+                <div
+                  id="fixture-tabs-panel"
+                  role="tabpanel"
+                  aria-labelledby={`fixture-tabs-${activeTab}`}
+                  tabIndex={0}
+                >
+                  <FixtureContent tab={activeTab} data={data} />
+                </div>
+              </>
+            )
+          })()}
           </>
         )}
       </DataState>

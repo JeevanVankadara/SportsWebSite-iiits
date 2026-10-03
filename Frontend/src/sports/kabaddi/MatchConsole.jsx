@@ -50,7 +50,7 @@ export default function MatchConsole({ detail, names, api, busy, run, readOnly =
     return (
       <div className="kb">
         <Scoreboard {...shared} />
-        {started && <Court {...shared} />}
+        {started && <OnTheMat state={state} />}
         {started && <EventLog {...shared} />}
       </div>
     )
@@ -59,13 +59,61 @@ export default function MatchConsole({ detail, names, api, busy, run, readOnly =
   return (
     <div className="kb">
       <Scoreboard {...shared} />
+      {started && <OnTheMat state={state} />}
       {!over && <ClockBar {...shared} />}
       {playing && !over && <RaidPad key={`${period}-${state.timeline.length}`} {...shared} />}
       {started && !over && (
         <OtherActions key={state.timeline.length} {...shared} undosLeft={undosLeft} onUndo={handleUndo} />
       )}
-      {started && <Court {...shared} />}
       {started && <EventLog {...shared} />}
+    </div>
+  )
+}
+
+export function OnTheMat({ state }) {
+  const team1Count = Math.max(0, Math.min(7, state?.sides?.team1?.on_mat_count ?? state?.sides?.team1?.on_court?.length ?? 7))
+  const team2Count = Math.max(0, Math.min(7, state?.sides?.team2?.on_mat_count ?? state?.sides?.team2?.on_court?.length ?? 7))
+
+  return (
+    <div className="kb-on-mat-card">
+      <span className="kb-on-mat-title">On the mat</span>
+      <div className="kb-on-mat-display">
+        <div className="kb-mat-dots" aria-label={`Team 1 has ${team1Count} of 7 on mat`}>
+          {Array.from({ length: 7 }).map((_, i) => {
+            const isFilled = i < team1Count
+            return (
+              <span
+                key={i}
+                className={`kb-mat-dot kb-dot-team1 ${isFilled ? 'is-filled' : 'is-empty'}`}
+                title={isFilled ? 'On mat' : 'Out'}
+              />
+            )
+          })}
+        </div>
+
+        <div className="kb-mat-court-icon" title="Kabaddi Mat">
+          <svg width="34" height="22" viewBox="0 0 34 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="32" height="20" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+            <line x1="17" y1="1" x2="17" y2="21" stroke="currentColor" strokeWidth="1.6" />
+            <line x1="1" y1="11" x2="33" y2="11" stroke="currentColor" strokeWidth="1" strokeOpacity="0.7" />
+            <line x1="9" y1="1" x2="9" y2="21" stroke="currentColor" strokeWidth="1" strokeOpacity="0.7" />
+            <line x1="25" y1="1" x2="25" y2="21" stroke="currentColor" strokeWidth="1" strokeOpacity="0.7" />
+          </svg>
+        </div>
+
+        <div className="kb-mat-dots" aria-label={`Team 2 has ${team2Count} of 7 on mat`}>
+          {Array.from({ length: 7 }).map((_, i) => {
+            const isFilled = i < team2Count
+            return (
+              <span
+                key={i}
+                className={`kb-mat-dot kb-dot-team2 ${isFilled ? 'is-filled' : 'is-empty'}`}
+                title={isFilled ? 'On mat' : 'Out'}
+              />
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -85,17 +133,21 @@ function Scoreboard({ fixture, state, names }) {
 
   return (
     <section className="kb-board" aria-label="Score">
-      {TEAMS.map((team, index) => (
-        <div key={team} className={`kb-board-team${index === 1 ? ' is-right' : ''}`}>
-          <span className="kb-board-name">{names[team]}</span>
-          <span className="kb-board-score">{state.score[team]}</span>
-          {period !== 'not_started' && (
-            <span className="kb-board-sub">
-              {state.sides[team].on_court.length} on court · {state.sides[team].out.length} out
-            </span>
-          )}
-        </div>
-      ))}
+      {TEAMS.map((team, index) => {
+        const onMat = state.sides[team]?.on_mat_count ?? state.sides[team]?.on_court?.length ?? 7
+        const outCount = Math.max(0, 7 - onMat)
+        return (
+          <div key={team} className={`kb-board-team${index === 1 ? ' is-right' : ''}`}>
+            <span className="kb-board-name">{names[team]}</span>
+            <span className="kb-board-score">{state.score[team]}</span>
+            {period !== 'not_started' && (
+              <span className="kb-board-sub">
+                {onMat} on mat · {outCount} out
+              </span>
+            )}
+          </div>
+        )
+      })}
       <div className="kb-board-mid">
         {showClock && <span className="kb-clock">{formatClock(remainingSeconds(fixture, now))}</span>}
         <span className="kb-period">
@@ -227,85 +279,91 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
   const config = configOf(fixture)
   const [raidingTeam, setRaidingTeam] = useState(state.next_raid?.team ?? fixture.first_raid ?? 'team1')
   const [raider, setRaider] = useState(null)
-  const [mode, setMode] = useState('scored')
-  // Defenders who went out, in order: [{ id, line }] where line means they stepped out.
-  const [outs, setOuts] = useState([])
-  // How the next defender tapped went out: touched by the raider, or stepped out of bounds.
-  const [mark, setMark] = useState('touch')
+  const [attackingPoints, setAttackingPoints] = useState(0)
   const [bonus, setBonus] = useState(false)
+  const [defendingPoints, setDefendingPoints] = useState(0)
   const [tackler, setTackler] = useState(null)
+  const [isSelfOut, setIsSelfOut] = useState(false)
 
   const defendingTeam = otherTeam(raidingTeam)
   const attackers = state.sides[raidingTeam].on_court
   const defenders = state.sides[defendingTeam].on_court
+  const defendersOnMat = state.sides[defendingTeam]?.on_mat_count ?? defenders.length
+  const attackersOnMat = state.sides[raidingTeam]?.on_mat_count ?? attackers.length
   const doOrDie = config.do_or_die_enabled && state.sides[raidingTeam].empty_raids >= config.do_or_die_after_empty_raids
   const raidNumber = fixture.events.filter((event) => RAID_EVENTS.includes(event.type)).length + 1
 
+  const bonusEligible = config.bonus_enabled && defendersOnMat >= 6
+  const isSuperTackle =
+    config.super_tackle_enabled &&
+    defendersOnMat <= config.super_tackle_threshold &&
+    defendingPoints >= config.super_tackle_points
+
+  function resetRaidState() {
+    setRaider(null)
+    setAttackingPoints(0)
+    setBonus(false)
+    setDefendingPoints(0)
+    setTackler(null)
+    setIsSelfOut(false)
+  }
+
   function switchTeam(team) {
     setRaidingTeam(team)
-    setRaider(null)
-    setOuts([])
-    setMark('touch')
-    setBonus(false)
-    setTackler(null)
+    resetRaidState()
   }
 
-  // Line outs give the raiding house a point each but are not the raider's points, so they do not
-  // count towards a super raid. Mirrors the server (services/kabaddi/rules.js).
-  const lineOuts = outs.filter((out) => out.line).length
-  const raidPoints = outs.length - lineOuts + (bonus ? 1 : 0)
-  const housePoints = raidPoints + lineOuts
+  const totalAttacking = attackingPoints + (bonus ? 1 : 0)
+  const tacklerPlayer = tackler ? players.get(tackler) ?? players.get(String(tackler)) : null
 
-  // What saving would do, shown before it is saved.
-  let preview
-  if (mode === 'scored') {
-    const allOut = outs.length > 0 && outs.length === defenders.length
-    if (housePoints === 0) {
-      preview = doOrDie
-        ? `Do-or-die failed: raider out, +1 to ${names[defendingTeam]}`
-        : 'Empty raid, no points'
-    } else {
-      preview = `+${housePoints} to ${names[raidingTeam]}`
-      if (raidPoints >= config.super_raid_min_points) preview += ' · Super raid'
-      if (lineOuts) preview += ` · ${lineOuts} stepped out`
-      if (allOut) preview += ` · All out +${config.all_out_points}`
-    }
-  } else if (mode === 'tackled') {
-    const superTackle = config.super_tackle_enabled && defenders.length <= config.super_tackle_threshold
-    const points = superTackle ? config.super_tackle_points : 1
-    preview = `+${points} to ${names[defendingTeam]}${superTackle ? ' · Super tackle' : ''}`
-    if (attackers.length === 1) preview += ` · All out +${config.all_out_points}`
+  // Live preview text
+  let preview = ''
+  if (totalAttacking === 0 && defendingPoints === 0) {
+    preview = doOrDie ? `Do-or-die failed: raider out, +1 to ${names[defendingTeam]}` : 'Empty raid, no points'
   } else {
-    preview = `Raider out, +1 to ${names[defendingTeam]}`
-    if (attackers.length === 1) preview += ` · All out +${config.all_out_points}`
+    const parts = []
+    if (totalAttacking > 0) {
+      let atkMsg = `+${totalAttacking} to ${names[raidingTeam]}`
+      if (bonus) atkMsg += ' (Bonus)'
+      if (attackingPoints >= config.super_raid_min_points) atkMsg += ' · Super raid'
+      if (attackingPoints > 0 && attackingPoints >= defendersOnMat) {
+        atkMsg += ` · All out +${config.all_out_points}`
+      }
+      parts.push(atkMsg)
+    }
+    if (defendingPoints > 0) {
+      let defMsg = `+${defendingPoints} to ${names[defendingTeam]}`
+      if (isSelfOut) {
+        defMsg += ' (Raider self-out)'
+      } else if (tacklerPlayer) {
+        defMsg += ` (${isSuperTackle ? 'Super tackle' : 'Tackle'} by ${tacklerPlayer.name})`
+      } else {
+        defMsg += ` (${isSuperTackle ? 'Super tackle' : 'Tackle'})`
+      }
+      if (attackersOnMat === 1) defMsg += ` · All out +${config.all_out_points}`
+      parts.push(defMsg)
+    }
+    preview = parts.join(' · ')
   }
 
-  const canSave = raider && (mode !== 'tackled' || tackler)
+  const canSave = raider && (defendingPoints === 0 || isSelfOut || tackler)
 
-  function save() {
-    const body =
-      mode === 'scored'
-        ? {
-            type: 'raid',
-            team: raidingTeam,
-            raider,
-            touched: outs.map((out) => out.id),
-            stepped_out: outs.filter((out) => out.line).map((out) => out.id),
-            bonus,
-          }
-        : mode === 'tackled'
-          ? { type: 'tackle', team: raidingTeam, raider, tackler }
-          : { type: 'line_out', team: raidingTeam, raider }
-    run(() => api.addEvent(fixture._id, body))
+  async function save() {
+    const body = {
+      type: 'raid',
+      team: raidingTeam,
+      raider,
+      points: attackingPoints,
+      bonus,
+      defending_points: defendingPoints,
+      tackler: isSelfOut ? null : tackler,
+      is_self_out: isSelfOut,
+    }
+    const ok = await run(() => api.addEvent(fixture._id, body))
+    if (ok) {
+      resetRaidState()
+    }
   }
-
-  // Tapping a defender adds them as the next one out (marked the current way); tapping again removes them.
-  const toggleOut = (id) =>
-    setOuts((current) =>
-      current.some((out) => out.id === id)
-        ? current.filter((out) => out.id !== id)
-        : [...current, { id, line: mark === 'line' }],
-    )
 
   return (
     <section className="kb-panel">
@@ -326,68 +384,148 @@ function RaidPad({ fixture, state, names, players, api, busy, run }) {
       <PlayerChips ids={attackers} players={players} selected={raider ? [raider] : []} onPick={setRaider} />
 
       {raider && (
-        <>
-          <p className="kb-step">Result</p>
-          <div className="kb-seg" role="group" aria-label="Raid result">
-            <button type="button" aria-pressed={mode === 'scored'} onClick={() => setMode('scored')}>
-              Raider came back
-            </button>
-            <button type="button" aria-pressed={mode === 'tackled'} onClick={() => setMode('tackled')}>
-              Raider tackled
-            </button>
-            <button type="button" aria-pressed={mode === 'stepped'} onClick={() => setMode('stepped')}>
-              Raider stepped out
-            </button>
-          </div>
-
-          {mode === 'scored' && (
-            <>
-              <p className="kb-step">Defenders out, in order</p>
-              <div className="kb-seg" role="group" aria-label="How the next defender went out">
-                <button type="button" aria-pressed={mark === 'touch'} onClick={() => setMark('touch')}>
-                  Touched
+        <div className="kb-scoring-section">
+          {/* Attacking Counter */}
+          <div className="kb-counter-card">
+            <div className="kb-counter-header">
+              <div className="kb-counter-title-wrap">
+                <span className="kb-counter-badge kb-badge-atk">Raiding Points</span>
+                <span className="kb-counter-title">{names[raidingTeam]}</span>
+              </div>
+              <div className="kb-counter-ctrl">
+                <button
+                  type="button"
+                  className="kb-counter-btn"
+                  disabled={attackingPoints <= 0}
+                  onClick={() => setAttackingPoints((p) => Math.max(0, p - 1))}
+                  aria-label="Decrease raiding points"
+                >
+                  −
                 </button>
-                <button type="button" aria-pressed={mark === 'line'} onClick={() => setMark('line')}>
-                  Stepped out
+                <span className="kb-counter-num">{attackingPoints}</span>
+                <button
+                  type="button"
+                  className="kb-counter-btn"
+                  disabled={attackingPoints >= defendersOnMat}
+                  onClick={() => setAttackingPoints((p) => Math.min(defendersOnMat, p + 1))}
+                  aria-label="Increase raiding points"
+                >
+                  +
                 </button>
               </div>
-              <p className="kb-hint">
-                Tap defenders in the order they went out — that is the order they come back. Pick Touched or Stepped
-                out before each tap. Leave empty for an empty raid.
-              </p>
-              <PlayerChips
-                ids={defenders}
-                players={players}
-                selected={outs.map((out) => out.id)}
-                lineOuts={outs.filter((out) => out.line).map((out) => out.id)}
-                onPick={toggleOut}
-                showOrder
-              />
-              {config.bonus_enabled && (
-                <label className="kb-check">
-                  <input type="checkbox" checked={bonus} onChange={(event) => setBonus(event.target.checked)} />
-                  Bonus point
-                </label>
-              )}
-            </>
-          )}
-          {mode === 'tackled' && (
-            <>
-              <p className="kb-hint">Tap the defender who made the tackle.</p>
-              <PlayerChips ids={defenders} players={players} selected={tackler ? [tackler] : []} onPick={setTackler} />
-            </>
-          )}
-          {mode === 'stepped' && (
-            <p className="kb-hint">The raider crossed the boundary line: the raider is out and the defenders get a point.</p>
-          )}
+            </div>
 
+            {/* Bonus Tickbox */}
+            {config.bonus_enabled && (
+              <div className="kb-bonus-row">
+                <label className={`kb-check ${!bonusEligible ? 'is-disabled' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={bonus}
+                    disabled={!bonusEligible}
+                    onChange={(e) => setBonus(e.target.checked)}
+                  />
+                  <span>Bonus point (+1)</span>
+                </label>
+                {!bonusEligible && (
+                  <span className="kb-bonus-hint">Requires 6+ defenders on mat ({defendersOnMat} active)</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Defending Counter */}
+          <div className="kb-counter-card">
+            <div className="kb-counter-header">
+              <div className="kb-counter-title-wrap">
+                <span className="kb-counter-badge kb-badge-def">Defending Points</span>
+                <span className="kb-counter-title">{names[defendingTeam]}</span>
+                {defendersOnMat <= config.super_tackle_threshold && config.super_tackle_enabled && (
+                  <span className="kb-tag kb-tag-super">Super Tackle Active (2 pts)</span>
+                )}
+              </div>
+              <div className="kb-counter-ctrl">
+                <button
+                  type="button"
+                  className="kb-counter-btn"
+                  disabled={defendingPoints <= 0}
+                  onClick={() => {
+                    const nextVal = Math.max(0, defendingPoints - 1)
+                    setDefendingPoints(nextVal)
+                    if (nextVal === 0) {
+                      setTackler(null)
+                      setIsSelfOut(false)
+                    }
+                  }}
+                  aria-label="Decrease defending points"
+                >
+                  −
+                </button>
+                <span className="kb-counter-num">{defendingPoints}</span>
+                <button
+                  type="button"
+                  className="kb-counter-btn"
+                  disabled={defendingPoints >= 2}
+                  onClick={() => {
+                    const nextVal = Math.min(2, defendingPoints + 1)
+                    setDefendingPoints(nextVal)
+                  }}
+                  aria-label="Increase defending points"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Tackler selection or Self-Out when defendingPoints > 0 */}
+            {defendingPoints > 0 && (
+              <div className="kb-tackle-section">
+                <div className="kb-tackle-head">
+                  <span className="kb-step">Tackled by:</span>
+                  <button
+                    type="button"
+                    className={`kb-btn kb-btn-sm ${isSelfOut ? 'kb-btn-active' : ''}`}
+                    onClick={() => {
+                      setIsSelfOut(true)
+                      setTackler(null)
+                    }}
+                  >
+                    Raider Self-Out
+                  </button>
+                </div>
+
+                {!isSelfOut ? (
+                  <PlayerChips
+                    ids={defenders}
+                    players={players}
+                    selected={tackler ? [tackler] : []}
+                    onPick={(id) => {
+                      setTackler(id)
+                      setIsSelfOut(false)
+                    }}
+                  />
+                ) : (
+                  <p className="kb-hint kb-warn-text">
+                    Raider stepped out on their own. Point awarded to defending team (no tackler credited).
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action / Preview footer */}
           <div className="kb-save">
             <span className="kb-preview">{preview}</span>
-            <button type="button" className="kb-btn kb-btn-primary" disabled={busy || !canSave} onClick={save}>
-              Save
+            <button
+              type="button"
+              className="kb-btn kb-btn-primary"
+              disabled={busy || !canSave}
+              onClick={save}
+            >
+              Save Raid
             </button>
           </div>
-        </>
+        </div>
       )}
     </section>
   )
@@ -544,14 +682,14 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
                 />
               </label>
               <label className="kb-field">
-                <span>Reason</span>
+                <span>Reason {open === 'correction' ? '(optional)' : ''}</span>
                 <input
                   className="kb-input"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  placeholder={open === 'correction' ? 'e.g. point given to the wrong house' : 'e.g. lobby violation'}
+                  placeholder={open === 'correction' ? 'Optional (e.g. score error)' : 'e.g. lobby violation'}
                   maxLength={200}
-                  required
+                  required={open !== 'correction'}
                 />
               </label>
             </div>
@@ -571,31 +709,7 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
   )
 }
 
-// Who is on court, who is out (in revival order) and who is left on the bench.
-function Court({ state, names, players }) {
-  return (
-    <section className="kb-court">
-      {TEAMS.map((team) => {
-        const side = state.sides[team]
-        return (
-          <div key={team} className="kb-panel">
-            <h3 className="kb-title">{names[team]}</h3>
-            <p className="kb-step">On court ({side.on_court.length})</p>
-            <PlayerChips ids={side.on_court} players={players} empty="Nobody on court" />
-            <p className="kb-step">Out, next back first ({side.out.length})</p>
-            <PlayerChips ids={side.out} players={players} empty="Nobody out" />
-            {side.bench.length > 0 && (
-              <>
-                <p className="kb-step">Substitutes</p>
-                <PlayerChips ids={side.bench} players={players} />
-              </>
-            )}
-          </div>
-        )
-      })}
-    </section>
-  )
-}
+
 
 // The full running log of the match: every raid, tackle, technical point, correction and substitution,
 // with the score after each one. Shown to both the referee and the admin; nobody edits it here.
