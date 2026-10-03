@@ -14,8 +14,9 @@ export const PLAYING_PERIODS = ['first_half', 'second_half'];
 // line_out: the raider steps out of bounds; the raider is out and the defenders get a point.
 // technical: points given to a house by the referee (e.g. a lobby or time-out violation).
 // correction: an admin's plus or minus change to a house's score.
+// score_change: coordinator complete score & on-court player count update.
 // substitution: a player on court is swapped for one on the bench.
-export const EVENT_TYPES = ['raid', 'tackle', 'line_out', 'technical', 'correction', 'substitution'];
+export const EVENT_TYPES = ['raid', 'tackle', 'line_out', 'technical', 'correction', 'substitution', 'score_change'];
 
 // Rules from the Inter UG Kabaddi rule set. Each fixture keeps its own copy, set before the match starts.
 export const DEFAULT_CONFIG = {

@@ -562,7 +562,7 @@ function PlayerChips({ ids, players, selected = [], lineOuts = [], onPick, empty
   )
 }
 
-// Technical points, substitutions, score corrections, and undoing the last one or two actions.
+// Technical points, substitutions, score changes, and undoing the last one or two actions.
 function OtherActions({ fixture, state, names, players, busy, run, api, undosLeft, onUndo }) {
   const [open, setOpen] = useState(null)
   const [team, setTeam] = useState('team1')
@@ -570,25 +570,44 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
   const [note, setNote] = useState('')
   const [playerOut, setPlayerOut] = useState('')
   const [playerIn, setPlayerIn] = useState('')
+  const [team1Score, setTeam1Score] = useState(state.score.team1)
+  const [team2Score, setTeam2Score] = useState(state.score.team2)
+  const [team1Mat, setTeam1Mat] = useState(state.sides.team1?.on_mat_count ?? 7)
+  const [team2Mat, setTeam2Mat] = useState(state.sides.team2?.on_mat_count ?? 7)
   const over = fixture.status === 'completed'
   const lastEvent = fixture.events.at(-1)
   const canUndo = Boolean(lastEvent) && undosLeft > 0
 
   function toggle(name) {
     setOpen((current) => (current === name ? null : name))
-    setPoints(name === 'correction' ? '-1' : '1')
+    setPoints('1')
     setNote('')
     setPlayerOut('')
     setPlayerIn('')
+    setTeam1Score(state.score.team1)
+    setTeam2Score(state.score.team2)
+    setTeam1Mat(state.sides.team1?.on_mat_count ?? 7)
+    setTeam2Mat(state.sides.team2?.on_mat_count ?? 7)
   }
 
   function submit(event) {
     event.preventDefault()
-    const body =
-      open === 'substitution'
-        ? { type: 'substitution', team, player_out: playerOut, player_in: playerIn }
-        : { type: open, team, points: Number(points), note }
-    run(() => api.addEvent(fixture._id, body))
+    let body
+    if (open === 'score_change') {
+      body = {
+        type: 'score_change',
+        team1_score: Number(team1Score),
+        team2_score: Number(team2Score),
+        team1_on_mat: Number(team1Mat),
+        team2_on_mat: Number(team2Mat),
+        note,
+      }
+    } else if (open === 'substitution') {
+      body = { type: 'substitution', team, player_out: playerOut, player_in: playerIn }
+    } else {
+      body = { type: open, team, points: Number(points), note }
+    }
+    run(() => api.addEvent(fixture._id, body)).then((ok) => ok && setOpen(null))
   }
 
   function undo() {
@@ -601,7 +620,7 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
   const buttons = [
     { key: 'technical', label: 'Technical point' },
     !over && { key: 'substitution', label: 'Substitution' },
-    { key: 'correction', label: 'Correct score' },
+    { key: 'score_change', label: 'Change score' },
   ].filter(Boolean)
 
   return (
@@ -623,26 +642,113 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
           className="kb-btn kb-btn-danger"
           disabled={busy || !canUndo}
           onClick={undo}
-          title={lastEvent && undosLeft === 0 ? 'Undo limit reached — use Correct score to fix the score' : undefined}
+          title={lastEvent && undosLeft === 0 ? 'Undo limit reached — use Change score to fix the score' : undefined}
         >
           Undo{lastEvent ? ` (${undosLeft} left)` : ''}
         </button>
       </div>
       {lastEvent && undosLeft === 0 && (
-        <p className="kb-hint">Undo limit reached. Use Correct score to fix the scoreline if needed.</p>
+        <p className="kb-hint">Undo limit reached. Use Change score to adjust the scoreline and court count.</p>
       )}
 
       {open && (
         <form className="kb-form" onSubmit={submit}>
-          <div className="kb-seg" role="group" aria-label="House">
-            {TEAMS.map((item) => (
-              <button key={item} type="button" aria-pressed={team === item} onClick={() => setTeam(item)}>
-                {names[item]}
-              </button>
-            ))}
-          </div>
+          {open !== 'score_change' && (
+            <div className="kb-seg" role="group" aria-label="House">
+              {TEAMS.map((item) => (
+                <button key={item} type="button" aria-pressed={team === item} onClick={() => setTeam(item)}>
+                  {names[item]}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {open === 'substitution' ? (
+          {open === 'score_change' ? (
+            <div className="kb-score-change-grid">
+              <div className="kb-score-change-teams">
+                {/* Team 1 */}
+                <div className="kb-team-change-card">
+                  <div className="kb-team-change-head">
+                    <span className="kb-counter-badge kb-badge-atk">{names.team1}</span>
+                    <span className="kb-muted" style={{ fontSize: '0.75rem' }}>Current: {state.score.team1} pts</span>
+                  </div>
+                  <div className="kb-grid">
+                    <label className="kb-field">
+                      <span>New Score</span>
+                      <input
+                        className="kb-input"
+                        type="number"
+                        min={0}
+                        max={500}
+                        value={team1Score}
+                        onChange={(e) => setTeam1Score(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="kb-field">
+                      <span>Players on Court</span>
+                      <select
+                        className="kb-input"
+                        value={team1Mat}
+                        onChange={(e) => setTeam1Mat(Number(e.target.value))}
+                        required
+                      >
+                        {[7, 6, 5, 4, 3, 2, 1].map((cnt) => (
+                          <option key={cnt} value={cnt}>{cnt} on mat</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Team 2 */}
+                <div className="kb-team-change-card">
+                  <div className="kb-team-change-head">
+                    <span className="kb-counter-badge kb-badge-def">{names.team2}</span>
+                    <span className="kb-muted" style={{ fontSize: '0.75rem' }}>Current: {state.score.team2} pts</span>
+                  </div>
+                  <div className="kb-grid">
+                    <label className="kb-field">
+                      <span>New Score</span>
+                      <input
+                        className="kb-input"
+                        type="number"
+                        min={0}
+                        max={500}
+                        value={team2Score}
+                        onChange={(e) => setTeam2Score(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="kb-field">
+                      <span>Players on Court</span>
+                      <select
+                        className="kb-input"
+                        value={team2Mat}
+                        onChange={(e) => setTeam2Mat(Number(e.target.value))}
+                        required
+                      >
+                        {[7, 6, 5, 4, 3, 2, 1].map((cnt) => (
+                          <option key={cnt} value={cnt}>{cnt} on mat</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <label className="kb-field" style={{ width: '100%' }}>
+                <span>Reason for score change (optional)</span>
+                <input
+                  className="kb-input"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Optional (e.g. referee score discrepancy resolved)"
+                  maxLength={200}
+                />
+              </label>
+            </div>
+          ) : open === 'substitution' ? (
             <div className="kb-grid">
               <label className="kb-field">
                 <span>Going off</span>
@@ -670,26 +776,26 @@ function OtherActions({ fixture, state, names, players, busy, run, api, undosLef
           ) : (
             <div className="kb-grid">
               <label className="kb-field kb-field-narrow">
-                <span>{open === 'correction' ? 'Points (+ or −)' : 'Points'}</span>
+                <span>Points</span>
                 <input
                   className="kb-input"
                   type="number"
-                  min={open === 'correction' ? -20 : 1}
-                  max={open === 'correction' ? 20 : 5}
+                  min={1}
+                  max={5}
                   value={points}
                   onChange={(event) => setPoints(event.target.value)}
                   required
                 />
               </label>
               <label className="kb-field">
-                <span>Reason {open === 'correction' ? '(optional)' : ''}</span>
+                <span>Reason</span>
                 <input
                   className="kb-input"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  placeholder={open === 'correction' ? 'Optional (e.g. score error)' : 'e.g. lobby violation'}
+                  placeholder="e.g. lobby violation"
                   maxLength={200}
-                  required={open !== 'correction'}
+                  required
                 />
               </label>
             </div>

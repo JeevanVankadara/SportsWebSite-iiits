@@ -247,6 +247,17 @@ export function replayMatch(fixture) {
       lastRaid = event;
     } else if (event.type === 'technical' || event.type === 'correction') {
       add(event.team, event.points ?? 0);
+    } else if (event.type === 'score_change') {
+      const delta1 = (event.team1_score ?? score.team1) - score.team1;
+      const delta2 = (event.team2_score ?? score.team2) - score.team2;
+      if (delta1 !== 0) add('team1', delta1);
+      if (delta2 !== 0) add('team2', delta2);
+      if (event.team1_on_mat != null) {
+        sides.team1.on_mat_count = Math.max(1, Math.min(maxCourt, event.team1_on_mat));
+      }
+      if (event.team2_on_mat != null) {
+        sides.team2.on_mat_count = Math.max(1, Math.min(maxCourt, event.team2_on_mat));
+      }
     } else if (event.type === 'substitution') {
       const side = sides[event.team];
       const outgoing = idOf(event.player_out);
@@ -376,6 +387,13 @@ export function computeKabaddiScorecardStats(fixture, playersMap = {}) {
       addStat(defending, 'extra_points', LINE_OUT_POINTS, half);
     } else if (event.type === 'technical' || event.type === 'correction') {
       addStat(event.team, 'extra_points', event.points ?? 0, half);
+    } else if (event.type === 'score_change') {
+      if (entry?.points?.team1) {
+        addStat('team1', 'extra_points', entry.points.team1, half);
+      }
+      if (entry?.points?.team2) {
+        addStat('team2', 'extra_points', entry.points.team2, half);
+      }
     }
 
     if (entry?.all_out) {

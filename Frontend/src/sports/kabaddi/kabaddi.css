@@ -508,6 +508,7 @@
 
 .kb-tag-technical,
 .kb-tag-correction,
+.kb-tag-score_change,
 .kb-tag-line_out,
 .kb-tag-warn {
   background: var(--kb-warn-soft);
@@ -517,6 +518,44 @@
 .kb-tag-substitution {
   background: var(--kb-accent-soft);
   color: var(--kb-accent);
+}
+
+/* Score change form */
+.kb-score-change-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.kb-score-change-teams {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kb-team-change-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--kb-line);
+  border-radius: 8px;
+}
+
+.kb-team-change-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .kb-score-change-teams {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 /* Court and log */

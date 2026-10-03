@@ -18,7 +18,10 @@ import { HttpError } from '../../../utils/httpError.js';
 import { ensureOpen, refereeDetail, refereeFixture } from './access.js';
 
 export async function myFixtures(req, res) {
-  const fixtures = await FootballFixture.find({ referees: req.player._id })
+  const fixtures = await FootballFixture.find({
+    referees: req.player._id,
+    status: { $in: ['live', 'scheduled'] },
+  })
     .populate('tournament', 'tournament_name houses')
     .sort({ scheduled_at: 1, created_at: -1 });
 

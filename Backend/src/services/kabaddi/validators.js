@@ -119,7 +119,7 @@ export function parseClockAction(body = {}) {
  */
 export function parseMatchEvent(body = {}, { allowCorrection = false } = {}) {
   const note = typeof body.note === 'string' ? body.note.trim().slice(0, 200) : '';
-  const team = requireTeam(body.team);
+  const team = body.type === 'score_change' ? (body.team && ['team1', 'team2'].includes(body.team) ? body.team : 'team1') : requireTeam(body.team);
 
   switch (body.type) {
     case 'raid': {
@@ -181,6 +181,34 @@ export function parseMatchEvent(body = {}, { allowCorrection = false } = {}) {
       }
       const note = typeof body.note === 'string' ? body.note.trim().slice(0, 200) : '';
       return { type: 'correction', team, points, note };
+    }
+    case 'score_change': {
+      const t1Score = toWholeNumber(body.team1_score);
+      const t2Score = toWholeNumber(body.team2_score);
+      if (!Number.isInteger(t1Score) || t1Score < 0 || t1Score > 500) {
+        throw new HttpError(400, 'Team 1 score must be a valid non-negative number');
+      }
+      if (!Number.isInteger(t2Score) || t2Score < 0 || t2Score > 500) {
+        throw new HttpError(400, 'Team 2 score must be a valid non-negative number');
+      }
+      const t1Mat = toWholeNumber(body.team1_on_mat);
+      const t2Mat = toWholeNumber(body.team2_on_mat);
+      if (!Number.isInteger(t1Mat) || t1Mat < 1 || t1Mat > 7) {
+        throw new HttpError(400, 'Team 1 players on mat must be between 1 and 7');
+      }
+      if (!Number.isInteger(t2Mat) || t2Mat < 1 || t2Mat > 7) {
+        throw new HttpError(400, 'Team 2 players on mat must be between 1 and 7');
+      }
+      const note = typeof body.note === 'string' ? body.note.trim().slice(0, 200) : '';
+      return {
+        type: 'score_change',
+        team: 'team1',
+        team1_score: t1Score,
+        team2_score: t2Score,
+        team1_on_mat: t1Mat,
+        team2_on_mat: t2Mat,
+        note,
+      };
     }
     case 'substitution': {
       const outgoing = playerId(body.player_out, 'Pick the player going off');

@@ -9,7 +9,10 @@ import { openRefereeFixture, refereeDetail, refereeFixture } from './access.js';
 
 // GET /api/coordinator/cricket/fixtures
 export async function listMyFixtures(req, res) {
-  const fixtures = await CricketFixture.find({ referees: req.player._id })
+  const fixtures = await CricketFixture.find({
+    referees: req.player._id,
+    status: { $in: ['live', 'scheduled'] },
+  })
     .sort({ scheduled_at: 1, created_at: 1 })
     .populate('tournament', 'tournament_name houses')
     .populate('referees', 'name username');
