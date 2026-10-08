@@ -43,6 +43,10 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    # Serialize deployments so cleanup cannot overlap another deployment's build.
+    concurrency:
+      group: gcp-production-deploy
+      cancel-in-progress: false
     steps:
       - name: SSH into GCP VM and update containers
         uses: appleboy/ssh-action@v1.0.3
@@ -58,10 +62,16 @@ jobs:
             echo "Pulling latest changes from main..."
             git pull origin main
 
+            echo "Freeing Docker disk space before the build..."
+            # Images referenced by containers are retained; volumes are untouched.
+            docker image prune -af
+            docker builder prune -af
+
             echo "Rebuilding and restarting Docker containers..."
             docker compose up -d --build
 
-            echo "Cleaning up dangling images to save disk space..."
-            docker image prune -f
+            echo "Removing previous unused images and build cache..."
+            docker image prune -af
+            docker builder prune -af
 
             echo "Deployment successfully finished!"

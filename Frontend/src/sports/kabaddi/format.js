@@ -28,6 +28,10 @@ export const EVENT_LABELS = {
 export function eventBadge(event, entry) {
   if (entry?.super_raid) return { label: 'Super raid', tone: 'super' }
   if (entry?.super_tackle) return { label: 'Super tackle', tone: 'super' }
+  // Counter-based scoring stores tackles as raid events; label their outcome in the log.
+  if (event.type === 'raid' && event.defending_points > 0 && event.tackler && !event.is_self_out) {
+    return { label: 'Tackle', tone: 'tackle' }
+  }
   return { label: EVENT_LABELS[event.type] ?? event.type, tone: event.type }
 }
 
