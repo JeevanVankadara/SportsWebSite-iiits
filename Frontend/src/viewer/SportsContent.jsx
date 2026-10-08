@@ -34,6 +34,9 @@ import {
   configOf as volleyballConfigOf,
   MATCH_SETS,
 } from '../sports/volleyball/format.js'
+import {
+  configOf as throwballConfigOf,
+} from '../sports/throwball/format.js'
 import { houseName, idOf, resultLine, sportName, formatDate } from './data.js'
 
 function playerIndex(fixture) {
@@ -775,6 +778,60 @@ function VolleyballSets({ data }) {
   )
 }
 
+function ThrowballSets({ data }) {
+  const { fixture, tournament } = data
+  const names = {
+    team1: houseName(tournament, fixture.team1),
+    team2: houseName(tournament, fixture.team2),
+  }
+  const config = throwballConfigOf(fixture)
+
+  return (
+    <div className="st-detail-stack">
+      <section className="st-detail-panel">
+        <span className="st-eyebrow">SETS · Best of {config.match_sets} · {config.points_to_win} to win · {config.point_cap} cap</span>
+        <div className="st-table-scroll">
+          <table className="st-table">
+            <thead>
+              <tr>
+                <th scope="col">Set</th>
+                <th scope="col">{names.team1}</th>
+                <th scope="col">{names.team2}</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: config.match_sets }, (_, i) => i + 1).map((setNo) => {
+                const set = (fixture.sets ?? []).find((s) => s.set_no === setNo)
+                const isLive = set?.status === 'live'
+                const isCompleted = set?.status === 'completed'
+                const played = isLive || isCompleted
+
+                return (
+                  <tr key={setNo}>
+                    <td><strong>Set {setNo}</strong></td>
+                    <td>{played ? <strong className={set.winner === 'team1' ? 'won' : ''}>{set.team1_points}</strong> : '—'}</td>
+                    <td>{played ? <strong className={set.winner === 'team2' ? 'won' : ''}>{set.team2_points}</strong> : '—'}</td>
+                    <td>
+                      {isLive ? (
+                        <span className="st-live-text">● LIVE</span>
+                      ) : isCompleted ? (
+                        set.winner ? `${names[set.winner]} won` : 'Finished'
+                      ) : (
+                        <span style={{ color: 'var(--color-muted)' }}>Yet to be played</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function Squads({ data }) {
   const { fixture: f, detail } = data
   return (
@@ -788,7 +845,7 @@ function Squads({ data }) {
               ]
             : f.sport === 'football'
               ? rosterState(f, team).all
-              : f.sport === 'kabaddi' || f.sport === 'volleyball'
+              : f.sport === 'kabaddi' || f.sport === 'volleyball' || f.sport === 'throwball'
                 ? [
                     ...(f[`${team}_lineup`]?.starters ?? []),
                     ...(f[`${team}_lineup`]?.bench ?? []),
@@ -812,7 +869,7 @@ function Squads({ data }) {
             {players.length ? (
               players.map((player) => (
                 <div className="st-roster-row" key={idOf(player)}>
-                  {f.sport !== 'volleyball' && <PlayerAvatar id={idOf(player)} />}
+                  {f.sport !== 'volleyball' && f.sport !== 'throwball' && <PlayerAvatar id={idOf(player)} />}
                   <strong>{formatPlayerName(player.name)}</strong>
                   {onPitch && (
                     <span>
@@ -837,6 +894,7 @@ export function FixtureContent({ tab, data }) {
   const { fixture: f } = data
   if (tab === 'squads') return <Squads data={data} />
   if (f.sport === 'volleyball') return <VolleyballSets data={data} />
+  if (f.sport === 'throwball') return <ThrowballSets data={data} />
   if (tab === 'timeline') {
     if (f.sport === 'kabaddi') return <KabaddiTimeline data={data} />
     return <FootballTimeline data={data} />

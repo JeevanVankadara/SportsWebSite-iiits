@@ -1,0 +1,89 @@
+import { Player } from '../../../models/Player.js';
+import { ThrowballFixture } from '../../../models/sports/throwball/ThrowballFixture.js';
+import { deleteFriendlyIfEmpty, Tournament } from '../../../models/Tournament.js';
+import {
+  deleteFixtures,
+  findThrowballGame,
+  fixtureResponse,
+  setFixtureDecision as applyFixtureDecision,
+} from '../../../services/throwball/fixture.service.js';
+import { validateFixtureDecision } from '../../../services/throwball/validators.js';
+import { publishFixture } from '../../../services/liveBus.js';
+import { HttpError } from '../../../utils/httpError.js';
+import { ensureAllExist, findByIdOr404, isObjectId, optionalDate, optionalIdList } from '../../../utils/validation.js';
+import { parseStage } from '../../../models/fixtureStage.js';
+import { ensureNoGuests } from '../../../services/guestPlayer.service.js';
+
+// Like every other sport, the admin only creates, edits and deletes the fixture and sets the final
+// decision. The match itself (rules, lineups and scoring) is run by the assigned referee.
+
+const TEAM_LABELS = { team1: 'Team 1', team2: 'Team 2' };
+
+function requireHouse(tournament, value, label) {
+  if (!isObjectId(value) || !tournament.houses.id(value)) {
+    throw new HttpError(400, `${label} must be one of this tournament's houses`);
+  }
+  return value;
+}
+
+async function applyDetails(fixture, tournament, body) {
+  for (const team of ['team1', 'team2']) {
+    if (!fixture.isNew && body[team] === undefined) continue;
+    const houseId = requireHouse(tournament, body[team], TEAM_LABELS[team]);
+    if (!fixture.isNew && !fixture[team].equals(houseId) && fixture.status !== 'scheduled') {
+      throw new HttpError(409, 'Houses cannot change after the match has started');
+    }
+    fixture[team] = houseId;
+  }
+
+  const referees = optionalIdList(body.referees, 'Referees');
+  if (referees) {
+    await ensureAllExist(Player, referees, 'referees');
+    await ensureNoGuests(referees);
+    fixture.referees = referees;
+  }
+
+  const scheduledAt = optionalDate(body.scheduled_at, 'Date and time');
+  if (scheduledAt !== undefined) fixture.scheduled_at = scheduledAt;
+
+  const stage = parseStage(body.stage);
+  if (stage !== undefined) fixture.stage = stage;
+}
+
+const loadFixture = (req) => findByIdOr404(ThrowballFixture, req.params.id, 'Fixture not found');
+
+export async function createFixture(req, res) {
+  const body = req.body ?? {};
+  const tournament = await findByIdOr404(Tournament, req.params.tournamentId, 'Tournament not found');
+  const throwball = await findThrowballGame();
+  if (!throwball || !tournament.games.some((id) => id.equals(throwball._id))) {
+    throw new HttpError(409, "Throwball is not one of this tournament's sports. Add it from Edit tournament first.");
+  }
+
+  const fixture = new ThrowballFixture({ tournament: tournament._id });
+  await applyDetails(fixture, tournament, body);
+  await fixture.save();
+  res.status(201).json(await fixtureResponse(fixture._id, { publish: true }));
+}
+
+export async function updateFixture(req, res) {
+  const fixture = await loadFixture(req);
+  const tournament = await Tournament.findById(fixture.tournament);
+  await applyDetails(fixture, tournament, req.body ?? {});
+  await fixture.save();
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
+}
+
+export async function deleteFixture(req, res) {
+  const fixture = await loadFixture(req);
+  await deleteFixtures({ _id: fixture._id });
+  await deleteFriendlyIfEmpty(fixture.tournament, ThrowballFixture);
+  publishFixture('throwball', fixture._id);
+  res.status(204).end();
+}
+
+export async function setFixtureDecision(req, res) {
+  const fixture = await loadFixture(req);
+  await applyFixtureDecision(fixture, validateFixtureDecision(req.body ?? {}));
+  res.json(await fixtureResponse(fixture._id, { publish: true }));
+}

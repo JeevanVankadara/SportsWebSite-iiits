@@ -8,6 +8,7 @@ export const SPORTS = [
   { key: 'football', label: 'Football' },
   { key: 'kabaddi', label: 'Kabaddi' },
   { key: 'volleyball', label: 'Volleyball' },
+  { key: 'throwball', label: 'Throwball' },
 ]
 
 // The super admin manages tournaments and the other admins, and every sport.

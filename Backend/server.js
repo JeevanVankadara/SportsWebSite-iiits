@@ -23,7 +23,9 @@ import liveRoutes from './src/routes/live.routes.js';
 import playerRoutes from './src/routes/player.routes.js';
 import tournamentRoutes from './src/routes/tournament.routes.js';
 import volleyballRoutes from './src/routes/volleyball/volleyball.routes.js';
+import throwballRoutes from './src/routes/throwball/throwball.routes.js';
 import volleyballCoordinatorRoutes from './src/routes/volleyball/coordinator.routes.js';
+import throwballCoordinatorRoutes from './src/routes/throwball/coordinator.routes.js';
 
 const app = express();
 
@@ -46,6 +48,7 @@ app.use('/api/cricket', cricketRoutes);
 app.use('/api/football', footballRoutes);
 app.use('/api/badminton', badmintonRoutes);
 app.use('/api/volleyball', volleyballRoutes);
+app.use('/api/throwball', throwballRoutes);
 app.use('/api/live', liveRoutes);
 
 app.use('/api/admin', adminRoutes);
@@ -56,6 +59,7 @@ app.use('/api/coordinator/cricket', cricketCoordinatorRoutes);
 app.use('/api/coordinator/football', footballCoordinatorRoutes);
 app.use('/api/coordinator/badminton', badmintonCoordinatorRoutes);
 app.use('/api/coordinator/volleyball', volleyballCoordinatorRoutes);
+app.use('/api/coordinator/throwball', throwballCoordinatorRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

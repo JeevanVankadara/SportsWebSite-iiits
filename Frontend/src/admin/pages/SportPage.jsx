@@ -9,6 +9,7 @@ import FootballRoutes from '../sports/football/FootballRoutes.jsx'
 import CricketRoutes from '../sports/cricket/CricketRoutes.jsx'
 import KabaddiRoutes from '../sports/kabaddi/KabaddiRoutes.jsx'
 import VolleyballRoutes from '../sports/volleyball/VolleyballRoutes.jsx'
+import ThrowballRoutes from '../sports/throwball/ThrowballRoutes.jsx'
 import { canManageSport } from '../permissions.js'
 import { useTournament } from '../useTournament.js'
 
@@ -35,6 +36,9 @@ export default function SportPage() {
   }
   if (sportName === 'kabaddi') {
     return <KabaddiRoutes tournament={tournament} sport={sport} />
+  }
+  if (sportName === 'throwball') {
+    return <ThrowballRoutes tournament={tournament} sport={sport} />
   }
   if (sportName === 'volleyball') {
     return <VolleyballRoutes tournament={tournament} sport={sport} />

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { caseInsensitive, schemaOptions } from './schemaOptions.js';
 
 // The sports an admin can pick for a tournament. More details (rules, scoring) come later.
-export const PREDEFINED_GAMES = ['Cricket', 'Badminton', 'Football', 'Kabaddi', 'Volleyball'];
+export const PREDEFINED_GAMES = ['Cricket', 'Badminton', 'Football', 'Kabaddi', 'Volleyball', 'Throwball'];
 
 // Games: game_id (_id), game_name, rules_id (rules)
 const gameSchema = new mongoose.Schema(
@@ -29,3 +29,4 @@ export async function ensurePredefinedGames() {
     if (!exists) await Game.create({ game_name });
   }
 }
+

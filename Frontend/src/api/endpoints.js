@@ -279,3 +279,43 @@ export const coordinatorKabaddiApi = {
     coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/events`), { method: 'POST', body: data }),
   undo: (fixtureId) => coordinatorRequest(kabaddiCoordinatorPath(`fixtures/${id(fixtureId)}/undo`), { method: 'POST' }),
 }
+
+
+
+
+
+const throwballPath = (path) => `/api/throwball/${path}`
+
+export const throwballApi = {
+  fixtures: (tournamentId) => request(throwballPath(`tournaments/${id(tournamentId)}/fixtures`)),
+  standings: (tournamentId) => request(throwballPath(`tournaments/${id(tournamentId)}/standings`)),
+  fixture: (fixtureId) => request(throwballPath(`fixtures/${id(fixtureId)}`)),
+  createFixture: (tournamentId, data) =>
+    request(throwballPath(`tournaments/${id(tournamentId)}/fixtures`), { method: 'POST', body: data }),
+  updateFixture: (fixtureId, data) => request(throwballPath(`fixtures/${id(fixtureId)}`), { method: 'PATCH', body: data }),
+  deleteFixture: (fixtureId) => request(throwballPath(`fixtures/${id(fixtureId)}`), { method: 'DELETE' }),
+  setDecision: (fixtureId, data) => request(throwballPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+}
+
+const throwballCoordinatorPath = (path) => `/api/coordinator/throwball/${path}`
+
+export const coordinatorThrowballApi = {
+  fixtures: () => coordinatorRequest(throwballCoordinatorPath('fixtures')),
+  fixture: (fixtureId) => coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}`)),
+  saveConfig: (fixtureId, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/config`), { method: 'PUT', body: data }),
+  saveSlip: (fixtureId, team, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/slips/${team}`), { method: 'PUT', body: data }),
+  decideFixture: (fixtureId, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/decision`), { method: 'PUT', body: data }),
+  startMatch: (fixtureId) => coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/start`), { method: 'POST' }),
+  score: (fixtureId, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/score`), { method: 'POST', body: data }),
+  nextSet: (fixtureId) => coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/next-set`), { method: 'POST' }),
+  finishMatch: (fixtureId) => coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/finish`), { method: 'POST' }),
+  substitute: (fixtureId, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/substitution`), { method: 'POST', body: data }),
+  undo: (fixtureId) => coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/undo`), { method: 'POST' }),
+  editSet: (fixtureId, setId, data) =>
+    coordinatorRequest(throwballCoordinatorPath(`fixtures/${id(fixtureId)}/sets/${id(setId)}`), { method: 'PUT', body: data }),
+}

@@ -5,6 +5,7 @@ import FootballAssignments from '../sports/football/FootballAssignments.jsx'
 import CricketAssignments from '../sports/cricket/CricketAssignments.jsx'
 import KabaddiAssignments from '../sports/kabaddi/KabaddiAssignments.jsx'
 import VolleyballAssignments from '../sports/volleyball/VolleyballAssignments.jsx'
+import ThrowballAssignments from '../sports/throwball/ThrowballAssignments.jsx'
 
 // Everything assigned to the co-ordinator, one section per sport.
 // A new sport adds its own <XAssignments /> section here.
@@ -27,6 +28,7 @@ export default function GamesPage() {
       <CricketAssignments sectionNumber="04" />
       <KabaddiAssignments sectionNumber="05" />
       <VolleyballAssignments sectionNumber="06" />
+      <ThrowballAssignments sectionNumber="07" />
     </>
   )
 }
